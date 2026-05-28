@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Casino X — Lobby</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Shared design system FIRST, lobby styles second -->
+  <link rel="stylesheet" href="casino-theme.css">
+  <link rel="stylesheet" href="lobby.css">
+
+  <script src="wallet.js"></script>
+</head>
+
+<body>
+  <!-- Header -->
+  <header class="casino-header">
+    <div class="logo">
+      <span class="logo-title">Casino X</span>
+      <span class="logo-sub">Royale Collection</span>
+    </div>
+    <div class="header-controls">
+      <div class="balance-pill" id="balance-pill" title="Your bankroll, shared across every game">
+        <span class="chip"></span> $<span id="lobby-balance">100.00</span>
+      </div>
+      <button class="pill-btn" id="cashier-btn" aria-label="Cashier — top up to $100">
+        <i class="fa-solid fa-coins"></i> Cashier
+      </button>
+      <button class="pill-btn" id="theme-toggle" aria-label="Toggle theme">
+        <i id="theme-icon" class="fa-solid fa-moon"></i> Theme
+      </button>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="lobby-hero">
+    <p class="kicker">Welcome to the floor</p>
+    <h1 class="hero-title">Take Your Seat</h1>
+    <p class="hero-sub">One bankroll. Every table. Pick your game.</p>
+    <div class="deco-rule"><span class="diamond">◆</span></div>
+  </section>
+
+  <!-- Game grid -->
+  <section class="game-grid">
+
+    <!-- Slot machine -->
+    <a class="game-card live" href="slots/index.html">
+      <div class="game-emblem">🎰</div>
+      <div class="game-name">Lucky Reels</div>
+      <p class="game-tag">Spin three reels for up to 50× your bet on a triple jackpot.</p>
+      <div class="game-meta">Slots · Min 60¢</div>
+      <span class="enter-btn">Play</span>
+    </a>
+
+    <!-- Blackjack -->
+    <a class="game-card live" href="blackjack/index.html">
+      <div class="game-emblem">🂡</div>
+      <div class="game-name">Blackjack X</div>
+      <p class="game-tag">Beat the dealer to 21 without going bust. Classic table rules.</p>
+      <div class="game-meta">Cards · Dealer stands on 17</div>
+      <span class="enter-btn">Play</span>
+    </a>
+
+    <!-- Coming soon -->
+    <div class="game-card locked" aria-disabled="true">
+      <span class="ribbon">Soon</span>
+      <div class="game-emblem">🎡</div>
+      <div class="game-name">Roulette Royale</div>
+      <p class="game-tag">Red, black, or a number of your own. The wheel decides.</p>
+      <div class="game-meta">Table · Coming soon</div>
+      <span class="enter-btn">Locked</span>
+    </div>
+
+    <div class="game-card locked" aria-disabled="true">
+      <span class="ribbon">Soon</span>
+      <div class="game-emblem">🃏</div>
+      <div class="game-name">Texas Hold'em</div>
+      <p class="game-tag">Read the table, bluff the room, take the pot.</p>
+      <div class="game-meta">Poker · Coming soon</div>
+      <span class="enter-btn">Locked</span>
+    </div>
+
+  </section>
+
+  <footer class="lobby-footer">
+    Casino X · For entertainment only — no real-money wagering.
+  </footer>
+
+  <script>
+    // ── Theme (shares the 'theme' key + .light-theme/.dark-theme with the slot game) ──
+    (function () {
+      const saved = localStorage.getItem('theme') || 'dark';
+      document.body.classList.add(saved === 'light' ? 'light-theme' : 'dark-theme');
+      const icon = document.getElementById('theme-icon');
+      icon.className = saved === 'light' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+
+      document.getElementById('theme-toggle').addEventListener('click', () => {
+        const body = document.body;
+        const toLight = body.classList.contains('dark-theme');
+        body.classList.toggle('dark-theme', !toLight);
+        body.classList.toggle('light-theme', toLight);
+        icon.className = toLight ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+        localStorage.setItem('theme', toLight ? 'light' : 'dark');
+      });
+    })();
+
+    // ── Shared bankroll display ──
+    (function () {
+      const out  = document.getElementById('lobby-balance');
+      const pill = document.getElementById('balance-pill');
+
+      CasinoWallet.onChange((balance) => {
+        out.textContent = balance.toFixed(2);
+        pill.classList.remove('bump');
+        void pill.offsetWidth;        // restart the animation
+        pill.classList.add('bump');
+      });
+
+      document.getElementById('cashier-btn').addEventListener('click', () => {
+        if (CasinoWallet.get() >= CasinoWallet.STARTING) {
+          if (!confirm('Reset your bankroll to $100?')) return;
+        }
+        CasinoWallet.reset();
+      });
+    })();
+  </script>
+</body>
+</html>
