@@ -44,10 +44,14 @@
   --bg-1: #c8d5c0;
   --bg-2: #2d6e47;
   --bg-3: #b4d2a5;
-  --text: #1a2e1a;
-  --text-dim: #4a6a4a;
-  --surface: rgba(255, 255, 255, 0.55);
+  --text: #16240f;
+  --text-dim: #3a5236;
+  --surface: rgba(255, 255, 255, 0.62);
   --noise: rgba(0, 0, 0, 0.03);
+  /* Gold reads poorly on a pale background — darken it in light mode so
+     headings, prices and labels keep their contrast. */
+  --gold: #8a6e28;
+  --gold-light: #6f5410;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -106,6 +110,67 @@ h1, h2, h3 {
 }
 
 .shell-controls { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; justify-content: flex-end; }
+
+/* ── Progression: level + XP bar ── */
+.shell-progress { display: flex; flex-direction: column; gap: 3px; align-items: flex-start; }
+.shell-progress .lvl {
+  font-family: var(--font-display); font-size: 12px; font-weight: 700;
+  color: var(--gold-light); letter-spacing: 0.08em; text-transform: uppercase;
+}
+.shell-xp {
+  width: 88px; height: 7px; border-radius: 7px;
+  background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border); overflow: hidden;
+  font-size: 0; /* hide the XP text label visually; it stays for screen readers via aria */
+}
+.shell-xp-fill {
+  height: 100%; width: 0;
+  background: linear-gradient(90deg, var(--gold-dark), var(--gold-light));
+  transition: width 0.4s ease;
+}
+
+/* ── Daily-bonus button ── */
+.shell-bonus { position: relative; }
+.shell-bonus.ready {
+  border-color: var(--gold); color: var(--gold-light);
+  animation: shell-glow 1.5s ease-in-out infinite;
+}
+.shell-bonus.ready::after {
+  content: ''; position: absolute; top: -2px; right: -2px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--loss); box-shadow: 0 0 6px var(--loss);
+}
+@keyframes shell-glow {
+  0%, 100% { box-shadow: 0 0 0 rgba(201, 168, 76, 0); }
+  50%      { box-shadow: 0 0 14px rgba(201, 168, 76, 0.7); }
+}
+
+/* ── Daily-bonus modal ── */
+.shell-modal-box.bonus { max-width: 480px; }
+.shell-bonus-sub { color: var(--text-dim); margin-bottom: 14px; }
+.shell-streak {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin: 4px 0 20px;
+}
+.shell-streak .day {
+  padding: 8px 2px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  text-align: center;
+  min-width: 0;
+}
+.shell-streak .day .d { font-size: 9px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-dim); }
+.shell-streak .day .amt { font-family: var(--font-display); font-weight: 700; color: var(--gold-light); font-size: 13px; margin-top: 4px; }
+.shell-streak .day.claimed { opacity: 0.5; }
+.shell-streak .day.claimed .amt::after { content: ' ✓'; color: var(--win); }
+.shell-streak .day.today { border-color: var(--gold); box-shadow: 0 0 14px rgba(201, 168, 76, 0.4); transform: translateY(-2px); }
+
+@media (max-width: 460px) {
+  /* On very narrow screens, two rows reads better than 7 cramped columns */
+  .shell-streak { grid-template-columns: repeat(4, 1fr); }
+}
 
 /* Pill buttons + links */
 .shell-pill {
@@ -214,6 +279,14 @@ h1, h2, h3 {
 .shell-modal-box h3 { font-size: 1.8rem; font-weight: 900; margin-bottom: 8px; }
 .shell-modal-box p  { color: var(--text-dim); font-size: 1.1rem; line-height: 1.6; margin-bottom: 22px; }
 .shell-modal-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+/* Info / rules variant */
+.shell-modal-box.info { max-width: 460px; text-align: left; }
+.shell-modal-box.info h3 { text-align: center; }
+.shell-info-body { color: var(--text); font-size: 1rem; line-height: 1.6; max-height: 60vh; overflow: auto; }
+.shell-info-body h6 { font-family: var(--font-display); color: var(--gold); margin: 14px 0 4px; letter-spacing: 0.04em; }
+.shell-info-body ul, .shell-info-body ol { padding-left: 1.2em; margin: 4px 0; }
+.shell-info-body li { margin: 3px 0; }
 
 /* ── Celebration ── */
 #shell-confetti { position: fixed; inset: 0; z-index: 1900; pointer-events: none; }
