@@ -111,20 +111,20 @@
   </footer>
 
   <script>
-    // ── Theme (shares the 'theme' key + .light-theme/.dark-theme with the slot game) ──
-    (function () {
-      const saved = localStorage.getItem('theme') || 'dark';
-      document.body.classList.add(saved === 'light' ? 'light-theme' : 'dark-theme');
-      const icon = document.getElementById('theme-icon');
-      icon.className = saved === 'light' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    // ── Meta-game + theme: let the shell own theming so the lobby stays in sync
+    //    with every game. standalone() applies the saved theme (sets data-theme
+    //    on <html>, which the shell tokens key off) before anything else. ──
+    CasinoShell.standalone({ lobbyHref: 'index.html' });
 
+    // ── Theme toggle: delegate to the shell, then mirror the lobby's own icon ──
+    (function () {
+      const icon = document.getElementById('theme-icon');
+      const syncIcon = () =>
+        (icon.className = CasinoShell.theme.get() === 'light' ? 'fa-solid fa-sun' : 'fa-solid fa-moon');
+      syncIcon();
       document.getElementById('theme-toggle').addEventListener('click', () => {
-        const body = document.body;
-        const toLight = body.classList.contains('dark-theme');
-        body.classList.toggle('dark-theme', !toLight);
-        body.classList.toggle('light-theme', toLight);
-        icon.className = toLight ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-        localStorage.setItem('theme', toLight ? 'light' : 'dark');
+        CasinoShell.theme.toggle();
+        syncIcon();
       });
     })();
 
@@ -147,10 +147,6 @@
         CasinoWallet.reset();
       });
     })();
-
-    // ── Meta-game: level/XP display + daily bonus (no header injection here;
-    //    the lobby has its own header, so we wire into the elements above) ──
-    CasinoShell.standalone({ lobbyHref: 'index.html' });
   </script>
 </body>
 </html>
