@@ -104,6 +104,8 @@ function refreshButtons() {
   const playing  = phase === 'playing';
   const broke    = betting && currentBet === 0 && balance() < minBet();
   const remaining = balance() - currentBet;
+  // Add/remove a class that mobile CSS uses for the heavy disabled treatment
+  document.body.classList.toggle('mid-hand', playing);
 
   // Chips: only enabled while betting and affordable
   document.querySelectorAll('.chip-btn').forEach((btn) => {
@@ -278,8 +280,9 @@ function resolve(message, outcome) {
   updateLeaderboard(outcome, net);
 
   lastBet = currentBet;
-  // Return to betting; result + cards stay on screen until the next deal.
-  enterBetting();
+  // Delay re-enabling bet UI so the result registers before buttons re-enable.
+  // Prevents accidental re-deal on fast taps and makes the outcome feel clear.
+  setTimeout(enterBetting, 420);
 }
 
 /* ============================================================
