@@ -9,205 +9,90 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 
-  <!-- Shared design system FIRST (one level up), game styles second -->
-  <link rel="stylesheet" href="../casino-theme.css">
+  <!-- Shell first, game styles second -->
+  <link rel="stylesheet" href="../casino-shell.css">
   <link rel="stylesheet" href="styles.css">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
 </head>
 
 <body>
-  <!-- Floating theme toggle (script.js hooks .theme-toggle + #theme-icon) -->
-  <div class="theme-toggle" aria-label="Toggle theme">
-    <div class="theme-icon-wrapper">
-      <i id="theme-icon" class="fas fa-sun"></i>
-    </div>
-  </div>
+  <!-- The shell injects the header, modals and overlays. -->
 
-  <!-- Toast container -->
-  <div id="toast-container" class="toast-container position-fixed top-0 end-1 p-3"></div>
+  <main class="game-stage">
+    <h1>Slot Machine</h1>
 
-  <!-- Shared casino header -->
-  <header class="casino-header">
-    <div class="logo">
-      <span class="logo-title">Lucky Reels</span>
-      <span class="logo-sub">Casino Edition</span>
-    </div>
-    <div class="header-controls">
-      <a class="pill-btn" href="../index.html" aria-label="Back to lobby">
-        <i class="fa-solid fa-dice"></i> Lobby
-      </a>
-    </div>
-  </header>
-
-  <h1>Slot Machine</h1>
-
-  <!-- Reels -->
-  <div class="slot-machine">
-    <div class="reel" id="reel-0"><div class="icon-container"></div></div>
-    <div class="reel" id="reel-1"><div class="icon-container"></div></div>
-    <div class="reel" id="reel-2"><div class="icon-container"></div></div>
-  </div>
-
-  <!-- Controls -->
-  <div class="controls">
-    <div id="balance-display" class="digital-screen small-screen">
-      💵 Balance: $<span id="balance">100</span>
+    <!-- Reels -->
+    <div class="slot-machine">
+      <div class="reel" id="reel-0"><div class="icon-container"></div></div>
+      <div class="reel" id="reel-1"><div class="icon-container"></div></div>
+      <div class="reel" id="reel-2"><div class="icon-container"></div></div>
     </div>
 
-    <div class="bet-buttons">
-      <button class="pushable" onclick="setBet(0.6)" aria-label="Bet 60 cents">
-        <span class="front">60¢</span>
-      </button>
-      <button class="pushable" onclick="setBet(1.2)" aria-label="Bet 1 dollar 20">
-        <span class="front">$1.20</span>
-      </button>
-      <button class="pushable" onclick="setBet(2.4)" aria-label="Bet 2 dollars 40">
-        <span class="front">$2.40</span>
-      </button>
-      <button class="pushable" onclick="setBet(3.6)" aria-label="Bet 3 dollars 60">
-        <span class="front">$3.60</span>
-      </button>
-      <button class="pushable" onclick="setBet(6)" aria-label="Bet 6 dollars, maximum bet">
-        <span class="front">$6.00 (Max)</span>
-      </button>
-    </div>
+    <!-- Controls -->
+    <div class="controls">
+      <div class="bet-buttons">
+        <button class="pushable" onclick="setBet(0.6)" aria-label="Bet 60 cents"><span class="front">60¢</span></button>
+        <button class="pushable" onclick="setBet(1.2)" aria-label="Bet 1 dollar 20"><span class="front">$1.20</span></button>
+        <button class="pushable" onclick="setBet(2.4)" aria-label="Bet 2 dollars 40"><span class="front">$2.40</span></button>
+        <button class="pushable" onclick="setBet(3.6)" aria-label="Bet 3 dollars 60"><span class="front">$3.60</span></button>
+        <button class="pushable" onclick="setBet(6)" aria-label="Bet 6 dollars, maximum bet"><span class="front">$6.00 (Max)</span></button>
+      </div>
 
-    <div id="bet-display" class="digital-screen small-screen">
-      🎲 Current Bet: $<span id="current-bet">0.60</span>
-    </div>
+      <div id="bet-display" class="digital-screen small-screen">
+        🎲 Current Bet: $<span id="current-bet">0.60</span>
+      </div>
 
-    <div class="button-container">
-      <button class="button spin-button"
-              aria-label="Spin the reels"
-              data-bs-toggle="tooltip"
-              data-bs-placement="top"
-              data-bs-title="Spin (or press Space)">
-        <i class="fa-solid fa-arrows-rotate spin-icon"></i>
-      </button>
-
-      <button id="reset-button" class="reset-button" aria-label="Reset balance to 100 dollars">
-        <i class="fa-solid fa-circle-dollar-to-slot"></i>
-      </button>
-
-      <button id="help" class="help-button" aria-label="Open help guide">
-        <i class="fa-solid fa-question help-icon"></i>
-      </button>
-    </div>
-  </div>
-
-  <!-- Result display -->
-  <div id="winnings-display" class="digital-screen">
-    <div id="result" class="result">🎉 Welcome! 🎉</div>
-  </div>
-
-  <!-- Spin history -->
-  <div id="history-container" class="history-container">
-    <h3>Recent Spins</h3>
-    <ul id="history-list" class="history-list">
-      <li class="history-empty">No spins yet — give it a go!</li>
-    </ul>
-  </div>
-
-  <!-- Winning combinations table -->
-  <h2>Winning Combinations</h2>
-  <table class="winning-chart">
-    <thead>
-      <tr>
-        <th>Symbols</th>
-        <th>Full Match</th>
-        <th>Partial Match</th>
-        <th>Full Multiplier</th>
-        <th>Partial Multiplier</th>
-        <th>Example Winnings (Bet: $<span id="max-bet-display"></span>)</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>🍒</td><td>🍒 🍒 🍒</td><td>🍒 🍒 🍋</td><td>x2</td><td>x1</td>
-        <td><span id="cherry-winnings"></span></td>
-      </tr>
-      <tr>
-        <td>🍋</td><td>🍋 🍋 🍋</td><td>🍋 🍋 🍒</td><td>x3</td><td>x1.5</td>
-        <td><span id="lemon-winnings"></span></td>
-      </tr>
-      <tr>
-        <td>🍉</td><td>🍉 🍉 🍉</td><td>🍉 🍉 🍇</td><td>x4</td><td>x2</td>
-        <td><span id="watermelon-winnings"></span></td>
-      </tr>
-      <tr>
-        <td>⭐</td><td>⭐ ⭐ ⭐</td><td>⭐ ⭐ 🍊</td><td>x5</td><td>x2.5</td>
-        <td><span id="star-winnings"></span></td>
-      </tr>
-      <tr>
-        <td>💰</td><td>💰 💰 💰</td><td>—</td><td>Jackpot x50</td><td>—</td>
-        <td><span id="jackpot-winnings"></span></td>
-      </tr>
-    </tbody>
-  </table>
-
-  <!-- Help modal -->
-  <div id="helpModal" class="modal fade" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="helpModalLabel">How to Play</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <h6>🎯 Goal</h6>
-          <p>Match symbols on the reels to win rewards based on your bet and the multipliers.</p>
-
-          <h6>📝 Gameplay</h6>
-          <ol>
-            <li><b>Set your bet:</b> Use the buttons below the balance display.</li>
-            <li><b>Spin:</b> Click <i class="fa-solid fa-arrows-rotate"></i> or press <kbd>Space</kbd>.</li>
-            <li><b>Win:</b> Match symbols to earn multiples of your bet.</li>
-          </ol>
-
-          <h6>🔘 Buttons</h6>
-          <ul>
-            <li><i class="fa-solid fa-arrows-rotate"></i> <b>Spin</b> — spin the reels (also: <kbd>Space</kbd>)</li>
-            <li><i class="fa-solid fa-circle-dollar-to-slot"></i> <b>Reset</b> — restore balance to $100</li>
-            <li><i class="fa-solid fa-question"></i> <b>Help</b> — this guide</li>
-          </ul>
-
-          <h6>💡 Tips</h6>
-          <p>Higher bets increase winnings but drain your balance faster. Play wisely!</p>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Got It</button>
-        </div>
+      <div class="button-container">
+        <button class="button spin-button" aria-label="Spin the reels" title="Spin (or press Space)">
+          <i class="fa-solid fa-arrows-rotate spin-icon"></i>
+        </button>
+        <button id="reset-button" class="reset-button" aria-label="Cashier — reset balance to 100 dollars" title="Cashier · reset to $100">
+          <i class="fa-solid fa-circle-dollar-to-slot"></i>
+        </button>
+        <button id="help" class="help-button" aria-label="Open help guide" title="How to play">
+          <i class="fa-solid fa-question help-icon"></i>
+        </button>
       </div>
     </div>
-  </div>
 
-  <!-- Game Over modal -->
-  <div id="gameOverModal" class="modal fade" tabindex="-1" aria-labelledby="gameOverLabel" aria-hidden="true"
-       data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content game-over-modal">
-        <div class="modal-header border-0 justify-content-center">
-          <h5 class="modal-title" id="gameOverLabel">💸 Game Over</h5>
-        </div>
-        <div class="modal-body text-center">
-          <p class="game-over-msg">You've run out of funds.<br>Better luck next time!</p>
-        </div>
-        <div class="modal-footer border-0 justify-content-center">
-          <button type="button" class="btn btn-success btn-lg" id="gameOverResetBtn">
-            <i class="fa-solid fa-rotate-left"></i> Reset to $100
-          </button>
-        </div>
-      </div>
+    <!-- Result display -->
+    <div id="winnings-display" class="digital-screen">
+      <div id="result" class="result">🎉 Welcome! 🎉</div>
     </div>
-  </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Spin history -->
+    <div id="history-container" class="history-container">
+      <h3>Recent Spins</h3>
+      <ul id="history-list" class="history-list">
+        <li class="history-empty">No spins yet — give it a go!</li>
+      </ul>
+    </div>
+
+    <!-- Winning combinations table -->
+    <h2>Winning Combinations</h2>
+    <table class="winning-chart">
+      <thead>
+        <tr>
+          <th>Symbols</th><th>Full Match</th><th>Partial Match</th>
+          <th>Full Multiplier</th><th>Partial Multiplier</th>
+          <th>Example Winnings (Bet: $<span id="max-bet-display"></span>)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>🍒</td><td>🍒 🍒 🍒</td><td>🍒 🍒 🍋</td><td>x2</td><td>x1</td><td><span id="cherry-winnings"></span></td></tr>
+        <tr><td>🍋</td><td>🍋 🍋 🍋</td><td>🍋 🍋 🍒</td><td>x3</td><td>x1.5</td><td><span id="lemon-winnings"></span></td></tr>
+        <tr><td>🍉</td><td>🍉 🍉 🍉</td><td>🍉 🍉 🍇</td><td>x4</td><td>x2</td><td><span id="watermelon-winnings"></span></td></tr>
+        <tr><td>⭐</td><td>⭐ ⭐ ⭐</td><td>⭐ ⭐ 🍊</td><td>x5</td><td>x2.5</td><td><span id="star-winnings"></span></td></tr>
+        <tr><td>💰</td><td>💰 💰 💰</td><td>—</td><td>Jackpot x50</td><td>—</td><td><span id="jackpot-winnings"></span></td></tr>
+      </tbody>
+    </table>
+  </main>
+
   <script src="../wallet.js"></script>
+  <script src="../casino-shell.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
