@@ -13,9 +13,11 @@
 
   <!-- Shared design system FIRST, lobby styles second -->
   <link rel="stylesheet" href="casino-theme.css">
+  <link rel="stylesheet" href="casino-shell.css">
   <link rel="stylesheet" href="lobby.css">
 
   <script src="wallet.js"></script>
+  <script src="casino-shell.js"></script>
 </head>
 
 <body>
@@ -29,6 +31,13 @@
       <div class="balance-pill" id="balance-pill" title="Your bankroll, shared across every game">
         <span class="chip"></span> $<span id="lobby-balance">100.00</span>
       </div>
+      <div class="shell-progress" title="Level & XP">
+        <span class="lvl">Lv <span id="shell-level">1</span></span>
+        <div class="shell-xp" id="shell-xp-text"><div class="shell-xp-fill" id="shell-xp-fill"></div></div>
+      </div>
+      <button class="shell-pill shell-icon-btn shell-bonus" id="shell-bonus-btn" aria-label="Daily bonus" title="Daily bonus">
+        <i class="fa-solid fa-gift"></i>
+      </button>
       <button class="pill-btn" id="cashier-btn" aria-label="Cashier — top up to $100">
         <i class="fa-solid fa-coins"></i> Cashier
       </button>
@@ -138,6 +147,10 @@
         CasinoWallet.reset();
       });
     })();
+
+    // ── Meta-game: level/XP display + daily bonus (no header injection here;
+    //    the lobby has its own header, so we wire into the elements above) ──
+    CasinoShell.standalone({ lobbyHref: 'index.html' });
   </script>
 </body>
 </html>
