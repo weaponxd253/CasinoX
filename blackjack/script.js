@@ -32,6 +32,9 @@ const minBet    = () => CHIPS[0];
    INIT
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
+  // Adopt the site-wide theme choice on load (default dark, matching other pages)
+  applyTheme(localStorage.getItem('theme') === 'light' ? 'light' : 'dark');
+
   document.querySelectorAll('.chip-btn').forEach((btn) =>
     btn.addEventListener('click', () => addChip(parseInt(btn.dataset.value, 10)))
   );
@@ -344,10 +347,22 @@ function calculateHandValue(hand) {
 function setResult(msg) { document.getElementById('result-message').textContent = msg; }
 function round(n) { return Math.max(0, parseFloat(Number(n).toFixed(2))); }
 
-function toggleTheme() {
-  document.body.classList.toggle('light');
+function applyTheme(t) {
+  const light = t === 'light';
+  // Blackjack's stylesheet keys off body.light; also set the site-wide classes
+  // + data-theme so the choice is consistent with every other page.
+  document.documentElement.dataset.theme = light ? 'light' : 'dark';
+  document.body.classList.toggle('light', light);
+  document.body.classList.toggle('light-theme', light);
+  document.body.classList.toggle('dark-theme', !light);
+  localStorage.setItem('theme', light ? 'light' : 'dark');
   const btn = document.getElementById('theme-toggle');
-  btn.textContent = document.body.classList.contains('light') ? '☾ Dark Mode' : '☀ Light Mode';
+  if (btn) btn.textContent = light ? '☾ Dark Mode' : '☀ Light Mode';
+}
+
+function toggleTheme() {
+  const next = localStorage.getItem('theme') === 'light' ? 'dark' : 'light';
+  applyTheme(next);
 }
 
 function toggleSound() {
