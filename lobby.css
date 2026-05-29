@@ -237,7 +237,26 @@ body.light .game-card {
 body.light-theme .balance-pill,
 body.light .balance-pill { color: var(--gold-dark); }
 body.light-theme .game-tag,
-body.light .game-tag { color: rgba(26, 46, 26, 0.7); }
+body.light .game-tag { color: rgba(245, 234, 213, 0.85); }
+
+/* Text that sits on the pale background (outside the dark cards) needs
+   darker ink in light mode, or it washes out. */
+body.light-theme .hero-title,
+body.light .hero-title {
+  color: #7a5e16;
+  text-shadow: 0 2px 18px rgba(138, 110, 40, 0.18);
+}
+body.light-theme .kicker,
+body.light .kicker { color: #6f5410; }
+body.light-theme .hero-sub,
+body.light .hero-sub { color: #2f4a2b; }
+body.light-theme .deco-rule,
+body.light .deco-rule { color: var(--gold-dark); }
+body.light-theme .lobby-footer,
+body.light .lobby-footer { color: #3a5236; }
+/* Header level/XP text in light mode */
+body.light-theme .shell-progress .lvl,
+body.light .shell-progress .lvl { color: var(--gold-dark); }
 
 /* ── Responsive ── */
 @media (max-width: 600px) {
