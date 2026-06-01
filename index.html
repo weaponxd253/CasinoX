@@ -15,8 +15,6 @@
   <link rel="stylesheet" href="casino-theme.css">
   <link rel="stylesheet" href="casino-shell.css">
   <link rel="stylesheet" href="lobby.css">
-  <link rel="stylesheet" href="casino-mobile.css">
-
 
   <script src="wallet.js"></script>
   <script src="casino-shell.js"></script>
@@ -60,6 +58,15 @@
   <!-- Game grid -->
   <section class="game-grid">
 
+    <!-- Hotel Manager -->
+    <a class="game-card live" href="hotel/index.html">
+      <div class="game-emblem">🏨</div>
+      <div class="game-name">Hotel Manager</div>
+      <p class="game-tag">Build your resort empire. Upgrade departments, attract guests, earn hotel cash.</p>
+      <div class="game-meta">Management · Phase 1</div>
+      <span class="enter-btn">Manage</span>
+    </a>
+
     <!-- Slot machine -->
     <a class="game-card live" href="slots/index.html">
       <div class="game-emblem">🎰</div>
@@ -87,15 +94,14 @@
       <span class="enter-btn">Play</span>
     </a>
 
-    <!-- Coming soon -->
-    <div class="game-card locked" aria-disabled="true">
-      <span class="ribbon">Soon</span>
+    <!-- Roulette -->
+    <a class="game-card live" href="roulette/index.html">
       <div class="game-emblem">🎡</div>
       <div class="game-name">Roulette Royale</div>
       <p class="game-tag">Red, black, or a number of your own. The wheel decides.</p>
-      <div class="game-meta">Table · Coming soon</div>
-      <span class="enter-btn">Locked</span>
-    </div>
+      <div class="game-meta">Table · Single zero</div>
+      <span class="enter-btn">Play</span>
+    </a>
 
     <div class="game-card locked" aria-disabled="true">
       <span class="ribbon">Soon</span>
@@ -113,20 +119,20 @@
   </footer>
 
   <script>
-    // ── Meta-game + theme: let the shell own theming so the lobby stays in sync
-    //    with every game. standalone() applies the saved theme (sets data-theme
-    //    on <html>, which the shell tokens key off) before anything else. ──
-    CasinoShell.standalone({ lobbyHref: 'index.html' });
-
-    // ── Theme toggle: delegate to the shell, then mirror the lobby's own icon ──
+    // ── Theme (shares the 'theme' key + .light-theme/.dark-theme with the slot game) ──
     (function () {
+      const saved = localStorage.getItem('theme') || 'dark';
+      document.body.classList.add(saved === 'light' ? 'light-theme' : 'dark-theme');
       const icon = document.getElementById('theme-icon');
-      const syncIcon = () =>
-        (icon.className = CasinoShell.theme.get() === 'light' ? 'fa-solid fa-sun' : 'fa-solid fa-moon');
-      syncIcon();
+      icon.className = saved === 'light' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+
       document.getElementById('theme-toggle').addEventListener('click', () => {
-        CasinoShell.theme.toggle();
-        syncIcon();
+        const body = document.body;
+        const toLight = body.classList.contains('dark-theme');
+        body.classList.toggle('dark-theme', !toLight);
+        body.classList.toggle('light-theme', toLight);
+        icon.className = toLight ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+        localStorage.setItem('theme', toLight ? 'light' : 'dark');
       });
     })();
 
@@ -149,6 +155,10 @@
         CasinoWallet.reset();
       });
     })();
+
+    // ── Meta-game: level/XP display + daily bonus (no header injection here;
+    //    the lobby has its own header, so we wire into the elements above) ──
+    CasinoShell.standalone({ lobbyHref: 'index.html' });
   </script>
 </body>
 </html>
