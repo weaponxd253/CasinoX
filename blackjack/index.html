@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blackjack X — Casino X</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Shell first, game styles second, mobile last -->
+  <link rel="stylesheet" href="../casino-shell.css">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="betting.css">
+  <link rel="stylesheet" href="../casino-mobile.css">
+</head>
+<body>
+  <!-- Shell injects the header. Game content starts here. -->
+
+  <p class="instruction-strip">
+    Stack chips below to place a bet, then Deal.
+    Hit for another card — Stand to let the dealer play. Blackjack pays 3:2.
+  </p>
+
+  <!-- Speed control — moved out of header, lives near the table -->
+  <div class="speed-row">
+    <span class="speed-label">Speed</span>
+    <input type="range" id="speed-range" min="0.5" max="2" step="0.1" value="1"
+           oninput="updateSpeed(this.value)" aria-label="Animation speed">
+    <strong id="speed-value">1.0</strong>×
+  </div>
+
+  <div class="table-wrap" id="table-wrap">
+    <div class="table-inner">
+      <div class="hand-section">
+        <div class="hand-label">Dealer's Hand</div>
+        <div id="dealer-cards" class="cards-container"></div>
+        <div id="dealer-score" class="score-badge">Score: 0</div>
+      </div>
+      <div class="table-divider"></div>
+      <div class="hand-section">
+        <div class="hand-label">Your Hand</div>
+        <div id="player-cards" class="cards-container"></div>
+        <div id="player-score" class="score-badge">Score: 0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wager bar -->
+  <div class="wager-bar">
+    <div class="chips">
+      <button class="chip-btn chip-1"  data-value="1"  aria-label="Bet $1">$1</button>
+      <button class="chip-btn chip-5"  data-value="5"  aria-label="Bet $5">$5</button>
+      <button class="chip-btn chip-10" data-value="10" aria-label="Bet $10">$10</button>
+      <button class="chip-btn chip-25" data-value="25" aria-label="Bet $25">$25</button>
+    </div>
+    <div class="bet-readout">
+      <span class="bet-label">Bet</span>
+      <span class="bet-amount" id="bet-amount">$0.00</span>
+    </div>
+    <div class="bet-tools">
+      <button class="shell-pill" id="max-bet">Max</button>
+      <button class="shell-pill" id="rebet">Rebet</button>
+      <button class="shell-pill" id="clear-bet">Clear</button>
+    </div>
+  </div>
+
+  <div class="actions-row">
+    <button class="action-btn primary"   onclick="deal()"        id="deal-button">Deal</button>
+    <button class="action-btn secondary" onclick="playerHit()"   id="hit-button"   disabled>Hit</button>
+    <button class="action-btn secondary" onclick="playerStand()" id="stand-button" disabled>Stand</button>
+    <button class="action-btn danger"    onclick="resetTable()"  id="reset-button">Clear Table</button>
+  </div>
+
+  <div class="bottom-panel" style="margin-top:16px;">
+    <div class="result-panel">
+      <div class="result-label">Result</div>
+      <div id="result-message">—</div>
+      <div id="winning-message"></div>
+    </div>
+    <div class="scoreboard-panel">
+      <div class="panel-title">Scoreboard</div>
+      <div class="score-row"><span>Player</span><span id="player-total">0</span></div>
+      <div class="score-row"><span>Dealer</span><span id="dealer-total">0</span></div>
+    </div>
+  </div>
+
+  <div class="leaderboard-panel">
+    <div class="panel-title">Recent Hands</div>
+    <ul id="leaderboard-list">
+      <li style="color:var(--text-dim);font-size:13px;">No hands played yet.</li>
+    </ul>
+  </div>
+
+  <script src="../wallet.js"></script>
+  <script src="../casino-shell.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

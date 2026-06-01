@@ -13,11 +13,7 @@ A browser-based casino hub with a shared bankroll, meta-game progression, and a 
 | Lucky Reels | ✅ Live | $0.60 | Slots · 8 symbols · jackpot 50× |
 | Blackjack X | ✅ Live | $1 | 3:2 payout · dealer stands on 17 |
 | Coin Flip | ✅ Live | $1 | Double or nothing |
-<<<<<<< HEAD
-| Roulette Royale | ✅ Live | $1 | European single-zero roulette |
-=======
 | Roulette Royale | 🔒 Soon | — | |
->>>>>>> 5d1f8fc4b79325fca5b4a39e8133b9bcccfb5b4d
 | Texas Hold'em | 🔒 Soon | — | |
 
 ---
@@ -52,22 +48,10 @@ casino/
 │   └── sounds/
 │       └── README.txt      ← Drop card-draw.mp3 · win.wav · lose.wav here
 │
-<<<<<<< HEAD
-├── coinflip/
-│   ├── index.html          ← On the shell ✓
-│   ├── styles.css          ← Coin flip styles
-│   └── game.js             ← Game logic (~50 lines, reference implementation)
-│
-└── roulette/
-    ├── index.html          ← On the shell ✓
-    ├── styles.css          ← Roulette table + wheel styles
-    └── game.js             ← European roulette logic
-=======
 └── coinflip/
     ├── index.html          ← On the shell ✓
     ├── styles.css          ← Coin flip styles
     └── game.js             ← Game logic (~50 lines, reference implementation)
->>>>>>> 5d1f8fc4b79325fca5b4a39e8133b9bcccfb5b4d
 ```
 
 ---
@@ -254,10 +238,7 @@ See `coinflip/` for a complete working example in ~50 lines of JS.
 - [ ] Migrate Blackjack onto the shell (retires `casino-theme.css`, adds XP)
 - [ ] Persistent player profile page (lifetime stats, achievements)
 - [ ] Daily bonus timer (free-chip refill every N hours)
-<<<<<<< HEAD
-=======
 - [ ] Roulette Royale (simplified red/black/number board, GSAP wheel spin)
->>>>>>> 5d1f8fc4b79325fca5b4a39e8133b9bcccfb5b4d
 - [ ] Mines (high-tension push-your-luck format)
 - [ ] Video Poker — Jacks or Better
 - [ ] PWA / installable (manifest + service worker)
