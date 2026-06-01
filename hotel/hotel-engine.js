@@ -181,6 +181,14 @@ const HotelEngine = (() => {
       HotelState.updateTicker(now);
     }
 
+    // Restore guest population from offline absence
+    if (window.HotelGuests) {
+      const elapsed = now - (state.ticker.lastTick || now);
+      const gResult = HotelGuests.restoreFromOffline(state, elapsed)
+                   ?? HotelGuests.tick(state);
+      HotelState.setGuestData(gResult);
+    }
+
     recalculateSatisfaction(state);
     recalculateReputation(state);
     checkAchievements(state);
@@ -195,9 +203,41 @@ const HotelEngine = (() => {
     const now    = Date.now();
     const result = calculateIncome(state, now);
 
+    // Department passive income
     if (result.amount > 0) {
       HotelState.addHotelCash(result.amount);
       HotelBridge?.emit('income', { amount: result.amount, breakdown: result.breakdown });
+    }
+
+    // Guest system tick
+    if (window.HotelGuests) {
+      const gResult = HotelGuests.tick(state);
+      HotelState.setGuestData(gResult);
+
+      // Guest spending income (separate from dept income)
+      if (gResult.guestIncome > 0) {
+        HotelState.addHotelCash(gResult.guestIncome);
+        HotelBridge?.emit('guest_income', { amount: gResult.guestIncome });
+      }
+
+      // Process special guest events
+      gResult.specialEvents.forEach(ev => {
+        if (ev.type === 'vip_arrival') {
+          HotelState.setVipPresent(true, ev.departAt);
+          HotelState.tickAchievementProgress('first_vip', 1);
+          HotelBridge?.emit('vip_arrival', { typeId: 'vip' });
+          CasinoShell?.toast('⭐ A VIP guest has arrived at the hotel!');
+        } else if (ev.type === 'vip_departure') {
+          HotelState.setVipPresent(false, null);
+          CasinoShell?.toast('⭐ The VIP guest has checked out.');
+        } else if (ev.type === 'high_roller_arrival') {
+          HotelState.setHighRollerFlag();
+          HotelBridge?.emit('high_roller_arrival', {});
+          CasinoShell?.toast('💎 A High Roller has arrived — head to the casino!');
+        } else if (ev.type === 'high_roller_departure') {
+          HotelState.clearHighRollerFlag();
+        }
+      });
     }
 
     HotelState.updateTicker(now);
@@ -235,18 +275,25 @@ const HotelEngine = (() => {
 
   /* ── Helpers ─────────────────────────────────────────────── */
 
-  /** Income rate for the current state — used by UI display */
+  /** Combined income rate (dept + guest spending) shown in header */
   function currentIpm(state) {
     const { UPGRADE_CATALOG } = HotelConfig;
-    let total = 0;
+    let deptTotal = 0;
     for (const [id, dept] of Object.entries(state.departments)) {
       if (!dept.unlocked || dept.level === 0) continue;
-      total += UPGRADE_CATALOG[id]?.[dept.level - 1]?.ipm ?? 0;
+      deptTotal += UPGRADE_CATALOG[id]?.[dept.level - 1]?.ipm ?? 0;
     }
     const satMult    = satisfactionMultiplier(state.satisfaction.current);
     const activeMult = (state.ticker.activeMultiplierExpiry > Date.now())
       ? state.ticker.activeMultiplier : 1.0;
-    return Math.round(total * satMult * activeMult);
+    const deptIpm = Math.round(deptTotal * satMult * activeMult);
+
+    // Guest spending income (1 min interval)
+    const guestIpm = window.HotelGuests
+      ? HotelGuests.calculateGuestIncome(state.guests, 1)
+      : 0;
+
+    return deptIpm + guestIpm;
   }
 
   /** Cost to upgrade deptId to the next level */

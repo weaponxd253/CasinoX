@@ -266,6 +266,29 @@ const HotelState = (() => {
     save();
   }
 
+  /** Batch-update all guest simulation outputs from a single tick result. */
+  function setGuestData({ population, checkInRate, checkOutRate, mix, rollingAverage }) {
+    const g = _state.guests;
+    if (population     !== undefined) g.population    = Math.max(0, Math.round(population));
+    if (checkInRate    !== undefined) g.checkInRate   = checkInRate;
+    if (checkOutRate   !== undefined) g.checkOutRate  = checkOutRate;
+    if (mix)                          g.mix            = mix;
+    if (rollingAverage !== undefined) _state.satisfaction.rollingAverage = rollingAverage;
+    save();
+  }
+
+  function setVipPresent(present, departsAt = null) {
+    _state.guests.vipPresent  = !!present;
+    _state.guests.vipDepartsAt = departsAt;
+    if (present) _state.guests.stats.vipsHosted++;
+    save();
+  }
+
+  function clearHighRollerFlag() {
+    _state.guests.highRollerPresent = false;
+    save();
+  }
+
   function resetSave() {
     _state = createNewSave();
     save();
@@ -282,7 +305,8 @@ const HotelState = (() => {
     addHotelCash, spendHotelCash,
     setReputation, setSatisfaction, setSatisfactionComponents, setTrend,
     upgradeDept, unlockDept, updateTicker,
-    updateCasinoBridge, setHighRollerFlag,
+    updateCasinoBridge, setHighRollerFlag, clearHighRollerFlag,
+    setGuestData, setVipPresent,
     unlockAchievement, tickAchievementProgress,
   };
 })();
