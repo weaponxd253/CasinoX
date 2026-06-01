@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,32 +7,29 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Shell first, game styles second, mobile last -->
+  <link rel="stylesheet" href="../casino-shell.css">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="betting.css">
   <link rel="stylesheet" href="../casino-mobile.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
 </head>
-
 <body>
+  <!-- Shell injects the header. Game content starts here. -->
 
-  <header class="header">
-    <div class="logo">
-      <span class="logo-title">Blackjack X</span>
-      <span class="logo-sub">Casino Edition</span>
-    </div>
-    <div class="header-controls">
-      <div class="bj-balance" id="bj-balance-pill" title="Shared bankroll">$<span id="bj-balance">100.00</span></div>
-      <a class="pill-btn" href="../index.html">↩ Lobby</a>
-      <button class="pill-btn" onclick="toggleTheme()" id="theme-toggle">☀ Light Mode</button>
-      <button class="pill-btn" onclick="toggleSound()" id="sound-toggle">♪ Mute</button>
-      <div class="speed-wrap">
-        <span class="speed-label">Speed: <strong id="speed-value">1.0</strong>×</span>
-        <input type="range" id="speed-range" min="0.5" max="2" step="0.1" value="1" oninput="updateSpeed(this.value)">
-      </div>
-    </div>
-  </header>
+  <p class="instruction-strip">
+    Stack chips below to place a bet, then Deal.
+    Hit for another card — Stand to let the dealer play. Blackjack pays 3:2.
+  </p>
 
-  <p class="instruction-strip">Stack chips to place a bet, then Deal. Hit for another card — Stand to let the dealer play. Blackjack pays 3:2.</p>
+  <!-- Speed control — moved out of header, lives near the table -->
+  <div class="speed-row">
+    <span class="speed-label">Speed</span>
+    <input type="range" id="speed-range" min="0.5" max="2" step="0.1" value="1"
+           oninput="updateSpeed(this.value)" aria-label="Animation speed">
+    <strong id="speed-value">1.0</strong>×
+  </div>
 
   <div class="table-wrap" id="table-wrap">
     <div class="table-inner">
@@ -54,27 +50,27 @@
   <!-- Wager bar -->
   <div class="wager-bar">
     <div class="chips">
-      <button class="chip-btn chip-1"  data-value="1"  aria-label="Bet 1 dollar">$1</button>
-      <button class="chip-btn chip-5"  data-value="5"  aria-label="Bet 5 dollars">$5</button>
-      <button class="chip-btn chip-10" data-value="10" aria-label="Bet 10 dollars">$10</button>
-      <button class="chip-btn chip-25" data-value="25" aria-label="Bet 25 dollars">$25</button>
+      <button class="chip-btn chip-1"  data-value="1"  aria-label="Bet $1">$1</button>
+      <button class="chip-btn chip-5"  data-value="5"  aria-label="Bet $5">$5</button>
+      <button class="chip-btn chip-10" data-value="10" aria-label="Bet $10">$10</button>
+      <button class="chip-btn chip-25" data-value="25" aria-label="Bet $25">$25</button>
     </div>
     <div class="bet-readout">
       <span class="bet-label">Bet</span>
       <span class="bet-amount" id="bet-amount">$0.00</span>
     </div>
     <div class="bet-tools">
-      <button class="pill-btn" id="max-bet">Max</button>
-      <button class="pill-btn" id="rebet">Rebet</button>
-      <button class="pill-btn" id="clear-bet">Clear</button>
+      <button class="shell-pill" id="max-bet">Max</button>
+      <button class="shell-pill" id="rebet">Rebet</button>
+      <button class="shell-pill" id="clear-bet">Clear</button>
     </div>
   </div>
 
   <div class="actions-row">
-    <button class="action-btn primary"   onclick="deal()"       id="deal-button">Deal</button>
-    <button class="action-btn secondary" onclick="hit()"        id="hit-button" disabled>Hit</button>
-    <button class="action-btn secondary" onclick="stand()"      id="stand-button" disabled>Stand</button>
-    <button class="action-btn danger"    onclick="resetTable()" id="reset-button">Clear Table</button>
+    <button class="action-btn primary"   onclick="deal()"        id="deal-button">Deal</button>
+    <button class="action-btn secondary" onclick="playerHit()"   id="hit-button"   disabled>Hit</button>
+    <button class="action-btn secondary" onclick="playerStand()" id="stand-button" disabled>Stand</button>
+    <button class="action-btn danger"    onclick="resetTable()"  id="reset-button">Clear Table</button>
   </div>
 
   <div class="bottom-panel" style="margin-top:16px;">
@@ -85,29 +81,20 @@
     </div>
     <div class="scoreboard-panel">
       <div class="panel-title">Scoreboard</div>
-      <div class="score-row">
-        <span>Player</span>
-        <span id="player-total">0</span>
-      </div>
-      <div class="score-row">
-        <span>Dealer</span>
-        <span id="dealer-total">0</span>
-      </div>
+      <div class="score-row"><span>Player</span><span id="player-total">0</span></div>
+      <div class="score-row"><span>Dealer</span><span id="dealer-total">0</span></div>
     </div>
   </div>
 
   <div class="leaderboard-panel">
     <div class="panel-title">Recent Hands</div>
     <ul id="leaderboard-list">
-      <li style="color: var(--text-muted); font-size:13px;">No hands played yet.</li>
+      <li style="color:var(--text-dim);font-size:13px;">No hands played yet.</li>
     </ul>
   </div>
 
-  <audio id="card-draw-sound" src="sounds/card-draw.mp3"></audio>
-  <audio id="win-sound" src="sounds/win.wav"></audio>
-  <audio id="lose-sound" src="sounds/lose.wav"></audio>
-
   <script src="../wallet.js"></script>
+  <script src="../casino-shell.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
