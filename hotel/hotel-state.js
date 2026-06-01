@@ -1,0 +1,290 @@
+/* ============================================================
+   HOTEL MANAGER — STATE  (hotel-state.js)
+   ------------------------------------------------------------
+   Single source of truth for all mutable hotel data.
+   One localStorage key: 'hotelGameState'.
+   Auto-saves on every mutation via the proxy setters.
+   ============================================================ */
+
+const HotelState = (() => {
+  const STORAGE_KEY = 'hotelGameState';
+  const SCHEMA_VERSION = 1;
+
+  let _state = null;
+
+  /* ── Default save (new game) ─────────────────────────────── */
+  function createNewSave(hotelName = 'Grand Casino Resort') {
+    const now = Date.now();
+    return {
+      meta: {
+        version:    SCHEMA_VERSION,
+        saveId:     typeof crypto !== 'undefined'
+                      ? crypto.randomUUID()
+                      : `save_${now}`,
+        hotelName,
+        hotelTier:  1,
+        createdAt:  now,
+        lastSaved:  now,
+        lastOpened: now,
+      },
+      currencies: {
+        hotelCash:  HotelConfig.ECONOMY.STARTING_CASH,
+        crowns:     0,
+        reputation: 1,
+      },
+      departments: {
+        lobby:         { unlocked:true,  level:1, lastCollected:now },
+        casino:        { unlocked:true,  level:1, lastCollected:now },
+        rooms:         { unlocked:true,  level:1, lastCollected:now },
+        restaurant:    { unlocked:false, level:0, lastCollected:null },
+        bar:           { unlocked:false, level:0, lastCollected:null },
+        entertainment: { unlocked:false, level:0, lastCollected:null },
+        spa:           { unlocked:false, level:0, lastCollected:null },
+      },
+      ticker: {
+        lastTick:              now,
+        offlineCapHours:       HotelConfig.ECONOMY.OFFLINE_CAP_HOURS,
+        activeMultiplier:      1.0,
+        activeMultiplierExpiry: null,
+        totalMinutesActive:    0,
+      },
+      satisfaction: {
+        current:        75,
+        rollingAverage: 75,
+        trend:          'stable',
+        lastUpdated:    now,
+        components: {
+          roomComfort:        10,
+          foodQuality:         0,
+          entertainment:       0,
+          overcrowdingPenalty: 0,
+          maintenancePenalty:  0,
+          securityPenalty:     0,
+        },
+      },
+      // Phase 2 — guests stubbed out but present so the schema is complete
+      guests: {
+        population:          5,
+        checkInRate:         2,
+        checkOutRate:        1,
+        mix: {
+          budgetTraveler: 1.0, tourist: 0, gambler: 0,
+          businessGuest:  0,   vip: 0,     highRoller: 0,
+        },
+        vipPresent:          false,
+        highRollerPresent:   false,
+        vipDepartsAt:        null,
+        stats: { totalHosted:0, vipsHosted:0, highRollersHosted:0, totalSpent:0 },
+      },
+      stats: {
+        hotelCashEarned: { total:0, fromRooms:0, fromCasino:0 },
+        hotelCashSpent:  { total:0, onUpgrades:0 },
+        totalTicksElapsed:   0,
+        peakReputation:      1,
+        peakSatisfaction:    75,
+        upgradeCount:        0,
+      },
+      achievements: {
+        reputationBonus: 0,
+        unlocked:        [],
+        progress: {
+          'first_upgrade':      { current:0, required:1  },
+          'five_upgrades':      { current:0, required:5  },
+          'satisfaction_80':    { current:0, required:1  },
+          'first_vip':          { current:0, required:1  },
+          'ten_blackjack_wins': { current:0, required:10 },
+          'jackpot_hit':        { current:0, required:1  },
+          'full_house':         { current:0, required:1  },
+          'all_depts_unlocked': { current:0, required:7  },
+        },
+      },
+      casinoBridge: {
+        activeMultiplier:  1.0,
+        multiplierExpiry:  null,
+        events: {
+          blackjackWins:0, blackjackLosses:0, slotsSpun:0,
+          jackpotsHit:0, coinFlipsWon:0, totalChipsWagered:0,
+        },
+        snapshot: {
+          casinoLevel:1, chipBalance:100, playerLevel:1, lastSnapshot:null,
+        },
+      },
+    };
+  }
+
+  /* ── Migration ───────────────────────────────────────────── */
+  function migrate(state) {
+    const v = state?.meta?.version ?? 0;
+    // v0 → v1: add casinoBridge if missing
+    if (v < 1) {
+      state.meta.version  = 1;
+      state.casinoBridge  = state.casinoBridge  ?? createNewSave().casinoBridge;
+      state.guests        = state.guests        ?? createNewSave().guests;
+      state.achievements  = state.achievements  ?? createNewSave().achievements;
+    }
+    return state;
+  }
+
+  /* ── Persistence ─────────────────────────────────────────── */
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return createNewSave();
+      const parsed = JSON.parse(raw);
+      return migrate(parsed);
+    } catch (e) {
+      console.warn('[HotelState] Corrupt save — starting fresh.', e);
+      return createNewSave();
+    }
+  }
+
+  function save() {
+    if (!_state) return;
+    _state.meta.lastSaved = Date.now();
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(_state));
+    } catch (e) {
+      console.error('[HotelState] Save failed:', e);
+    }
+  }
+
+  /* ── Init ────────────────────────────────────────────────── */
+  function init() {
+    _state = load();
+    _state.meta.lastOpened = Date.now();
+    save();
+    return _state;
+  }
+
+  /* ── Getters ─────────────────────────────────────────────── */
+  function get()               { return _state; }
+  function getDept(id)         { return _state.departments[id]; }
+  function getCash()           { return _state.currencies.hotelCash; }
+  function getReputation()     { return _state.currencies.reputation; }
+  function getSatisfaction()   { return _state.satisfaction.current; }
+
+  /* ── Mutators (all auto-save) ────────────────────────────── */
+  function addHotelCash(amount) {
+    _state.currencies.hotelCash = round(_state.currencies.hotelCash + amount);
+    _state.stats.hotelCashEarned.total = round(_state.stats.hotelCashEarned.total + amount);
+    save();
+  }
+
+  function spendHotelCash(amount) {
+    if (_state.currencies.hotelCash < amount) return false;
+    _state.currencies.hotelCash = round(_state.currencies.hotelCash - amount);
+    _state.stats.hotelCashSpent.total = round(_state.stats.hotelCashSpent.total + amount);
+    save();
+    return true;
+  }
+
+  function setReputation(value) {
+    _state.currencies.reputation = Math.max(1, Math.round(value));
+    if (_state.currencies.reputation > _state.stats.peakReputation) {
+      _state.stats.peakReputation = _state.currencies.reputation;
+    }
+    save();
+  }
+
+  function setSatisfaction(value) {
+    const clamped = Math.max(0, Math.min(100, Math.round(value)));
+    _state.satisfaction.current = clamped;
+    if (clamped > _state.stats.peakSatisfaction) {
+      _state.stats.peakSatisfaction = clamped;
+    }
+    save();
+  }
+
+  function upgradeDept(deptId) {
+    const dept    = _state.departments[deptId];
+    const catalog = HotelConfig.UPGRADE_CATALOG[deptId];
+    if (!dept || !catalog) return false;
+    if (dept.level >= catalog.length) return false;   // already max
+    const nextLevel = dept.level + 1;
+    const cost      = catalog[nextLevel - 1].cost;
+    if (!spendHotelCash(cost)) return false;
+    dept.level = nextLevel;
+    dept.unlocked = true;
+    _state.stats.upgradeCount++;
+    _state.stats.hotelCashSpent.onUpgrades = round(
+      _state.stats.hotelCashSpent.onUpgrades + cost
+    );
+    save();
+    return true;
+  }
+
+  function unlockDept(deptId) {
+    if (_state.departments[deptId]) {
+      _state.departments[deptId].unlocked = true;
+      _state.departments[deptId].lastCollected = Date.now();
+    }
+    save();
+  }
+
+  function updateTicker(now) {
+    _state.ticker.lastTick = now;
+    _state.ticker.totalMinutesActive++;
+    save();
+  }
+
+  function setSatisfactionComponents(components) {
+    Object.assign(_state.satisfaction.components, components);
+    save();
+  }
+
+  function setTrend(trend) {
+    _state.satisfaction.trend = trend;
+    save();
+  }
+
+  function updateCasinoBridge(events) {
+    Object.assign(_state.casinoBridge.events, events);
+    save();
+  }
+
+  function unlockAchievement(id) {
+    if (_state.achievements.unlocked.includes(id)) return;
+    const entry = HotelConfig.ACHIEVEMENT_CATALOG.find(a => a.id === id);
+    if (!entry) return;
+    _state.achievements.unlocked.push(id);
+    _state.achievements.reputationBonus += entry.repBonus;
+    save();
+    return entry;
+  }
+
+  function tickAchievementProgress(id, increment = 1) {
+    const prog = _state.achievements.progress[id];
+    if (!prog || _state.achievements.unlocked.includes(id)) return null;
+    prog.current = Math.min(prog.required, prog.current + increment);
+    if (prog.current >= prog.required) return unlockAchievement(id);
+    save();
+    return null;
+  }
+
+  function setHighRollerFlag() {
+    _state.guests.highRollerPresent = true;
+    save();
+  }
+
+  function resetSave() {
+    _state = createNewSave();
+    save();
+  }
+
+  /* ── Helpers ─────────────────────────────────────────────── */
+  function round(n) {
+    return Math.max(0, parseFloat(Number(n).toFixed(2)));
+  }
+
+  return {
+    init, get, save, resetSave, createNewSave,
+    getDept, getCash, getReputation, getSatisfaction,
+    addHotelCash, spendHotelCash,
+    setReputation, setSatisfaction, setSatisfactionComponents, setTrend,
+    upgradeDept, unlockDept, updateTicker,
+    updateCasinoBridge, setHighRollerFlag,
+    unlockAchievement, tickAchievementProgress,
+  };
+})();
+
+if (typeof window !== 'undefined') window.HotelState = HotelState;
