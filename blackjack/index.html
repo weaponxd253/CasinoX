@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+<<<<<<< HEAD
 
+=======
+>>>>>>> 5d1f8fc4b79325fca5b4a39e8133b9bcccfb5b4d
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
+<<<<<<< HEAD
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="betting.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
@@ -33,6 +37,31 @@
   </header>
 
   <p class="instruction-strip">Stack chips to place a bet, then Deal. Hit for another card — Stand to let the dealer play. Blackjack pays 3:2.</p>
+=======
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Shell first, game styles second, mobile last -->
+  <link rel="stylesheet" href="../casino-shell.css">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="betting.css">
+  <link rel="stylesheet" href="../casino-mobile.css">
+</head>
+<body>
+  <!-- Shell injects the header. Game content starts here. -->
+
+  <p class="instruction-strip">
+    Stack chips below to place a bet, then Deal.
+    Hit for another card — Stand to let the dealer play. Blackjack pays 3:2.
+  </p>
+
+  <!-- Speed control — moved out of header, lives near the table -->
+  <div class="speed-row">
+    <span class="speed-label">Speed</span>
+    <input type="range" id="speed-range" min="0.5" max="2" step="0.1" value="1"
+           oninput="updateSpeed(this.value)" aria-label="Animation speed">
+    <strong id="speed-value">1.0</strong>×
+  </div>
+>>>>>>> 5d1f8fc4b79325fca5b4a39e8133b9bcccfb5b4d
 
   <div class="table-wrap" id="table-wrap">
     <div class="table-inner">
@@ -53,27 +82,47 @@
   <!-- Wager bar -->
   <div class="wager-bar">
     <div class="chips">
+<<<<<<< HEAD
       <button class="chip-btn chip-1"  data-value="1"  aria-label="Bet 1 dollar">$1</button>
       <button class="chip-btn chip-5"  data-value="5"  aria-label="Bet 5 dollars">$5</button>
       <button class="chip-btn chip-10" data-value="10" aria-label="Bet 10 dollars">$10</button>
       <button class="chip-btn chip-25" data-value="25" aria-label="Bet 25 dollars">$25</button>
+=======
+      <button class="chip-btn chip-1"  data-value="1"  aria-label="Bet $1">$1</button>
+      <button class="chip-btn chip-5"  data-value="5"  aria-label="Bet $5">$5</button>
+      <button class="chip-btn chip-10" data-value="10" aria-label="Bet $10">$10</button>
+      <button class="chip-btn chip-25" data-value="25" aria-label="Bet $25">$25</button>
+>>>>>>> 5d1f8fc4b79325fca5b4a39e8133b9bcccfb5b4d
     </div>
     <div class="bet-readout">
       <span class="bet-label">Bet</span>
       <span class="bet-amount" id="bet-amount">$0.00</span>
     </div>
     <div class="bet-tools">
+<<<<<<< HEAD
       <button class="pill-btn" id="max-bet">Max</button>
       <button class="pill-btn" id="rebet">Rebet</button>
       <button class="pill-btn" id="clear-bet">Clear</button>
+=======
+      <button class="shell-pill" id="max-bet">Max</button>
+      <button class="shell-pill" id="rebet">Rebet</button>
+      <button class="shell-pill" id="clear-bet">Clear</button>
+>>>>>>> 5d1f8fc4b79325fca5b4a39e8133b9bcccfb5b4d
     </div>
   </div>
 
   <div class="actions-row">
+<<<<<<< HEAD
     <button class="action-btn primary"   onclick="deal()"       id="deal-button">Deal</button>
     <button class="action-btn secondary" onclick="hit()"        id="hit-button" disabled>Hit</button>
     <button class="action-btn secondary" onclick="stand()"      id="stand-button" disabled>Stand</button>
     <button class="action-btn danger"    onclick="resetTable()" id="reset-button">Clear Table</button>
+=======
+    <button class="action-btn primary"   onclick="deal()"        id="deal-button">Deal</button>
+    <button class="action-btn secondary" onclick="playerHit()"   id="hit-button"   disabled>Hit</button>
+    <button class="action-btn secondary" onclick="playerStand()" id="stand-button" disabled>Stand</button>
+    <button class="action-btn danger"    onclick="resetTable()"  id="reset-button">Clear Table</button>
+>>>>>>> 5d1f8fc4b79325fca5b4a39e8133b9bcccfb5b4d
   </div>
 
   <div class="bottom-panel" style="margin-top:16px;">
@@ -84,6 +133,7 @@
     </div>
     <div class="scoreboard-panel">
       <div class="panel-title">Scoreboard</div>
+<<<<<<< HEAD
       <div class="score-row">
         <span>Player</span>
         <span id="player-total">0</span>
@@ -92,12 +142,17 @@
         <span>Dealer</span>
         <span id="dealer-total">0</span>
       </div>
+=======
+      <div class="score-row"><span>Player</span><span id="player-total">0</span></div>
+      <div class="score-row"><span>Dealer</span><span id="dealer-total">0</span></div>
+>>>>>>> 5d1f8fc4b79325fca5b4a39e8133b9bcccfb5b4d
     </div>
   </div>
 
   <div class="leaderboard-panel">
     <div class="panel-title">Recent Hands</div>
     <ul id="leaderboard-list">
+<<<<<<< HEAD
       <li style="color: var(--text-muted); font-size:13px;">No hands played yet.</li>
     </ul>
   </div>
@@ -107,6 +162,14 @@
   <audio id="lose-sound" src="sounds/lose.wav"></audio>
 
   <script src="../wallet.js"></script>
+=======
+      <li style="color:var(--text-dim);font-size:13px;">No hands played yet.</li>
+    </ul>
+  </div>
+
+  <script src="../wallet.js"></script>
+  <script src="../casino-shell.js"></script>
+>>>>>>> 5d1f8fc4b79325fca5b4a39e8133b9bcccfb5b4d
   <script src="script.js"></script>
 </body>
 </html>

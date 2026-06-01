@@ -37,7 +37,10 @@ function flip(choice) {
 
   flipping = true;
   w.deduct(bet);
+<<<<<<< HEAD
   CasinoShell.awardXp(bet);
+=======
+>>>>>>> 5d1f8fc4b79325fca5b4a39e8133b9bcccfb5b4d
   CasinoShell.sound.click();
   resultEl.textContent = 'Flipping…';
 

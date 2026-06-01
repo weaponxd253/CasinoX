@@ -8,8 +8,11 @@ const WHEEL_ORDER = [
 ];
 const RED_NUMBERS = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]);
 const MAX_HISTORY = 10;
+<<<<<<< HEAD
 const POCKET_STEP = 360 / WHEEL_ORDER.length;
 const BALL_HOME_ANGLE = 0;
+=======
+>>>>>>> 5d1f8fc4b79325fca5b4a39e8133b9bcccfb5b4d
 
 const state = {
   chip: 5,
@@ -57,10 +60,13 @@ function numberColor(number) {
   return RED_NUMBERS.has(number) ? 'red' : 'black';
 }
 
+<<<<<<< HEAD
 function normalizeAngle(deg) {
   return ((deg % 360) + 360) % 360;
 }
 
+=======
+>>>>>>> 5d1f8fc4b79325fca5b4a39e8133b9bcccfb5b4d
 function renderBoard() {
   const zero = '<button class="number-bet zero" data-number="0"><span class="bet-text">0</span></button>';
   const rows = [[], [], []];
@@ -71,6 +77,7 @@ function renderBoard() {
   board.innerHTML = zero + rows.map((row) => row.join('')).join('');
 }
 
+<<<<<<< HEAD
 function renderWheelGradient() {
   const colors = { red: '#982020', black: '#101010', green: '#1f7a45' };
   const stops = WHEEL_ORDER.map((number, index) => {
@@ -92,6 +99,8 @@ function renderWheelNumbers() {
   wheel.appendChild(labels);
 }
 
+=======
+>>>>>>> 5d1f8fc4b79325fca5b4a39e8133b9bcccfb5b4d
 function setChip(amount) {
   if (state.spinning) return;
   state.chip = amount;
@@ -211,6 +220,7 @@ function randomPocket() {
 
 function spinWheelTo(number) {
   const pocketIndex = WHEEL_ORDER.indexOf(number);
+<<<<<<< HEAD
   const pocketAngle = POCKET_STEP * pocketIndex;
   const currentWheel = normalizeAngle(state.wheelRotation);
   const targetWheel = normalizeAngle(BALL_HOME_ANGLE - pocketAngle);
@@ -218,6 +228,11 @@ function spinWheelTo(number) {
 
   state.wheelRotation += wheelDelta;
   state.ballRotation += 1800;
+=======
+  const pocketAngle = (360 / WHEEL_ORDER.length) * pocketIndex;
+  state.wheelRotation += 1440 + pocketAngle;
+  state.ballRotation -= 1800 + pocketAngle + 18;
+>>>>>>> 5d1f8fc4b79325fca5b4a39e8133b9bcccfb5b4d
   wheel.style.transform = `rotate(${state.wheelRotation}deg)`;
   document.getElementById('ball-track').style.transform = `rotate(${state.ballRotation}deg)`;
 }
@@ -358,7 +373,10 @@ document.addEventListener('keydown', (event) => {
 });
 
 renderBoard();
+<<<<<<< HEAD
 renderWheelGradient();
 renderWheelNumbers();
+=======
+>>>>>>> 5d1f8fc4b79325fca5b4a39e8133b9bcccfb5b4d
 setChip(state.chip);
 renderBets();

@@ -480,12 +480,27 @@
     body.light #leaderboard-list li { background: rgba(0,0,0,0.05); color: #2a3a2a; }
     body.light .logo-title { color: var(--gold-dark); }
     body.light .logo-sub { color: #5a7a5a; }
+<<<<<<< HEAD
     body.light .hand-label { color: var(--gold-dark); }
     body.light .score-badge { color: var(--gold-dark); background: rgba(255,255,255,0.3); }
+=======
+>>>>>>> 5d1f8fc4b79325fca5b4a39e8133b9bcccfb5b4d
     body.light .instruction-strip { color: #4a6a4a; }
     body.light .header { border-color: rgba(138,110,40,0.4); }
     body.light .action-btn.primary { color: #1a2e1a; }
     body.light .action-btn.secondary { color: var(--gold-dark); border-color: rgba(138,110,40,0.5); }
+<<<<<<< HEAD
+=======
+
+    /* The felt table stays DARK green even in light mode, so text on it must
+       stay light/gold — not dark — or it disappears against the felt. */
+    body.light .hand-label { color: var(--gold-light); }
+    body.light .score-badge { color: var(--gold-light); background: rgba(0,0,0,0.35); }
+    /* Header pill controls sit on the pale background → darker ink for contrast */
+    body.light .pill-btn { color: var(--gold-dark); border-color: rgba(138,110,40,0.5); }
+    body.light .pill-btn:hover { color: var(--gold-dark); }
+    body.light .speed-label { color: #4a6a4a; }
+>>>>>>> 5d1f8fc4b79325fca5b4a39e8133b9bcccfb5b4d
  
     @media (max-width: 600px) {
       .table-wrap { border-radius: 20px; padding: 24px 16px 20px; }

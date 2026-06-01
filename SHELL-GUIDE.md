@@ -48,11 +48,14 @@ the game.
 | `CasinoShell.toast('message')` | Transient notification. |
 | `CasinoShell.celebrate(netWin)` | Confetti + big `+$X` flourish + sound. |
 | `CasinoShell.gameOver({title?, message?})` | Out-of-chips modal with Cashier + Lobby. |
+<<<<<<< HEAD
 | `CasinoShell.info(title, html)` | Dismissible modal for rules/paytables/help. |
 | `CasinoShell.awardXp(wager)` | Grant XP scaled to a wager (call on each bet). Handles level-ups + chip rewards. |
 | `CasinoShell.profile` | Read-only `{ xp, level, into, need, streak }`. |
 | `CasinoShell.dailyBonus.available() / .open() / .claim()` | Daily streak bonus. The shell auto-prompts once per session. |
 | `CasinoShell.standalone(cfg)` | Wire the meta-game WITHOUT injecting a header (for pages that have their own, like the lobby). Add elements with ids `shell-level`, `shell-xp-fill`, `shell-bonus-btn` and they're picked up automatically. |
+=======
+>>>>>>> 5d1f8fc4b79325fca5b4a39e8133b9bcccfb5b4d
 | `CasinoShell.theme.toggle()` | Flip light/dark (also a header button). |
 
 ## Notes
@@ -67,6 +70,7 @@ the game.
   can migrate to it later; until then both files can coexist.
 
 See `coinflip/` for a complete ~50-line reference game.
+<<<<<<< HEAD
 
 ## Meta-game (XP, levels, daily bonus)
 
@@ -86,3 +90,5 @@ CasinoShell.awardXp(bet);   // 1 XP per $1 wagered, min 1; auto handles level-up
   shell auto-opens the claim modal once per session.
 - **Blackjack** won't participate until it's migrated onto the shell (it still
   has its own header). Add the `awardXp` line during that migration.
+=======
+>>>>>>> 5d1f8fc4b79325fca5b4a39e8133b9bcccfb5b4d

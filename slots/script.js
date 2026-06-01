@@ -125,7 +125,10 @@ function spin() {
   }
 
   w.deduct(currentBet);
+<<<<<<< HEAD
   CasinoShell.awardXp(currentBet);
+=======
+>>>>>>> 5d1f8fc4b79325fca5b4a39e8133b9bcccfb5b4d
   CasinoShell.sound.click();
   typewriterEffect(result, "Spinning...", 100);
 

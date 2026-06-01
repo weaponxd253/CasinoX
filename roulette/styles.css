@@ -72,7 +72,16 @@
   display: grid;
   place-items: center;
   border: 10px solid var(--gold-dark);
+<<<<<<< HEAD
   background: var(--wheel-gradient, conic-gradient(#1f7a45, #101010, #982020, #101010));
+=======
+  background:
+    repeating-conic-gradient(
+      from -4deg,
+      #101010 0deg 9.73deg,
+      #8f1d1d 9.73deg 19.46deg
+    );
+>>>>>>> 5d1f8fc4b79325fca5b4a39e8133b9bcccfb5b4d
   box-shadow:
     0 18px 40px rgba(0, 0, 0, 0.5),
     inset 0 0 28px rgba(0, 0, 0, 0.45);
@@ -85,9 +94,12 @@
   inset: 18px;
   border-radius: 50%;
   border: 2px dashed rgba(245, 234, 213, 0.4);
+<<<<<<< HEAD
   box-shadow:
     0 0 0 22px rgba(0, 0, 0, 0.12) inset,
     0 0 0 1px rgba(245, 234, 213, 0.22);
+=======
+>>>>>>> 5d1f8fc4b79325fca5b4a39e8133b9bcccfb5b4d
 }
 
 .wheel-ring {
@@ -97,6 +109,7 @@
   background: radial-gradient(circle, transparent 46%, rgba(245, 234, 213, 0.18) 47%, transparent 49%);
 }
 
+<<<<<<< HEAD
 .wheel-numbers {
   position: absolute;
   inset: 0;
@@ -130,6 +143,8 @@
   color: #b7f4c8;
 }
 
+=======
+>>>>>>> 5d1f8fc4b79325fca5b4a39e8133b9bcccfb5b4d
 .wheel-center {
   position: relative;
   z-index: 2;
