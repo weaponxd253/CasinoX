@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bar Shift — Casino X Hotel</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <link rel="stylesheet" href="../../casino-shell.css">
+  <link rel="stylesheet" href="bar.css">
+
+  <script src="../../wallet.js"></script>
+  <script src="../../casino-shell.js"></script>
+  <script src="../hotel-config.js"></script>
+  <script src="../hotel-state.js"></script>
+  <script src="../hotel-engine.js"></script>
+  <script src="../hotel-bridge.js"></script>
+  <script src="bar-game.js"></script>
+</head>
+<body>
+  <main class="game-stage bar-shift-shell">
+    <div class="bar-topline">
+      <a class="hotel-back-link" href="../index.html">
+        <i class="fa-solid fa-building"></i>
+        Hotel
+      </a>
+      <div class="bar-hotel-cash">
+        <span>Hotel Cash</span>
+        $<strong id="bar-hotel-cash">0</strong>
+      </div>
+    </div>
+
+    <section class="bar-shift-board" aria-label="Bar shift">
+      <div class="bar-room">
+        <div class="bar-shelves">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <div class="bar-counter">
+          <div class="customer-zone" id="customer-zone">
+            <div class="customer-avatar" id="customer-avatar">♟</div>
+            <div class="order-ticket">
+              <div class="ticket-label">Order</div>
+              <div class="ticket-drink" id="ticket-drink">Ready</div>
+              <div class="patience-track">
+                <div class="patience-fill" id="patience-fill"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="drink-station" id="drink-station">
+            <button class="drink-btn" type="button" data-drink="beer"><span>🍺</span> Beer</button>
+            <button class="drink-btn" type="button" data-drink="martini"><span>🍸</span> Martini</button>
+            <button class="drink-btn" type="button" data-drink="wine"><span>🍷</span> Wine</button>
+            <button class="drink-btn" type="button" data-drink="oldFashioned"><span>🥃</span> Old Fashioned</button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="shift-panel">
+        <div class="shift-title">
+          <i class="fa-solid fa-martini-glass-citrus"></i>
+          Bar Shift
+        </div>
+
+        <div class="shift-stats">
+          <div>
+            <span>Served</span>
+            <strong class="served-ratio"><span id="served-count">0</span><span>/</span><span id="served-target">5</span></strong>
+          </div>
+          <div>
+            <span>Tips</span>
+            <strong>$<span id="tips-total">0</span></strong>
+          </div>
+          <div>
+            <span>Streak</span>
+            <strong id="streak-count">0</strong>
+          </div>
+          <div>
+            <span>Mood</span>
+            <strong id="mood-label">Calm</strong>
+          </div>
+        </div>
+
+        <div class="shift-results" id="shift-results" hidden>
+          <div class="results-heading">
+            <i class="fa-solid fa-receipt"></i>
+            Shift Complete
+          </div>
+          <div class="results-grid">
+            <div>
+              <span>Tips</span>
+              <strong>$<span id="result-tips">0</span></strong>
+            </div>
+            <div>
+              <span>Orders</span>
+              <strong id="result-orders">0</strong>
+            </div>
+            <div>
+              <span>Misses</span>
+              <strong id="result-misses">0</strong>
+            </div>
+            <div>
+              <span>Satisfaction</span>
+              <strong>+<span id="result-satisfaction">0</span></strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="shift-log" id="shift-log"></div>
+
+        <div class="shift-actions">
+          <button class="primary-shift-btn" id="start-shift-btn" type="button">
+            <i class="fa-solid fa-play"></i>
+            Start Shift
+          </button>
+          <a class="secondary-shift-btn" href="../index.html">
+            <i class="fa-solid fa-arrow-left"></i>
+            Back
+          </a>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      HotelState.init();
+      CasinoShell.mount({
+        name: 'Bar Shift',
+        subtitle: 'Hotel Department',
+        lobbyHref: '../../index.html',
+        footer: 'Casino X · Bar Shift · Hotel Department'
+      });
+      BarGame.init();
+    });
+  </script>
+</body>
+</html>

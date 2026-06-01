@@ -153,12 +153,25 @@
   overflow: hidden;
   box-shadow: var(--shadow-deep), inset 0 0 40px rgba(0,0,0,0.3);
   background: #050e08;
-  /* Phase 3: Pixi canvas will be injected here at the same size */
+  min-height: 650px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .hotel-building-css {
   display: flex;
   flex-direction: column;
+}
+
+.hotel-building-css.pixi-active {
+  display: none;
+}
+
+.hotel-pixi-canvas {
+  display: block;
+  max-width: 100%;
+  image-rendering: auto;
 }
 
 .hotel-floor {
@@ -388,6 +401,25 @@
   gap: 8px;
 }
 
+.panel-icon-btn {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.28);
+  color: var(--gold);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+.panel-icon-btn:hover {
+  border-color: var(--gold);
+  background: rgba(201,168,76,0.12);
+  color: var(--gold-light);
+}
+
 /* ── Department cards ─────────────────────────────────────── */
 .dept-upgrade-list {
   display: flex;
@@ -403,12 +435,26 @@
   display: flex;
   gap: 13px;
   align-items: flex-start;
-  transition: border-color 0.2s, background 0.2s;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, transform 0.2s;
 }
 
 .dept-card:not(.locked):not(.maxed):hover {
   border-color: rgba(201,168,76,0.7);
   background: rgba(0,0,0,0.45);
+  transform: translateX(-2px);
+}
+
+.dept-card.selected {
+  animation: dept-selected-pulse 1s ease;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px rgba(201,168,76,0.3), 0 0 18px rgba(201,168,76,0.18);
+}
+
+@keyframes dept-selected-pulse {
+  0% { transform: translateX(0); }
+  35% { transform: translateX(-4px); }
+  100% { transform: translateX(0); }
 }
 
 .dept-card.locked {
@@ -416,9 +462,170 @@
   filter: saturate(0.5);
 }
 
+.dept-card.ready {
+  border-color: rgba(201,168,76,0.46);
+  background: rgba(201,168,76,0.06);
+}
+
 .dept-card.maxed {
   border-color: rgba(201,168,76,0.6);
   background: rgba(201,168,76,0.06);
+}
+
+/* ── Focused department view ──────────────────────────────── */
+.dept-focus {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dept-focus-hero {
+  display: grid;
+  grid-template-columns: 54px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid rgba(201,168,76,0.38);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(135deg, rgba(201,168,76,0.1), rgba(0,0,0,0.08)),
+    var(--surface);
+}
+
+.dept-focus-icon {
+  width: 54px;
+  height: 54px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.35);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.dept-focus-copy {
+  min-width: 0;
+}
+
+.dept-focus-name {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--gold-light);
+}
+
+.dept-focus-status {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.dept-focus-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dept-focus-stat {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.24);
+}
+
+.dept-focus-stat span {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 5px;
+}
+
+.dept-focus-stat strong {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--gold-light);
+}
+
+.dept-focus-progress,
+.dept-focus-upgrade {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(0,0,0,0.22);
+  padding: 14px;
+}
+
+.dept-focus-progress-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.dept-focus-upgrade {
+  display: grid;
+  grid-template-columns: 1fr minmax(180px, 220px);
+  gap: 14px;
+  align-items: center;
+}
+
+.focus-kicker {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+
+.focus-next-name {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.focus-next-desc {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.dept-focus-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.secondary-panel-btn {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.28);
+  color: var(--gold-light);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.secondary-panel-btn:hover:not(:disabled) {
+  border-color: rgba(201,168,76,0.7);
+  background: rgba(201,168,76,0.1);
+}
+
+.secondary-panel-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .dept-card-icon {
@@ -545,7 +752,10 @@ body.light .income-rate-display { color: var(--gold-dark); }
   .hotel-manager-layout {
     grid-template-columns: 1fr;
   }
-  #hotel-canvas-wrap { max-width: 100%; }
+  #hotel-canvas-wrap {
+    max-width: 100%;
+    min-height: 0;
+  }
   .hotel-mgmt-panel {
     max-height: none;
     overflow-y: visible;
@@ -560,4 +770,13 @@ body.light .income-rate-display { color: var(--gold-dark); }
   .floor-name       { font-size: 13px; }
   .dept-card        { padding: 12px; gap: 10px; }
   .dept-card-icon   { font-size: 1.5rem; }
+  .dept-focus-hero  { grid-template-columns: 44px 1fr; }
+  .dept-focus-hero .level-badge { grid-column: 1 / -1; justify-self: start; }
+  .dept-focus-icon  { width: 44px; height: 44px; font-size: 1.5rem; }
+  .dept-focus-name  { font-size: 18px; }
+  .dept-focus-grid,
+  .dept-focus-upgrade,
+  .dept-focus-actions {
+    grid-template-columns: 1fr;
+  }
 }

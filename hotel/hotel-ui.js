@@ -7,6 +7,7 @@
    ============================================================ */
 
 const HotelUI = (() => {
+  let selectedDeptId = null;
 
   /* ── Bootstrap ───────────────────────────────────────────── */
   function init() {
@@ -17,10 +18,13 @@ const HotelUI = (() => {
       _showWelcomeBack(bootResult);
     }
 
+    window.HotelRenderer?.init?.();
     renderAll();
     _startLiveTick();
     _wireUpgradeButtons();
+    _wireDeptSelection();
     _wireNameEdit();
+    _wireFloorSelection();
     HotelBridge.syncCasinoSnapshot();
 
     // Subscribe to bridge events for visual feedback
@@ -40,6 +44,10 @@ const HotelUI = (() => {
       renderIncomeDisplay();
       renderHotelCash();
       renderBuildingView();
+    });
+
+    HotelBridge.on('guest_income', ({ amount }) => {
+      window.HotelRenderer?.flashIncome?.(amount);
     });
   }
 
@@ -119,6 +127,8 @@ const HotelUI = (() => {
      match what Phase 3 expects (520px wide, height: auto).
   ─────────────────────────────────────────────────────────── */
   function renderBuildingView() {
+    if (window.HotelRenderer?.render?.(HotelState.get())) return;
+
     const wrap  = document.getElementById('hotel-building-css');
     if (!wrap) return;
     const state = HotelState.get();
@@ -202,6 +212,13 @@ const HotelUI = (() => {
     const cash  = HotelState.getCash();
     const rep   = HotelState.getReputation();
 
+    if (selectedDeptId) {
+      renderFocusedDeptPanel(selectedDeptId, state);
+      return;
+    }
+
+    setMgmtTitle('<i class="fa-solid fa-arrow-up-right-dots"></i> Departments');
+
     // Show depts in floor order; locked-but-visible first, then hidden until close to rep
     const cards = FLOOR_ORDER.map(id => {
       if (id === 'lobby') return '';    // lobby has no upgrades in Phase 1
@@ -215,7 +232,7 @@ const HotelUI = (() => {
 
       if (!dept?.unlocked) {
         return `
-          <div class="dept-card locked" data-dept="${id}">
+          <div class="dept-card locked" data-dept="${id}" role="button" tabindex="0">
             <div class="dept-card-icon">${meta.icon}</div>
             <div class="dept-card-body">
               <div class="dept-card-name">${meta.label}</div>
@@ -233,16 +250,17 @@ const HotelUI = (() => {
       const next     = catalog[dept.level];          // undefined if maxed
       const isMax    = !next;
       const canAfford = !isMax && cash >= (next?.cost ?? Infinity);
+      const isReady = dept.level <= 0;
 
       return `
-        <div class="dept-card ${isMax ? 'maxed' : ''}" data-dept="${id}">
+        <div class="dept-card ${isMax ? 'maxed' : ''} ${isReady ? 'ready' : ''}" data-dept="${id}" role="button" tabindex="0">
           <div class="dept-card-icon">${meta.icon}</div>
           <div class="dept-card-body">
             <div class="dept-card-header">
               <span class="dept-card-name">${meta.label}</span>
-              <span class="level-badge ${isMax ? 'maxed' : ''}">Lv ${dept.level}${isMax ? ' MAX' : ''}</span>
+              <span class="level-badge ${isMax ? 'maxed' : ''}">${isReady ? 'Build' : `Lv ${dept.level}${isMax ? ' MAX' : ''}`}</span>
             </div>
-            <div class="dept-card-current">${current?.label ?? ''} · $${current?.ipm ?? 0}/min</div>
+            <div class="dept-card-current">${isReady ? 'Ready to build' : `${current?.label ?? ''} · $${current?.ipm ?? 0}/min`}</div>
             ${isMax
               ? `<div class="dept-card-maxed">Fully upgraded ✓</div>`
               : `<div class="dept-card-next">
@@ -252,7 +270,7 @@ const HotelUI = (() => {
                  <button class="upgrade-btn ${canAfford ? 'can-afford' : 'cant-afford'}"
                          data-dept="${id}" data-cost="${next.cost}"
                          ${canAfford ? '' : 'disabled'}>
-                   Upgrade · $${fmtShort(next.cost)}
+                   ${isReady ? 'Build' : 'Upgrade'} · $${fmtShort(next.cost)}
                  </button>`
             }
           </div>
@@ -260,6 +278,139 @@ const HotelUI = (() => {
     }).filter(Boolean).join('');
 
     list.innerHTML = cards || '<p class="no-depts">All departments unlocked!</p>';
+  }
+
+  function renderFocusedDeptPanel(deptId, state) {
+    const list = document.getElementById('dept-upgrade-list');
+    if (!list) return;
+
+    const dept = state.departments[deptId];
+    const meta = HotelConfig.DEPT_META[deptId];
+    const catalog = HotelConfig.UPGRADE_CATALOG[deptId] ?? [];
+    const reqRep = HotelConfig.DEPT_UNLOCK_REP[deptId] ?? 1;
+    const cash = HotelState.getCash();
+    const rep = HotelState.getReputation();
+    const status = getDeptStatus(deptId, dept, rep);
+    const current = dept?.level > 0 ? catalog[dept.level - 1] : null;
+    const next = status === 'locked' ? catalog[0] : catalog[dept?.level ?? 0];
+    const isMax = status === 'active' && !next;
+    const canAfford = !!next && cash >= next.cost && status !== 'locked';
+    const actionLabel = status === 'ready' ? 'Build Department' : 'Upgrade Department';
+
+    setMgmtTitle(`
+      <button class="panel-icon-btn" type="button" data-panel-action="back" title="Back to departments">
+        <i class="fa-solid fa-arrow-left"></i>
+      </button>
+      ${meta?.label ?? 'Department'}
+    `);
+
+    list.innerHTML = `
+      <section class="dept-focus" data-dept="${deptId}">
+        <div class="dept-focus-hero">
+          <div class="dept-focus-icon">${status === 'locked' ? '🚧' : meta.icon}</div>
+          <div class="dept-focus-copy">
+            <div class="dept-focus-name">${meta.label}</div>
+            <div class="dept-focus-status">${deptStatusLabel(status, dept, reqRep, rep, current)}</div>
+          </div>
+          <span class="level-badge ${isMax ? 'maxed' : ''}">
+            ${status === 'locked' ? `REP ${reqRep}` : `LV ${dept?.level ?? 0}${isMax ? ' MAX' : ''}`}
+          </span>
+        </div>
+
+        <div class="dept-focus-grid">
+          ${focusStat('Current Income', `$${current?.ipm ?? 0}/min`)}
+          ${focusStat('Next Income', next ? `$${next.ipm ?? 0}/min` : 'Maxed')}
+          ${focusStat('Satisfaction', formatBonus(current?.sat))}
+          ${focusStat('Reputation', formatBonus(current?.repBonus))}
+        </div>
+
+        ${renderDeptProgress(status, reqRep, rep)}
+
+        <div class="dept-focus-upgrade">
+          <div>
+            <div class="focus-kicker">${status === 'ready' ? 'Build' : isMax ? 'Complete' : 'Next Upgrade'}</div>
+            <div class="focus-next-name">${next?.label ?? 'Fully upgraded'}</div>
+            <div class="focus-next-desc">${next?.desc ?? 'This department is operating at peak luxury.'}</div>
+          </div>
+          ${renderFocusAction(deptId, status, next, canAfford, actionLabel, isMax)}
+        </div>
+
+        <div class="dept-focus-actions">
+          <button class="secondary-panel-btn" type="button" data-panel-action="back">
+            <i class="fa-solid fa-list"></i>
+            All Departments
+          </button>
+          <button class="secondary-panel-btn" type="button" data-panel-action="minigame" data-dept="${deptId}"
+                  ${status === 'active' ? '' : 'disabled'}>
+            <i class="fa-solid fa-gamepad"></i>
+            Department Game
+          </button>
+        </div>
+      </section>
+    `;
+  }
+
+  function getDeptStatus(deptId, dept, rep = HotelState.getReputation()) {
+    if (deptId === 'lobby') return 'active';
+    if (!dept?.unlocked) return 'locked';
+    if ((dept.level ?? 0) <= 0) return 'ready';
+    return 'active';
+  }
+
+  function deptStatusLabel(status, dept, reqRep, rep, current) {
+    if (status === 'locked') return `Locked · reputation ${rep}/${reqRep}`;
+    if (status === 'ready') return 'Ready to build';
+    return `${current?.label ?? 'Operating'} · $${current?.ipm ?? 0}/min`;
+  }
+
+  function renderDeptProgress(status, reqRep, rep) {
+    if (status !== 'locked') return '';
+    return `
+      <div class="dept-focus-progress">
+        <div class="dept-focus-progress-label">
+          <span>Reputation needed</span>
+          <span>${rep}/${reqRep}</span>
+        </div>
+        <div class="rep-progress-bar">
+          <div class="rep-progress-fill" style="width:${Math.min(100, (rep/reqRep)*100)}%"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderFocusAction(deptId, status, next, canAfford, actionLabel, isMax) {
+    if (status === 'locked') {
+      return `<button class="upgrade-btn cant-afford" type="button" disabled>Locked</button>`;
+    }
+    if (isMax || !next) {
+      return `<button class="upgrade-btn cant-afford" type="button" disabled>Maxed</button>`;
+    }
+    return `
+      <button class="upgrade-btn ${canAfford ? 'can-afford' : 'cant-afford'}"
+              type="button" data-dept="${deptId}" data-cost="${next.cost}"
+              ${canAfford ? '' : 'disabled'}>
+        ${actionLabel} · $${fmtShort(next.cost)}
+      </button>
+    `;
+  }
+
+  function focusStat(label, value) {
+    return `
+      <div class="dept-focus-stat">
+        <span>${label}</span>
+        <strong>${value}</strong>
+      </div>
+    `;
+  }
+
+  function formatBonus(value) {
+    if (!value) return '0';
+    return `+${value}`;
+  }
+
+  function setMgmtTitle(html) {
+    const title = document.querySelector('.mgmt-section-title');
+    if (title) title.innerHTML = html;
   }
 
   /* ── Wire upgrade buttons ─────────────────────────────────── */
@@ -285,6 +436,42 @@ const HotelUI = (() => {
     });
   }
 
+  function _wireDeptSelection() {
+    document.addEventListener('click', e => {
+      const panelAction = e.target.closest('[data-panel-action]');
+      if (panelAction) {
+        const action = panelAction.dataset.panelAction;
+        if (action === 'back') {
+          selectedDeptId = null;
+          renderDeptPanel();
+          return;
+        }
+        if (action === 'minigame') {
+          const deptId = panelAction.dataset.dept;
+          const meta = HotelConfig.DEPT_META[deptId];
+          if (deptId === 'bar') {
+            window.location.href = 'bar/index.html';
+            return;
+          }
+          CasinoShell.toast(`${meta?.label ?? 'Department'} game hooks will open here.`);
+          return;
+        }
+      }
+
+      const card = e.target.closest('.dept-card[data-dept]');
+      if (!card || e.target.closest('.upgrade-btn')) return;
+      selectDepartment(card.dataset.dept);
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const card = e.target.closest?.('.dept-card[data-dept]');
+      if (!card) return;
+      e.preventDefault();
+      selectDepartment(card.dataset.dept);
+    });
+  }
+
   /* ── Hotel name inline edit ──────────────────────────────── */
   function _wireNameEdit() {
     const el = document.getElementById('hotel-name-display');
@@ -298,6 +485,26 @@ const HotelUI = (() => {
         renderStats(HotelState.get());
       }
     });
+  }
+
+  /* ── Dollhouse floor selection ───────────────────────────── */
+  function _wireFloorSelection() {
+    window.addEventListener('hotel:floor-selected', e => {
+      const deptId = e.detail?.deptId;
+      if (!deptId) return;
+
+      window.HotelRenderer?.pulseFloor?.(deptId);
+      selectDepartment(deptId);
+      return;
+    });
+  }
+
+  function selectDepartment(deptId) {
+    if (!deptId) return;
+    selectedDeptId = deptId;
+    renderDeptPanel();
+    const panel = document.querySelector('.hotel-mgmt-panel');
+    if (panel) panel.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   /* ── Live income tick ─────────────────────────────────────── */
@@ -334,6 +541,8 @@ const HotelUI = (() => {
 
   /* ── Floating income number ──────────────────────────────── */
   function _floatIncomeNumber(amount) {
+    window.HotelRenderer?.flashIncome?.(amount);
+
     const wrap = document.getElementById('hotel-cash-pill');
     if (!wrap) return;
     const span = document.createElement('span');
@@ -353,7 +562,7 @@ const HotelUI = (() => {
     return String(Math.round(n));
   }
 
-  return { init, renderAll, renderBuildingView, renderDeptPanel, renderHotelCash };
+  return { init, renderAll, renderBuildingView, renderDeptPanel, renderHotelCash, selectDepartment };
 })();
 
 if (typeof window !== 'undefined') window.HotelUI = HotelUI;
