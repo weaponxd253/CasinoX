@@ -208,6 +208,71 @@ const GUEST_TYPES = {
   },
 };
 
+/* ── Named guest system config ─────────────────────────────
+   Used by hotel-guest-pool.js to turn fetched/fallback profiles
+   into game guests. Keep this static; saved guests store the
+   resolved values they were assigned at check-in time.
+─────────────────────────────────────────────────────────── */
+const ROOM_TYPES = {
+  standard: {
+    id:'standard', label:'Standard Room', reqRoomsLevel:1,
+    capacity:2, beds:'1 queen', ratePerNight:80,
+  },
+  double: {
+    id:'double', label:'Double Room', reqRoomsLevel:2,
+    capacity:4, beds:'2 queens', ratePerNight:130,
+  },
+  deluxe: {
+    id:'deluxe', label:'Deluxe Room', reqRoomsLevel:3,
+    capacity:3, beds:'1 king', ratePerNight:210,
+  },
+  suite: {
+    id:'suite', label:'Suite', reqRoomsLevel:4,
+    capacity:4, beds:'1 king + lounge', ratePerNight:360,
+  },
+  penthouse: {
+    id:'penthouse', label:'Penthouse', reqRoomsLevel:5,
+    capacity:6, beds:'private suite', ratePerNight:700,
+  },
+};
+
+const GUEST_ROOM_PREFS = {
+  budgetTraveler: ['standard', 'double'],
+  tourist:        ['double', 'standard', 'deluxe'],
+  gambler:        ['deluxe', 'suite', 'standard'],
+  businessGuest:  ['deluxe', 'suite'],
+  vip:            ['suite', 'penthouse', 'deluxe'],
+  highRoller:     ['penthouse', 'suite'],
+};
+
+const GUEST_PARTY_SIZE = {
+  budgetTraveler: { min:1, max:2 },
+  tourist:        { min:1, max:4 },
+  gambler:        { min:1, max:2 },
+  businessGuest:  { min:1, max:2 },
+  vip:            { min:1, max:3 },
+  highRoller:     { min:1, max:4 },
+};
+
+const STAY_PREFERENCES = [
+  'quiet_room',
+  'high_floor',
+  'low_floor',
+  'near_elevator',
+  'view',
+  'large_bathroom',
+];
+
+const SPECIAL_REQUESTS = [
+  'late_checkout',
+  'early_checkin',
+  'extra_pillows',
+  'extra_towels',
+  'champagne',
+  'crib',
+  'no_disturbance',
+];
+
 /* ── Casino game unlock gates ─────────────────────────────
    casinoLevel = Casino Floor dept level required to unlock.
    repRequired = minimum hotel reputation required.
@@ -229,6 +294,9 @@ if (typeof window !== 'undefined') {
   window.HotelConfig = {
     FLOOR_ORDER, DEPT_META, DEPT_UNLOCK_REP,
     UPGRADE_CATALOG, ACHIEVEMENT_CATALOG,
-    ECONOMY, GUEST_TYPES, CASINO_GAME_UNLOCKS,
+    ECONOMY, GUEST_TYPES,
+    ROOM_TYPES, GUEST_ROOM_PREFS, GUEST_PARTY_SIZE,
+    STAY_PREFERENCES, SPECIAL_REQUESTS,
+    CASINO_GAME_UNLOCKS,
   };
 }

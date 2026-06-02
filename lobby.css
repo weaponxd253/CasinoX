@@ -1,7 +1,73 @@
 /* ============================================================
    CASINO X — LOBBY styles
-   Requires casino-theme.css to be linked FIRST.
+   Requires casino-shell.css to be linked FIRST.
    ============================================================ */
+
+/* ── Header layout (previously in casino-theme.css) ─────────
+   The lobby uses its own header markup (.casino-header /
+   .logo / .pill-btn) rather than the shell-injected header.
+   These rules were in casino-theme.css; they live here now
+   so that file can be retired.                              */
+.casino-header {
+  width: 100%;
+  max-width: var(--maxw);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.logo                { display: flex; flex-direction: column; line-height: 1; }
+.logo-title {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--gold-light);
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 12px rgba(201, 168, 76, 0.4);
+}
+.logo-sub {
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+/* .pill-btn — lobby uses both .pill-btn (Cashier, Theme)
+   and .shell-pill (bonus button). Give pill-btn the same
+   look as shell-pill so they sit together consistently.  */
+.pill-btn {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 7px 16px;
+  border-radius: 40px;
+  border: 1px solid var(--border);
+  background: rgba(201, 168, 76, 0.10);
+  color: var(--gold-light);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  text-decoration: none;
+}
+.pill-btn:hover {
+  background: rgba(201, 168, 76, 0.25);
+  border-color: var(--gold);
+}
 
 /* ── Header bankroll + cashier ── */
 .balance-pill {

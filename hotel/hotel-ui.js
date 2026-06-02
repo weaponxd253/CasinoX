@@ -342,8 +342,8 @@ const HotelUI = (() => {
           </button>
           <button class="secondary-panel-btn" type="button" data-panel-action="minigame" data-dept="${deptId}"
                   ${status === 'active' ? '' : 'disabled'}>
-            <i class="fa-solid fa-gamepad"></i>
-            Department Game
+            <i class="fa-solid ${deptMiniGameIcon(deptId)}"></i>
+            ${deptMiniGameLabel(deptId)}
           </button>
         </div>
       </section>
@@ -408,6 +408,18 @@ const HotelUI = (() => {
     return `+${value}`;
   }
 
+  function deptMiniGameLabel(deptId) {
+    if (deptId === 'lobby') return 'Check-In Rush';
+    if (deptId === 'bar') return 'Bar Shift';
+    return 'Department Game';
+  }
+
+  function deptMiniGameIcon(deptId) {
+    if (deptId === 'lobby') return 'fa-id-card';
+    if (deptId === 'bar') return 'fa-martini-glass-citrus';
+    return 'fa-gamepad';
+  }
+
   function setMgmtTitle(html) {
     const title = document.querySelector('.mgmt-section-title');
     if (title) title.innerHTML = html;
@@ -449,6 +461,10 @@ const HotelUI = (() => {
         if (action === 'minigame') {
           const deptId = panelAction.dataset.dept;
           const meta = HotelConfig.DEPT_META[deptId];
+          if (deptId === 'lobby') {
+            window.location.href = 'checkin/index.html';
+            return;
+          }
           if (deptId === 'bar') {
             window.location.href = 'bar/index.html';
             return;

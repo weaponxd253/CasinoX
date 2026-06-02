@@ -11,10 +11,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-  <!-- Shared design system FIRST, lobby styles second -->
-  <link rel="stylesheet" href="casino-theme.css">
+  <!-- Shell first, lobby styles second, mobile last -->
   <link rel="stylesheet" href="casino-shell.css">
   <link rel="stylesheet" href="lobby.css">
+  <link rel="stylesheet" href="casino-mobile.css">
 
   <script src="wallet.js"></script>
   <script src="casino-shell.js"></script>
@@ -87,7 +87,7 @@
 
     <!-- Coin Flip -->
     <a class="game-card live" href="coinflip/index.html">
-      <div class="game-emblem">🪙</div>
+      <div class="game-emblem">💰</div>
       <div class="game-name">Coin Flip</div>
       <p class="game-tag">Pick a side, double or nothing. The fastest table on the floor.</p>
       <div class="game-meta">Instant · Min $1</div>
@@ -120,20 +120,22 @@
   </footer>
 
   <script>
-    // ── Theme (shares the 'theme' key + .light-theme/.dark-theme with the slot game) ──
-    (function () {
-      const saved = localStorage.getItem('theme') || 'dark';
-      document.body.classList.add(saved === 'light' ? 'light-theme' : 'dark-theme');
-      const icon = document.getElementById('theme-icon');
-      icon.className = saved === 'light' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    // ── Shell: applies saved theme immediately (sets data-theme on <html>)
+    //    and wires the meta-game (XP bar, bonus button, overlays).
+    //    Must run BEFORE the theme toggle listener so the icon is correct. ──
+    CasinoShell.standalone({ lobbyHref: 'index.html' });
 
+    // ── Theme toggle: delegate entirely to the shell so every page
+    //    stays in sync — shell writes data-theme + the theme key. ──
+    (function () {
+      const icon    = document.getElementById('theme-icon');
+      const syncIcon = () =>
+        (icon.className = CasinoShell.theme.get() === 'light'
+          ? 'fa-solid fa-sun' : 'fa-solid fa-moon');
+      syncIcon();   // set correct icon on load
       document.getElementById('theme-toggle').addEventListener('click', () => {
-        const body = document.body;
-        const toLight = body.classList.contains('dark-theme');
-        body.classList.toggle('dark-theme', !toLight);
-        body.classList.toggle('light-theme', toLight);
-        icon.className = toLight ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-        localStorage.setItem('theme', toLight ? 'light' : 'dark');
+        CasinoShell.theme.toggle();
+        syncIcon();
       });
     })();
 
@@ -157,11 +159,8 @@
       });
     })();
 
-    // ── Meta-game: level/XP display + daily bonus ──
-    CasinoShell.standalone({ lobbyHref: 'index.html' });
-
     // ── Casino unlock system ──────────────────────────────────────────────
-    // Read hotel state directly from localStorage — no hotel scripts needed.
+    // Read hotel state directly — no hotel scripts needed on this page.
     (function () {
       function getHotelProgress() {
         try {
@@ -175,17 +174,14 @@
 
       const { casinoLevel, reputation } = getHotelProgress();
 
-      // Update each locked card to show real unlock requirements
       document.querySelectorAll('.game-card.locked').forEach(card => {
         const gameId = card.dataset.gameId;
         if (!gameId) return;
-
-        // Unlock requirements by game ID
         const gates = {
-          roulette:   { casinoLevel: 2, repRequired: 5 },
-          mines:      { casinoLevel: 2, repRequired: 6 },
-          videoPoker: { casinoLevel: 3, repRequired: 10 },
-          texasHoldem:{ casinoLevel: 5, repRequired: 20 },
+          roulette:    { casinoLevel: 2, repRequired: 5  },
+          mines:       { casinoLevel: 2, repRequired: 6  },
+          videoPoker:  { casinoLevel: 3, repRequired: 10 },
+          texasHoldem: { casinoLevel: 5, repRequired: 20 },
         };
         const gate = gates[gameId];
         if (!gate) return;
@@ -193,16 +189,13 @@
         const metaEl = card.querySelector('.game-meta');
         const btnEl  = card.querySelector('.enter-btn');
         const ribbon = card.querySelector('.ribbon');
-
         const casinoMet = casinoLevel >= gate.casinoLevel;
         const repMet    = reputation  >= gate.repRequired;
 
         if (casinoMet && repMet) {
-          // Requirements met but game not built yet — still locked as "Coming Soon"
           if (ribbon) ribbon.textContent = 'Soon';
           if (metaEl) metaEl.textContent = 'Game coming soon';
         } else {
-          // Show specific requirement
           if (ribbon) ribbon.textContent = 'Locked';
           const needs = [];
           if (!casinoMet) needs.push(`Casino Floor Lv ${gate.casinoLevel}`);

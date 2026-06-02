@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Check-In Rush — Casino X Hotel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="../../casino-shell.css">
+  <link rel="stylesheet" href="game.css">
+  <link rel="stylesheet" href="../../casino-mobile.css">
+</head>
+<body>
+  <!-- Shell header injected by CasinoShell.mount() -->
+
+  <!-- ── Session HUD ── -->
+  <div class="ci-hud" id="ci-hud" style="display:none">
+    <div class="hud-block">
+      <span class="hud-label">Time</span>
+      <span class="hud-value timer" id="hud-timer">1:30</span>
+    </div>
+    <div class="hud-progress-wrap">
+      <div class="hud-progress" id="hud-progress"></div>
+    </div>
+    <div class="hud-block hud-score">
+      <span class="hud-stat win"><i class="fa-solid fa-check"></i> <span id="stat-in">0</span></span>
+      <span class="hud-stat loss"><i class="fa-solid fa-xmark"></i> <span id="stat-miss">0</span></span>
+      <span class="hud-stat gold"><i class="fa-solid fa-star"></i> <span id="stat-perfect">0</span></span>
+    </div>
+  </div>
+
+  <!-- ── Game Area ── -->
+  <div class="ci-game-area" id="ci-game-area" style="display:none">
+
+    <!-- Left: guest desk -->
+    <div class="ci-desk">
+      <div class="ci-desk-label">ARRIVING GUEST</div>
+
+      <!-- Guest card (rendered by JS) -->
+      <div class="ci-guest-slot" id="ci-guest-slot">
+        <div class="ci-empty-desk">Waiting for next guest…</div>
+      </div>
+
+      <!-- Patience bar -->
+      <div class="ci-patience-wrap" id="ci-patience-wrap">
+        <div class="ci-patience-track">
+          <div class="ci-patience-fill" id="ci-patience-fill"></div>
+        </div>
+        <span class="ci-patience-label" id="ci-patience-label">Patience</span>
+      </div>
+
+      <!-- Confirm button -->
+      <button class="ci-confirm-btn" id="ci-confirm-btn" disabled>
+        <i class="fa-solid fa-key"></i>
+        Assign Room & Check In
+      </button>
+    </div>
+
+    <!-- Right: room list -->
+    <div class="ci-rooms">
+      <div class="ci-rooms-label">AVAILABLE ROOMS <span id="room-count"></span></div>
+      <div class="ci-room-list" id="ci-room-list">
+        <!-- rendered by JS -->
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Overlays ── -->
+
+  <!-- Idle / start -->
+  <div class="ci-overlay" id="overlay-idle">
+    <div class="overlay-content">
+      <div class="overlay-icon">🏨</div>
+      <h2>Check-In Rush</h2>
+      <p>Guests arrive with room preferences. Assign them to the best available room before they lose patience and walk out.</p>
+      <div class="ci-diff-card" id="diff-card"></div>
+      <button class="ci-start-btn" id="ci-start-btn">Start Session</button>
+      <div class="ci-cooldown" id="ci-cooldown" style="display:none">
+        <i class="fa-solid fa-clock"></i>
+        Next session available in <strong id="cooldown-time"></strong>
+      </div>
+      <a href="../index.html" class="ci-back-link">← Back to Hotel</a>
+    </div>
+  </div>
+
+  <!-- Countdown -->
+  <div class="ci-overlay ci-countdown-overlay" id="overlay-countdown" style="display:none">
+    <div class="countdown-ring" id="countdown-ring">
+      <span id="countdown-num">3</span>
+    </div>
+    <div class="countdown-sub">Guests incoming!</div>
+  </div>
+
+  <!-- Results -->
+  <div class="ci-overlay" id="overlay-results" style="display:none">
+    <div class="overlay-content results-content">
+      <h2 id="results-headline">Session Complete</h2>
+      <div class="results-grid" id="results-grid"></div>
+      <div class="results-reward" id="results-reward"></div>
+      <div class="results-actions">
+        <button class="ci-start-btn" id="play-again-btn">Play Again</button>
+        <a href="../index.html" class="ci-back-link">Back to Hotel</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts — load order matters -->
+  <script src="../../wallet.js"></script>
+  <script src="../../casino-shell.js"></script>
+  <script src="../hotel-config.js"></script>
+  <script src="../hotel-state.js"></script>
+  <script src="../hotel-guests.js"></script>
+  <script src="../hotel-guest-pool.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
