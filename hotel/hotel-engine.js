@@ -6,6 +6,8 @@
    ============================================================ */
 
 const HotelEngine = (() => {
+  const CALENDAR_PHASES = ['morning', 'afternoon', 'evening', 'night'];
+  const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   /* ── Income ──────────────────────────────────────────────── */
 
@@ -41,7 +43,9 @@ const HotelEngine = (() => {
       ? state.casinoBridge.activeMultiplier
       : 1.0;
 
-    const totalIpm = baseIpm * satMult * activeMult * bridgeMult;
+    const entertainment = activeEntertainmentEffects(state, now);
+    const entertainmentMult = 1 + (entertainment.incomeBoost ?? 0);
+    const totalIpm = baseIpm * satMult * activeMult * bridgeMult * entertainmentMult;
 
     // 5. Minutes elapsed, capped for offline
     const elapsedMs  = now - state.ticker.lastTick;
@@ -58,6 +62,8 @@ const HotelEngine = (() => {
       satMult,
       activeMult,
       bridgeMult,
+      entertainmentMult,
+      entertainment,
       breakdown,
     };
   }
@@ -95,11 +101,14 @@ const HotelEngine = (() => {
     const noMaintenance    = !state.departments.maintenance?.unlocked ? -8 : 0;
     const noSecurity       = !state.departments.security?.unlocked    ? -4 : 0;
 
+    const entertainmentEffects = activeEntertainmentEffects(state);
+
     const raw = HotelConfig.ECONOMY.SAT_BASE
       + roomComfort
       + foodQuality
       + entertainBonus
       + spaBonus
+      + (entertainmentEffects.satisfactionBoost ?? 0)
       - overcrowd
       + noMaintenance
       + noSecurity;
@@ -115,6 +124,7 @@ const HotelEngine = (() => {
     HotelState.setTrend(trend);
     HotelState.setSatisfactionComponents({
       roomComfort, foodQuality, entertainBonus, spaBonus,
+      activeShowBonus: entertainmentEffects.satisfactionBoost ?? 0,
       overcrowdingPenalty: -overcrowd,
       maintenancePenalty:  noMaintenance,
       securityPenalty:     noSecurity,
@@ -186,6 +196,7 @@ const HotelEngine = (() => {
       const elapsed = now - (state.ticker.lastTick || now);
       const gResult = HotelGuests.restoreFromOffline(state, elapsed)
                    ?? HotelGuests.tick(state);
+      applyEntertainmentTraffic(state, gResult, now);
       HotelState.setGuestData(gResult);
     }
 
@@ -212,6 +223,7 @@ const HotelEngine = (() => {
     // Guest system tick
     if (window.HotelGuests) {
       const gResult = HotelGuests.tick(state);
+      applyEntertainmentTraffic(state, gResult, now);
       HotelState.setGuestData(gResult);
 
       // Guest spending income (separate from dept income)
@@ -286,7 +298,8 @@ const HotelEngine = (() => {
     const satMult    = satisfactionMultiplier(state.satisfaction.current);
     const activeMult = (state.ticker.activeMultiplierExpiry > Date.now())
       ? state.ticker.activeMultiplier : 1.0;
-    const deptIpm = Math.round(deptTotal * satMult * activeMult);
+    const entertainmentMult = 1 + (activeEntertainmentEffects(state).incomeBoost ?? 0);
+    const deptIpm = Math.round(deptTotal * satMult * activeMult * entertainmentMult);
 
     // Guest spending income (1 min interval)
     const guestIpm = window.HotelGuests
@@ -313,12 +326,147 @@ const HotelEngine = (() => {
     return catalog[dept.level];
   }
 
+  function activeEntertainmentEffects(state, now = Date.now()) {
+    const dateKey = calendarDayKey(state);
+    const phase = state.calendar?.phase;
+    const bookings = state.entertainment?.schedule?.bookings ?? [];
+    return bookings
+      .filter(show => show.dateKey === dateKey && (!show.phase || show.phase === phase))
+      .reduce((sum, show) => {
+        const effects = show.effects ?? {};
+        sum.trafficBoost += effects.trafficBoost ?? 0;
+        sum.satisfactionBoost += effects.satisfactionBoost ?? 0;
+        sum.incomeBoost += effects.incomeBoost ?? 0;
+        sum.barBoost += effects.barBoost ?? 0;
+        sum.restaurantBoost += effects.restaurantBoost ?? 0;
+        sum.casinoBoost += effects.casinoBoost ?? 0;
+        sum.vipChance += effects.vipChance ?? 0;
+        return sum;
+      }, {
+        trafficBoost: 0,
+        satisfactionBoost: 0,
+        incomeBoost: 0,
+        barBoost: 0,
+        restaurantBoost: 0,
+        casinoBoost: 0,
+        vipChance: 0,
+      });
+  }
+
+  function applyEntertainmentTraffic(state, gResult, now = Date.now()) {
+    const effects = activeEntertainmentEffects(state, now);
+    if (!effects.trafficBoost) return gResult;
+    const rooms = HotelConfig.UPGRADE_CATALOG.rooms?.[state.departments.rooms?.level - 1];
+    const capacity = rooms?.capacity ?? 10;
+    const cap = Math.floor(capacity * 1.3);
+    const bump = Math.max(0, Math.round(effects.trafficBoost * 4));
+    gResult.population = Math.min(cap, (gResult.population ?? state.guests.population) + bump);
+    gResult.checkInRate = Math.round(((gResult.checkInRate ?? 0) + effects.trafficBoost * 60) * 10) / 10;
+    if (effects.vipChance && !state.guests.vipPresent && Math.random() < effects.vipChance) {
+      gResult.specialEvents = gResult.specialEvents ?? [];
+      gResult.specialEvents.push({ type: 'vip_arrival', departAt: now + 3 * 3_600_000 });
+    }
+    return gResult;
+  }
+
+  function advanceCalendarPhase(state = HotelState.get()) {
+    const before = { ...state.calendar };
+    const phaseIndex = CALENDAR_PHASES.indexOf(before.phase);
+    const nextPhaseIndex = phaseIndex >= 0 ? (phaseIndex + 1) % CALENDAR_PHASES.length : 1;
+    const dayRolled = nextPhaseIndex === 0;
+    const nextCalendar = {
+      day: dayRolled ? before.day + 1 : before.day,
+      weekday: dayRolled ? (before.weekday + 1) % WEEKDAYS.length : before.weekday,
+      phase: CALENDAR_PHASES[nextPhaseIndex],
+      lastAdvancedAt: Date.now(),
+    };
+
+    const phaseMinutes = 6 * 60;
+    const activeShows = activeEntertainmentBookings(state, before.day, before.phase);
+    const income = calculatePhaseIncome(state, phaseMinutes);
+    if (income > 0) HotelState.addHotelCash(income);
+
+    let guestResult = null;
+    if (window.HotelGuests) {
+      guestResult = HotelGuests.tick(state);
+      applyEntertainmentTraffic(state, guestResult);
+      HotelState.setGuestData(guestResult);
+      if (guestResult.guestIncome > 0) HotelState.addHotelCash(Math.floor(guestResult.guestIncome * 6));
+      (guestResult.specialEvents ?? []).forEach(processSpecialGuestEvent);
+    }
+
+    HotelState.setCalendar(nextCalendar);
+    recalculateSatisfaction(HotelState.get());
+    recalculateReputation(HotelState.get());
+    checkAchievements(HotelState.get());
+
+    const report = {
+      id: `report_${Date.now()}`,
+      day: before.day,
+      weekday: WEEKDAYS[before.weekday] ?? 'Monday',
+      phase: before.phase,
+      nextDay: nextCalendar.day,
+      nextPhase: nextCalendar.phase,
+      income,
+      guestPopulation: HotelState.get().guests.population,
+      shows: activeShows.map(show => show.label),
+      trafficBoost: activeShows.reduce((sum, show) => sum + (show.effects?.trafficBoost ?? 0), 0),
+      satisfactionBoost: activeShows.reduce((sum, show) => sum + (show.effects?.satisfactionBoost ?? 0), 0),
+    };
+    HotelState.addCalendarReport(report);
+    return report;
+  }
+
+  function calculatePhaseIncome(state, minutes) {
+    const result = calculateIncome(
+      { ...state, ticker: { ...state.ticker, lastTick: Date.now() - minutes * 60_000 } },
+      Date.now()
+    );
+    return result.amount;
+  }
+
+  function activeEntertainmentBookings(state, day = state.calendar?.day, phase = state.calendar?.phase) {
+    const key = calendarDayKey(state, day);
+    return (state.entertainment?.schedule?.bookings ?? [])
+      .filter(show => show.dateKey === key && (!show.phase || show.phase === phase));
+  }
+
+  function processSpecialGuestEvent(ev) {
+    if (ev.type === 'vip_arrival') {
+      HotelState.setVipPresent(true, ev.departAt);
+      HotelState.tickAchievementProgress('first_vip', 1);
+      HotelBridge?.emit('vip_arrival', { typeId: 'vip' });
+      CasinoShell?.toast('A VIP guest has arrived at the hotel!');
+    } else if (ev.type === 'vip_departure') {
+      HotelState.setVipPresent(false, null);
+      CasinoShell?.toast('The VIP guest has checked out.');
+    } else if (ev.type === 'high_roller_arrival') {
+      HotelState.setHighRollerFlag();
+      HotelBridge?.emit('high_roller_arrival', {});
+      CasinoShell?.toast('A High Roller has arrived.');
+    } else if (ev.type === 'high_roller_departure') {
+      HotelState.clearHighRollerFlag();
+    }
+  }
+
+  function calendarDayKey(state, day = state.calendar?.day ?? 1) {
+    return `day-${day}`;
+  }
+
+  function dayKey(time = Date.now()) {
+    const d = new Date(time);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
   return {
     calculateIncome, satisfactionMultiplier,
     recalculateSatisfaction, recalculateReputation,
     processBootTick, processLiveTick,
     checkAchievements, checkDeptUnlocks,
     currentIpm, nextUpgradeCost, nextUpgradeStats,
+    activeEntertainmentEffects,
+    advanceCalendarPhase, activeEntertainmentBookings,
+    calendarDayKey, CALENDAR_PHASES, WEEKDAYS,
   };
 })();
 

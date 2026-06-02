@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spa Rush - Casino X Hotel</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <link rel="stylesheet" href="../../casino-shell.css">
+  <link rel="stylesheet" href="spa.css">
+  <link rel="stylesheet" href="../../casino-mobile.css">
+
+  <script src="../../wallet.js"></script>
+  <script src="../../casino-shell.js"></script>
+  <script src="../hotel-config.js"></script>
+  <script src="../hotel-state.js"></script>
+  <script src="../hotel-engine.js"></script>
+  <script src="../hotel-bridge.js"></script>
+  <script src="spa-game.js"></script>
+</head>
+<body>
+  <main class="game-stage spa-rush-shell">
+    <div class="spa-topline">
+      <a class="hotel-back-link" href="../index.html">
+        <i class="fa-solid fa-building"></i>
+        Hotel
+      </a>
+      <div class="spa-hotel-cash">
+        <span>Hotel Cash</span>
+        $<strong id="spa-hotel-cash">0</strong>
+      </div>
+    </div>
+
+    <section class="spa-board" aria-label="Spa Rush">
+      <div class="spa-room">
+        <div class="spa-room-header">
+          <div>
+            <span class="spa-kicker">Spa & Wellness</span>
+            <h2 id="spa-tier-label">Wellness Room</h2>
+          </div>
+          <div class="spa-session-meter">
+            <span>Time</span>
+            <strong id="spa-time">0:60</strong>
+            <div class="spa-session-track">
+              <div class="spa-session-fill" id="spa-session-fill"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="spa-layout">
+          <section class="spa-guests">
+            <div class="spa-section-title">Waiting Guests</div>
+            <div class="guest-slots" id="guest-slots"></div>
+          </section>
+
+          <section class="spa-stations">
+            <div class="spa-section-title">Treatment Rooms</div>
+            <div class="station-grid" id="station-grid"></div>
+          </section>
+        </div>
+
+        <section class="treatment-bar" id="treatment-bar" aria-label="Treatments"></section>
+      </div>
+
+      <aside class="spa-panel">
+        <div class="spa-panel-title">
+          <i class="fa-solid fa-spa"></i>
+          Spa Rush
+        </div>
+
+        <div class="spa-stats">
+          <div>
+            <span>Guests</span>
+            <strong><span id="spa-served">0</span>/<span id="spa-target">8</span></strong>
+          </div>
+          <div>
+            <span>Cash</span>
+            <strong>$<span id="spa-earned">0</span></strong>
+          </div>
+          <div>
+            <span>Perfect</span>
+            <strong id="spa-perfect">0</strong>
+          </div>
+          <div>
+            <span>Mood</span>
+            <strong id="spa-mood">Calm</strong>
+          </div>
+        </div>
+
+        <div class="spa-boost">
+          <div class="spa-boost-top">
+            <span>Satisfaction Bonus</span>
+            <strong>+<span id="spa-sat-preview">0</span></strong>
+          </div>
+          <div class="spa-boost-track">
+            <div id="spa-boost-fill"></div>
+          </div>
+        </div>
+
+        <div class="spa-results" id="spa-results" hidden>
+          <div class="results-heading">
+            <i class="fa-solid fa-receipt"></i>
+            Session Complete
+          </div>
+          <div class="results-grid">
+            <div><span>Cash</span><strong>$<span id="result-cash">0</span></strong></div>
+            <div><span>Treated</span><strong id="result-treated">0</strong></div>
+            <div><span>Walkouts</span><strong id="result-walkouts">0</strong></div>
+            <div><span>Satisfaction</span><strong>+<span id="result-sat">0</span></strong></div>
+          </div>
+        </div>
+
+        <div class="spa-log" id="spa-log"></div>
+
+        <div class="spa-actions">
+          <button class="primary-spa-btn" id="start-spa-btn" type="button">
+            <i class="fa-solid fa-play"></i>
+            Start Session
+          </button>
+          <a class="secondary-spa-btn" href="../index.html">
+            <i class="fa-solid fa-arrow-left"></i>
+            Back
+          </a>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      HotelState.init();
+      CasinoShell.mount({
+        name: 'Spa Rush',
+        subtitle: 'Hotel Department',
+        lobbyHref: '../../index.html',
+        footer: 'Casino X - Spa Rush - Hotel Department'
+      });
+      SpaRush.init();
+    });
+  </script>
+</body>
+</html>

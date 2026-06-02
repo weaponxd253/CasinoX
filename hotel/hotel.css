@@ -100,6 +100,77 @@
   letter-spacing: 0.06em;
 }
 
+/* ── Hotel calendar controls ─────────────────────────────── */
+.hotel-calendar-strip {
+  width: 100%;
+  max-width: 1100px;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, auto) auto;
+  align-items: center;
+  gap: 12px;
+  margin: -4px 0 18px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background:
+    linear-gradient(135deg, rgba(201,168,76,0.08), rgba(0,0,0,0.16)),
+    var(--surface);
+}
+
+.calendar-current {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.calendar-kicker {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.calendar-current strong {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--gold-light);
+}
+
+.calendar-active-show {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border: 1px solid rgba(201,168,76,0.28);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.22);
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.calendar-active-show.has-show {
+  color: var(--gold-light);
+  border-color: rgba(201,168,76,0.55);
+  background: rgba(201,168,76,0.09);
+}
+
+.advance-time-btn {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+  color: #132113;
+  font-family: var(--font-display);
+  font-weight: 700;
+  cursor: pointer;
+}
+
 /* ── Main two-column layout ──────────────────────────────── */
 .hotel-manager-layout {
   width: 100%;
@@ -830,6 +901,13 @@ body.light .income-rate-display { color: var(--gold-dark); }
 @media (max-width: 900px) {
   .hotel-manager-layout {
     grid-template-columns: 1fr;
+  }
+  .hotel-calendar-strip {
+    grid-template-columns: 1fr;
+  }
+  .calendar-active-show,
+  .advance-time-btn {
+    width: 100%;
   }
   #hotel-canvas-wrap {
     max-width: 100%;

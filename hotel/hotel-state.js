@@ -48,6 +48,13 @@ const HotelState = (() => {
         activeMultiplierExpiry: null,
         totalMinutesActive:    0,
       },
+      calendar: {
+        day:            1,
+        weekday:        0,
+        phase:          'morning',
+        lastAdvancedAt: now,
+        reports:        [],
+      },
       satisfaction: {
         current:        75,
         rollingAverage: 75,
@@ -75,6 +82,15 @@ const HotelState = (() => {
         highRollerPresent:   false,
         vipDepartsAt:        null,
         stats: { totalHosted:0, vipsHosted:0, highRollersHosted:0, totalSpent:0 },
+      },
+      entertainment: {
+        schedule: {
+          bookings: [],
+        },
+        stats: {
+          showsBooked: 0,
+          showsCancelled: 0,
+        },
       },
       stats: {
         hotelCashEarned: { total:0, fromRooms:0, fromCasino:0 },
@@ -122,6 +138,13 @@ const HotelState = (() => {
       state.guests        = state.guests        ?? createNewSave().guests;
       state.achievements  = state.achievements  ?? createNewSave().achievements;
     }
+    const fresh = createNewSave();
+    state.entertainment = state.entertainment ?? fresh.entertainment;
+    state.entertainment.schedule = state.entertainment.schedule ?? fresh.entertainment.schedule;
+    state.entertainment.schedule.bookings = state.entertainment.schedule.bookings ?? [];
+    state.entertainment.stats = state.entertainment.stats ?? fresh.entertainment.stats;
+    state.calendar = state.calendar ?? fresh.calendar;
+    state.calendar.reports = state.calendar.reports ?? [];
     return state;
   }
 
@@ -289,6 +312,35 @@ const HotelState = (() => {
     save();
   }
 
+  function bookEntertainmentShow(booking) {
+    _state.entertainment = _state.entertainment ?? createNewSave().entertainment;
+    _state.entertainment.schedule.bookings.push(booking);
+    _state.entertainment.stats.showsBooked++;
+    save();
+  }
+
+  function cancelEntertainmentShow(bookingId) {
+    const bookings = _state.entertainment?.schedule?.bookings ?? [];
+    const next = bookings.filter(b => b.id !== bookingId);
+    if (next.length === bookings.length) return false;
+    _state.entertainment.schedule.bookings = next;
+    _state.entertainment.stats.showsCancelled++;
+    save();
+    return true;
+  }
+
+  function setCalendar(calendar) {
+    Object.assign(_state.calendar, calendar);
+    save();
+  }
+
+  function addCalendarReport(report) {
+    _state.calendar.reports = _state.calendar.reports ?? [];
+    _state.calendar.reports.unshift(report);
+    _state.calendar.reports = _state.calendar.reports.slice(0, 8);
+    save();
+  }
+
   function resetSave() {
     _state = createNewSave();
     save();
@@ -307,6 +359,8 @@ const HotelState = (() => {
     upgradeDept, unlockDept, updateTicker,
     updateCasinoBridge, setHighRollerFlag, clearHighRollerFlag,
     setGuestData, setVipPresent,
+    bookEntertainmentShow, cancelEntertainmentShow,
+    setCalendar, addCalendarReport,
     unlockAchievement, tickAchievementProgress,
   };
 })();

@@ -25,6 +25,7 @@ const HotelUI = (() => {
     _wireDeptSelection();
     _wireNameEdit();
     _wireFloorSelection();
+    _wireCalendarControls();
     HotelBridge.syncCasinoSnapshot();
 
     // Subscribe to bridge events for visual feedback
@@ -57,6 +58,7 @@ const HotelUI = (() => {
     renderHotelCash();
     renderIncomeDisplay();
     renderStats(state);
+    renderCalendar(state);
     renderBuildingView();
     renderDeptPanel();
     renderSatisfactionMeter(state);
@@ -96,6 +98,23 @@ const HotelUI = (() => {
     setEl('hotel-tier',         `Tier ${state.meta.hotelTier}`);
     setEl('hotel-name-display', state.meta.hotelName);
     setEl('hotel-guests',       state.guests.population);
+  }
+
+  function renderCalendar(state) {
+    const cal = state.calendar ?? { day:1, weekday:0, phase:'morning' };
+    const label = document.getElementById('calendar-current-label');
+    if (label) {
+      label.textContent = `Day ${cal.day} · ${HotelEngine.WEEKDAYS[cal.weekday] ?? 'Monday'} · ${phaseLabel(cal.phase)}`;
+    }
+
+    const activeShow = document.getElementById('calendar-active-show');
+    if (activeShow) {
+      const shows = HotelEngine.activeEntertainmentBookings(state);
+      activeShow.classList.toggle('has-show', shows.length > 0);
+      activeShow.textContent = shows.length
+        ? `${shows.length} active show${shows.length === 1 ? '' : 's'}`
+        : 'No active show';
+    }
   }
 
   /* ── Satisfaction meter ──────────────────────────────────── */
@@ -411,12 +430,16 @@ const HotelUI = (() => {
   function deptMiniGameLabel(deptId) {
     if (deptId === 'lobby') return 'Check-In Rush';
     if (deptId === 'bar') return 'Bar Shift';
+    if (deptId === 'spa') return 'Spa Rush';
+    if (deptId === 'entertainment') return 'Show Lineup';
     return 'Department Game';
   }
 
   function deptMiniGameIcon(deptId) {
     if (deptId === 'lobby') return 'fa-id-card';
     if (deptId === 'bar') return 'fa-martini-glass-citrus';
+    if (deptId === 'spa') return 'fa-spa';
+    if (deptId === 'entertainment') return 'fa-masks-theater';
     return 'fa-gamepad';
   }
 
@@ -469,6 +492,14 @@ const HotelUI = (() => {
             window.location.href = 'bar/index.html';
             return;
           }
+          if (deptId === 'spa') {
+            window.location.href = 'spa/index.html';
+            return;
+          }
+          if (deptId === 'entertainment') {
+            window.location.href = 'entertainment/index.html';
+            return;
+          }
           CasinoShell.toast(`${meta?.label ?? 'Department'} game hooks will open here.`);
           return;
         }
@@ -512,6 +543,14 @@ const HotelUI = (() => {
       window.HotelRenderer?.pulseFloor?.(deptId);
       selectDepartment(deptId);
       return;
+    });
+  }
+
+  function _wireCalendarControls() {
+    document.getElementById('advance-time-btn')?.addEventListener('click', () => {
+      const report = HotelEngine.advanceCalendarPhase();
+      renderAll();
+      CasinoShell.toast(calendarReportText(report));
     });
   }
 
@@ -576,6 +615,20 @@ const HotelUI = (() => {
     if (n >= 1_000_000) return (n/1_000_000).toFixed(1) + 'M';
     if (n >= 1_000)     return (n/1_000).toFixed(1) + 'K';
     return String(Math.round(n));
+  }
+
+  function phaseLabel(phase) {
+    return {
+      morning: 'Morning',
+      afternoon: 'Afternoon',
+      evening: 'Evening',
+      night: 'Night',
+    }[phase] ?? phase;
+  }
+
+  function calendarReportText(report) {
+    const showText = report.shows?.length ? ` · ${report.shows.length} show${report.shows.length === 1 ? '' : 's'}` : '';
+    return `${phaseLabel(report.phase)} report: +$${fmt(report.income)}${showText}`;
   }
 
   return { init, renderAll, renderBuildingView, renderDeptPanel, renderHotelCash, selectDepartment };

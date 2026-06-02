@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Entertainment Booker - Casino X Hotel</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <link rel="stylesheet" href="../../casino-shell.css">
+  <link rel="stylesheet" href="entertainment.css">
+  <link rel="stylesheet" href="../../casino-mobile.css">
+
+  <script src="../../wallet.js"></script>
+  <script src="../../casino-shell.js"></script>
+  <script src="../hotel-config.js"></script>
+  <script src="../hotel-state.js"></script>
+  <script src="../hotel-engine.js"></script>
+  <script src="../hotel-bridge.js"></script>
+  <script src="entertainment.js"></script>
+</head>
+<body>
+  <main class="game-stage entertainment-shell">
+    <div class="ent-topline">
+      <a class="hotel-back-link" href="../index.html">
+        <i class="fa-solid fa-building"></i>
+        Hotel
+      </a>
+      <div class="ent-hotel-cash">
+        <span>Hotel Cash</span>
+        $<strong id="ent-hotel-cash">0</strong>
+      </div>
+    </div>
+
+    <section class="booker-board" aria-label="Entertainment Booker">
+      <div class="booker-main">
+        <header class="booker-header">
+          <div>
+            <span class="booker-kicker">Entertainment</span>
+            <h2 id="ent-tier-label">Events Space</h2>
+          </div>
+          <div class="active-effects">
+            <span>Today</span>
+            <strong id="today-effect-label">No show booked</strong>
+          </div>
+        </header>
+
+        <section class="calendar-section">
+          <div class="section-title">7-Day Lineup</div>
+          <div class="calendar-grid" id="calendar-grid"></div>
+        </section>
+
+        <section class="lineup-section">
+          <div class="section-title">Booked Lineup</div>
+          <div class="lineup-list" id="lineup-list"></div>
+        </section>
+      </div>
+
+      <aside class="booker-panel">
+        <div class="panel-title">
+          <i class="fa-solid fa-masks-theater"></i>
+          Show Lineup Builder
+        </div>
+
+        <div class="selection-card">
+          <span class="selection-label">Selected Slot</span>
+          <strong id="selected-slot-label">Choose a calendar slot</strong>
+        </div>
+
+        <div class="section-title">Available Acts</div>
+        <div class="act-list" id="act-list"></div>
+
+        <div class="act-detail" id="act-detail">
+          <span class="selection-label">Selected Act</span>
+          <strong>Choose an act</strong>
+          <p>Pick an act and calendar slot to preview its traffic and satisfaction effect.</p>
+        </div>
+
+        <button class="book-btn" id="book-btn" type="button" disabled>
+          <i class="fa-solid fa-calendar-plus"></i>
+          Book Show
+        </button>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      HotelState.init();
+      CasinoShell.mount({
+        name: 'Entertainment Booker',
+        subtitle: 'Hotel Department',
+        lobbyHref: '../../index.html',
+        footer: 'Casino X - Entertainment Booker - Hotel Department'
+      });
+      EntertainmentBooker.init();
+    });
+  </script>
+</body>
+</html>
