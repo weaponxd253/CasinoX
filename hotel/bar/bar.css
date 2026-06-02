@@ -39,7 +39,7 @@
 .bar-shift-board {
   width: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 330px;
+  grid-template-columns: minmax(0, 1fr) 340px;
   gap: 18px;
   align-items: stretch;
 }
@@ -69,47 +69,49 @@
 
 .bar-shelves {
   position: absolute;
-  left: 8%;
-  right: 8%;
-  top: 48px;
-  height: 154px;
-  border-top: 5px solid rgba(201,168,76,0.55);
-  border-bottom: 5px solid rgba(201,168,76,0.36);
+  left: 11%;
+  right: 11%;
+  top: 40px;
+  height: 118px;
+  border-top: 4px solid rgba(201,168,76,0.34);
+  border-bottom: 4px solid rgba(201,168,76,0.22);
   display: flex;
   align-items: end;
   justify-content: center;
-  gap: 22px;
-  padding-bottom: 18px;
+  gap: 20px;
+  padding-bottom: 13px;
+  opacity: 0.72;
 }
 
 .bar-shelves span {
-  width: 26px;
-  height: 72px;
+  width: 24px;
+  height: 58px;
   border-radius: 7px 7px 3px 3px;
   background: linear-gradient(180deg, var(--gold-light), #5b3020);
   box-shadow: 0 0 18px rgba(232,203,128,0.16);
 }
-.bar-shelves span:nth-child(2) { height: 94px; background: linear-gradient(180deg, #7fd4c8, #213f3b); }
-.bar-shelves span:nth-child(3) { height: 62px; background: linear-gradient(180deg, #d98775, #48221d); }
-.bar-shelves span:nth-child(4) { height: 102px; background: linear-gradient(180deg, #b9a3e6, #2e274a); }
-.bar-shelves span:nth-child(5) { height: 78px; background: linear-gradient(180deg, #87c46c, #263f22); }
+.bar-shelves span:nth-child(2) { height: 76px; background: linear-gradient(180deg, #7fd4c8, #213f3b); }
+.bar-shelves span:nth-child(3) { height: 50px; background: linear-gradient(180deg, #d98775, #48221d); }
+.bar-shelves span:nth-child(4) { height: 84px; background: linear-gradient(180deg, #b9a3e6, #2e274a); }
+.bar-shelves span:nth-child(5) { height: 62px; background: linear-gradient(180deg, #87c46c, #263f22); }
 
 .bar-counter {
   position: absolute;
   left: 6%;
   right: 6%;
-  bottom: 42px;
-  min-height: 300px;
+  top: 178px;
+  bottom: 36px;
+  min-height: 0;
   display: grid;
-  grid-template-rows: 1fr auto;
-  gap: 20px;
+  grid-template-rows: minmax(230px, 1fr) auto;
+  gap: 18px;
 }
 
 .customer-zone {
   display: flex;
   align-items: end;
   justify-content: center;
-  gap: 28px;
+  gap: 22px;
 }
 
 .customer-avatar {
@@ -138,12 +140,239 @@
   filter: drop-shadow(0 0 14px rgba(224,121,109,0.45));
 }
 
+.serve-tray {
+  width: 92px;
+  height: 126px;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  padding-bottom: 8px;
+  border-bottom: 5px solid rgba(201,168,76,0.35);
+}
+
+.bar-drink {
+  --liquid: #d99b24;
+  --liquid-dark: #835610;
+  --fill: 82%;
+  position: relative;
+  display: inline-block;
+  width: 54px;
+  height: 66px;
+  flex: 0 0 auto;
+}
+
+.serve-drink {
+  width: 68px;
+  height: 86px;
+  opacity: 0.72;
+  transform-origin: 50% 100%;
+  filter: drop-shadow(0 9px 12px rgba(0,0,0,0.34));
+}
+
+.serve-drink.served {
+  animation: drink-slide 0.52s ease;
+}
+
+.serve-drink.miss {
+  animation: drink-miss 0.36s ease;
+}
+
+.serve-drink.pouring .drink-liquid {
+  animation: drink-refill 0.5s ease;
+}
+
+@keyframes drink-slide {
+  0% { transform: translateY(8px) scale(0.94); opacity: 0.2; }
+  55% { transform: translateY(-5px) scale(1.06); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 0.9; }
+}
+
+@keyframes drink-miss {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  25% { transform: translateX(-7px) rotate(-4deg); }
+  55% { transform: translateX(7px) rotate(4deg); }
+  80% { transform: translateX(-3px) rotate(-2deg); }
+}
+
+@keyframes drink-refill {
+  0% { height: 12%; opacity: 0.7; }
+  100% { height: var(--fill); opacity: 1; }
+}
+
+.drink-liquid,
+.drink-foam,
+.drink-glass-shine,
+.drink-straw,
+.drink-bubbles,
+.drink-ice {
+  position: absolute;
+  pointer-events: none;
+}
+
+.drink-liquid {
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  height: var(--fill);
+  background: linear-gradient(180deg, var(--liquid), var(--liquid-dark));
+  opacity: 0.9;
+}
+
+.drink-glass-shine {
+  top: 12px;
+  right: 10px;
+  width: 4px;
+  height: 34px;
+  border-radius: 4px;
+  background: rgba(236,255,255,0.68);
+  opacity: 0.72;
+}
+
+.beer {
+  --liquid: #e6a12a;
+  --liquid-dark: #80530b;
+  --fill: 72%;
+  border: 8px solid #ec9b1b;
+  border-top: 0;
+  border-radius: 6px 6px 16px 16px;
+  background: rgba(255,230,152,0.12);
+}
+
+.beer::after {
+  content: '';
+  position: absolute;
+  top: 13px;
+  right: -26px;
+  width: 22px;
+  height: 34px;
+  border: 7px solid #ec9b1b;
+  border-left: 0;
+  border-radius: 0 16px 16px 0;
+}
+
+.beer .drink-liquid {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 0 0 9px 9px;
+}
+
+.beer .drink-foam {
+  left: -8px;
+  top: -13px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #ffe4ad;
+  box-shadow:
+    17px -8px 0 3px #ffe4ad,
+    36px -5px 0 1px #ffe4ad,
+    50px 1px 0 -1px #ffe4ad;
+}
+
+.beer .drink-bubbles span {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,224,123,0.28);
+  animation: bubble-rise 1.3s ease-in-out infinite;
+}
+.beer .drink-bubbles span:nth-child(1) { left: 16px; top: 34px; }
+.beer .drink-bubbles span:nth-child(2) { left: 29px; top: 48px; animation-delay: 0.25s; }
+.beer .drink-bubbles span:nth-child(3) { left: 38px; top: 29px; animation-delay: 0.45s; }
+
+@keyframes bubble-rise {
+  0%, 100% { transform: translateY(5px); opacity: 0.25; }
+  50% { transform: translateY(-8px); opacity: 0.75; }
+}
+
+.martini {
+  --liquid: #c70d13;
+  --liquid-dark: #7f070c;
+  --fill: 48%;
+  border-left: 4px solid rgba(246,222,205,0.95);
+  border-right: 4px solid rgba(246,222,205,0.95);
+  border-bottom: 5px solid rgba(246,222,205,0.95);
+  transform: perspective(80px) rotateX(-7deg);
+  clip-path: polygon(15% 4%, 85% 4%, 70% 78%, 57% 78%, 57% 100%, 43% 100%, 43% 78%, 30% 78%);
+}
+
+.martini .drink-liquid,
+.wine .drink-liquid {
+  left: 8px;
+  right: 8px;
+  bottom: 17px;
+  border-radius: 0 0 22px 22px;
+}
+
+.martini .drink-straw {
+  left: 15px;
+  top: -5px;
+  width: 3px;
+  height: 72px;
+  background: linear-gradient(90deg, #8fc8ff 0 40%, #f1fbff 40% 60%, #3b7fd8 60%);
+  transform: rotate(-14deg);
+  opacity: 0.9;
+}
+
+.wine {
+  --liquid: #cf1748;
+  --liquid-dark: #720922;
+  --fill: 56%;
+  border: 4px solid rgba(246,222,205,0.86);
+  border-top-width: 5px;
+  border-radius: 9px 9px 30px 30px;
+  clip-path: polygon(8% 0, 92% 0, 78% 72%, 57% 78%, 57% 100%, 43% 100%, 43% 78%, 22% 72%);
+}
+
+.old-fashioned {
+  --liquid: #c67924;
+  --liquid-dark: #7b3f12;
+  --fill: 45%;
+  border: 5px solid #b9d6d6;
+  border-top-width: 3px;
+  border-radius: 3px 3px 17px 17px;
+  background: rgba(178,218,218,0.12);
+}
+
+.old-fashioned .drink-liquid {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 0 0 12px 12px;
+}
+
+.drink-ice span {
+  position: absolute;
+  width: 19px;
+  height: 17px;
+  border-radius: 4px;
+  background: rgba(180,230,218,0.72);
+  transform: rotate(28deg);
+}
+.drink-ice span:nth-child(1) { left: 10px; bottom: 18px; }
+.drink-ice span:nth-child(2) { left: 28px; bottom: 22px; transform: rotate(-36deg); }
+
 .order-ticket {
-  width: min(320px, 48vw);
+  width: min(360px, 48vw);
   border: 1px solid rgba(201,168,76,0.58);
   border-radius: 8px;
   background: rgba(0,0,0,0.42);
-  padding: 16px;
+  padding: 18px;
+  box-shadow: 0 14px 34px rgba(0,0,0,0.28);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+
+.order-ticket.active {
+  border-color: var(--gold);
+  background: rgba(0,0,0,0.56);
+  box-shadow: 0 0 0 1px rgba(201,168,76,0.24), 0 0 28px rgba(201,168,76,0.16);
+}
+
+.order-ticket.complete {
+  border-color: rgba(111,207,151,0.62);
+  box-shadow: 0 0 26px rgba(111,207,151,0.12);
 }
 
 .ticket-label {
@@ -156,14 +385,15 @@
 
 .ticket-drink {
   font-family: var(--font-display);
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
   color: var(--gold-light);
-  min-height: 38px;
+  min-height: 42px;
+  line-height: 1.1;
 }
 
 .patience-track {
-  height: 9px;
+  height: 11px;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: rgba(0,0,0,0.38);
@@ -182,14 +412,14 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
-  padding: 16px;
+  padding: 14px;
   border: 1px solid rgba(201,168,76,0.42);
   border-radius: 10px;
   background: linear-gradient(180deg, #5c2c1b, #2b120d);
 }
 
 .drink-btn {
-  min-height: 78px;
+  min-height: 96px;
   border: 1px solid rgba(201,168,76,0.5);
   border-radius: 8px;
   background: rgba(0,0,0,0.26);
@@ -201,10 +431,11 @@
   transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
 }
 
-.drink-btn span {
+.drink-btn > .bar-drink {
   display: block;
-  font-size: 26px;
-  margin-bottom: 5px;
+  margin: 0 auto 8px;
+  transform: scale(0.72);
+  transform-origin: 50% 100%;
 }
 
 .drink-btn:hover:not(:disabled) {
@@ -293,6 +524,7 @@
     linear-gradient(135deg, rgba(201,168,76,0.12), rgba(0,0,0,0.18)),
     rgba(0,0,0,0.22);
   padding: 13px;
+  order: 3;
 }
 
 .shift-results[hidden] {
@@ -349,8 +581,8 @@
 }
 
 .shift-log {
-  min-height: 180px;
-  max-height: 220px;
+  min-height: 128px;
+  max-height: 170px;
   overflow-y: auto;
   border: 1px solid rgba(201,168,76,0.28);
   border-radius: 8px;
@@ -359,6 +591,12 @@
   color: var(--text-dim);
   font-size: 13px;
   line-height: 1.45;
+  transition: opacity 0.25s ease, max-height 0.25s ease;
+}
+
+.shift-panel.has-results .shift-log {
+  max-height: 132px;
+  opacity: 0.78;
 }
 
 .shift-log p + p {
@@ -416,7 +654,12 @@
 
 @media (max-width: 680px) {
   .bar-room {
-    min-height: 640px;
+    min-height: 720px;
+  }
+
+  .bar-counter {
+    top: 158px;
+    grid-template-rows: minmax(370px, 1fr) auto;
   }
 
   .customer-zone {
@@ -432,5 +675,15 @@
   .shift-stats,
   .shift-actions {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .drink-station {
+    grid-template-columns: 1fr;
+  }
+
+  .drink-btn {
+    min-height: 88px;
   }
 }

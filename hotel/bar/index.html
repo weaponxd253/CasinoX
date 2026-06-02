@@ -42,6 +42,16 @@
         <div class="bar-counter">
           <div class="customer-zone" id="customer-zone">
             <div class="customer-avatar" id="customer-avatar">♟</div>
+            <div class="serve-tray" aria-hidden="true">
+              <div class="bar-drink serve-drink beer" id="serve-drink">
+                <div class="drink-liquid"></div>
+                <div class="drink-foam"></div>
+                <div class="drink-bubbles"><span></span><span></span><span></span></div>
+                <div class="drink-ice"><span></span><span></span></div>
+                <div class="drink-straw"></div>
+                <div class="drink-glass-shine"></div>
+              </div>
+            </div>
             <div class="order-ticket">
               <div class="ticket-label">Order</div>
               <div class="ticket-drink" id="ticket-drink">Ready</div>
@@ -52,10 +62,22 @@
           </div>
 
           <div class="drink-station" id="drink-station">
-            <button class="drink-btn" type="button" data-drink="beer"><span>🍺</span> Beer</button>
-            <button class="drink-btn" type="button" data-drink="martini"><span>🍸</span> Martini</button>
-            <button class="drink-btn" type="button" data-drink="wine"><span>🍷</span> Wine</button>
-            <button class="drink-btn" type="button" data-drink="oldFashioned"><span>🥃</span> Old Fashioned</button>
+            <button class="drink-btn" type="button" data-drink="beer">
+              <span class="bar-drink beer"><span class="drink-liquid"></span><span class="drink-foam"></span><span class="drink-bubbles"><span></span><span></span><span></span></span><span class="drink-glass-shine"></span></span>
+              Beer
+            </button>
+            <button class="drink-btn" type="button" data-drink="martini">
+              <span class="bar-drink martini"><span class="drink-liquid"></span><span class="drink-straw"></span><span class="drink-glass-shine"></span></span>
+              Martini
+            </button>
+            <button class="drink-btn" type="button" data-drink="wine">
+              <span class="bar-drink wine"><span class="drink-liquid"></span><span class="drink-glass-shine"></span></span>
+              Wine
+            </button>
+            <button class="drink-btn" type="button" data-drink="oldFashioned">
+              <span class="bar-drink old-fashioned"><span class="drink-liquid"></span><span class="drink-ice"><span></span><span></span></span><span class="drink-glass-shine"></span></span>
+              Old Fashioned
+            </button>
           </div>
         </div>
       </div>

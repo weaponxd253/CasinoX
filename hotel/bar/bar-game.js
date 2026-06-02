@@ -55,6 +55,7 @@ const BarGame = (() => {
     document.getElementById('served-target').textContent = shift.target;
     document.getElementById('start-shift-btn').disabled = true;
     hideResults();
+    setOrderState('active');
     setDrinkButtons(true);
     clearLog();
     log('Shift opened.', 'gold');
@@ -75,6 +76,7 @@ const BarGame = (() => {
     shift.guest = GUESTS[Math.floor(Math.random() * GUESTS.length)];
 
     document.getElementById('ticket-drink').textContent = `${shift.order.icon} ${shift.order.label}`;
+    setOrderState('active');
     setCustomerMood('');
     updatePatience();
   }
@@ -94,6 +96,7 @@ const BarGame = (() => {
       shift.streak++;
       shift.served++;
       setCustomerMood('happy');
+      animateServe(shift.order.id, true);
       log(`${shift.guest} enjoyed the ${shift.order.label}. +$${earned}`, 'good');
       CasinoShell.sound.win();
     } else {
@@ -101,6 +104,7 @@ const BarGame = (() => {
       shift.misses++;
       shift.served++;
       setCustomerMood('annoyed');
+      animateServe(drinkId, false);
       log(`${shift.guest} left unhappy.`, 'bad');
       CasinoShell.sound.lose();
     }
@@ -149,6 +153,8 @@ const BarGame = (() => {
     document.getElementById('start-shift-btn').innerHTML = '<i class="fa-solid fa-rotate-right"></i> New Shift';
     document.getElementById('ticket-drink').textContent = 'Closed';
     document.getElementById('patience-fill').style.width = '0%';
+    setOrderState('complete');
+    resetServeDrink();
     syncHotelCash();
     updateStats();
     showResults({ tips, served, misses, satisfactionBonus });
@@ -184,6 +190,7 @@ const BarGame = (() => {
     document.getElementById('result-misses').textContent = misses;
     document.getElementById('result-satisfaction').textContent = satisfactionBonus;
     panel.hidden = false;
+    document.querySelector('.shift-panel')?.classList.add('has-results');
     panel.classList.remove('pop');
     void panel.offsetWidth;
     panel.classList.add('pop');
@@ -192,13 +199,50 @@ const BarGame = (() => {
   function hideResults() {
     const panel = document.getElementById('shift-results');
     if (panel) panel.hidden = true;
+    document.querySelector('.shift-panel')?.classList.remove('has-results');
   }
 
   function renderIdle() {
     const barLevel = HotelState.get().departments.bar?.level ?? 0;
     document.getElementById('ticket-drink').textContent = barLevel > 0 ? 'Ready' : 'Build Bar';
+    setOrderState('idle');
     document.getElementById('served-target').textContent = Math.min(8, 4 + Math.max(1, barLevel));
     log(barLevel > 0 ? 'Bar is ready.' : 'Bar & Lounge is not built yet.', barLevel > 0 ? 'gold' : 'bad', true);
+    resetServeDrink();
+  }
+
+  function setOrderState(state) {
+    const ticket = document.querySelector('.order-ticket');
+    if (!ticket) return;
+    ticket.classList.remove('idle', 'active', 'complete');
+    ticket.classList.add(state);
+  }
+
+  function animateServe(drinkId, correct) {
+    const drink = document.getElementById('serve-drink');
+    if (!drink) return;
+
+    const className = drinkClass(drinkId);
+    drink.className = `bar-drink serve-drink ${className}`;
+    drink.classList.remove('pouring', 'served', 'miss');
+    void drink.offsetWidth;
+    drink.classList.add(correct ? 'served' : 'miss');
+    if (correct) drink.classList.add('pouring');
+  }
+
+  function resetServeDrink() {
+    const drink = document.getElementById('serve-drink');
+    if (!drink) return;
+    drink.className = 'bar-drink serve-drink beer';
+  }
+
+  function drinkClass(drinkId) {
+    return {
+      beer: 'beer',
+      martini: 'martini',
+      wine: 'wine',
+      oldFashioned: 'old-fashioned',
+    }[drinkId] ?? 'old-fashioned';
   }
 
   function setCustomerMood(mood) {
