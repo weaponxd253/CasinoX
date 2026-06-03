@@ -8,7 +8,7 @@
 
 const HotelState = (() => {
   const STORAGE_KEY = 'hotelGameState';
-  const SCHEMA_VERSION = 2;
+  const SCHEMA_VERSION = 3;
 
   let _state = null;
 
@@ -86,6 +86,20 @@ const HotelState = (() => {
         rosterIdCounter:     0,
         stats: { totalHosted:0, vipsHosted:0, highRollersHosted:0, totalSpent:0 },
       },
+      staff: {
+        morale: 78,
+        payrollPerDay: 0,
+        roster: [
+          { id:'front_desk_maya', name:'Maya Chen', role:'Front Desk', specialty:'lobby', assignment:'lobby', speed:7, service:8, discipline:7, stamina:92, trait:'Warm Welcome' },
+          { id:'housekeeping_rosa', name:'Rosa Bell', role:'Housekeeping', specialty:'rooms', assignment:'rooms', speed:8, service:7, discipline:8, stamina:88, trait:'Fast Turnover' },
+          { id:'runner_eli', name:'Eli Grant', role:'Room Service', specialty:'rooms', assignment:'rooms', speed:9, service:6, discipline:6, stamina:84, trait:'Quick Runner' },
+          { id:'host_nadia', name:'Nadia Vale', role:'Casino Host', specialty:'casino', assignment:'casino', speed:6, service:9, discipline:7, stamina:86, trait:'VIP Whisperer' },
+          { id:'chef_marco', name:'Marco Reyes', role:'Restaurant Crew', specialty:'restaurant', assignment:'restaurant', speed:7, service:8, discipline:6, stamina:82, trait:'Tasting Notes' },
+          { id:'security_owen', name:'Owen Price', role:'Security', specialty:'casino', assignment:'casino', speed:6, service:5, discipline:9, stamina:90, trait:'Calm Floor' },
+          { id:'engineer_ivy', name:'Ivy Stone', role:'Maintenance', specialty:'rooms', assignment:'rest', speed:6, service:5, discipline:9, stamina:96, trait:'Quiet Fixes' },
+          { id:'spa_lina', name:'Lina Park', role:'Spa Attendant', specialty:'spa', assignment:'rest', speed:6, service:9, discipline:7, stamina:91, trait:'Guest Recovery' },
+        ],
+      },
       entertainment: {
         schedule: {
           bookings: [],
@@ -157,6 +171,18 @@ const HotelState = (() => {
     state.entertainment.stats = state.entertainment.stats ?? fresh.entertainment.stats;
     state.calendar = state.calendar ?? fresh.calendar;
     state.calendar.reports = state.calendar.reports ?? [];
+    state.staff = state.staff ?? fresh.staff;
+    if (!Array.isArray(state.staff.roster) || state.staff.roster.length === 0) {
+      state.staff.roster = fresh.staff.roster;
+    }
+    if (typeof state.staff.morale !== 'number') state.staff.morale = fresh.staff.morale;
+    if (typeof state.staff.payrollPerDay !== 'number') state.staff.payrollPerDay = fresh.staff.payrollPerDay;
+    state.staff.roster = state.staff.roster.map((member, idx) => ({
+      ...fresh.staff.roster[idx % fresh.staff.roster.length],
+      ...member,
+      assignment: member.assignment ?? member.specialty ?? 'rest',
+      stamina: Math.max(0, Math.min(100, Math.round(member.stamina ?? 85))),
+    }));
     state.meta.version = SCHEMA_VERSION;
     return state;
   }
@@ -444,6 +470,35 @@ const HotelState = (() => {
     return _state.guests.checkInBoostRemaining ?? 0;
   }
 
+  function getStaffRoster() {
+    return [...(_state.staff?.roster ?? [])];
+  }
+
+  function assignStaff(staffId, assignment) {
+    const member = _state.staff?.roster?.find(s => s.id === staffId);
+    if (!member) return false;
+    member.assignment = assignment || 'rest';
+    save();
+    return true;
+  }
+
+  function restStaff(staffId) {
+    const member = _state.staff?.roster?.find(s => s.id === staffId);
+    if (!member) return false;
+    member.assignment = 'rest';
+    member.stamina = Math.min(100, Math.round((member.stamina ?? 80) + 8));
+    save();
+    return true;
+  }
+
+  function adjustStaffStamina(staffId, delta) {
+    const member = _state.staff?.roster?.find(s => s.id === staffId);
+    if (!member || !Number.isFinite(delta)) return false;
+    member.stamina = Math.max(0, Math.min(100, Math.round((member.stamina ?? 80) + delta)));
+    save();
+    return true;
+  }
+
   function resetSave() {
     _state = createNewSave();
     save();
@@ -467,6 +522,7 @@ const HotelState = (() => {
     addGuestToRoster, removeGuestFromRoster, pruneExpiredFromRoster,
     getRoster, getRosterCount,
     applyCheckInBoost, consumeCheckInBoost, getCheckInBoost,
+    getStaffRoster, assignStaff, restStaff, adjustStaffStamina,
     unlockAchievement, tickAchievementProgress,
   };
 })();

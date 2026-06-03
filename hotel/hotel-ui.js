@@ -28,6 +28,7 @@ const HotelUI = (() => {
     _wireFloorSelection();
     _wireCalendarControls();
     _wireManagementTabs();
+    _wireStaffControls();
     HotelBridge.syncCasinoSnapshot();
 
     // Subscribe to bridge events for visual feedback
@@ -64,6 +65,7 @@ const HotelUI = (() => {
     renderBuildingView();
     renderGuestRoster(state);
     renderGuestPanel(state);
+    renderStaffPanel(state);
     renderOperationsPanel(state);
     renderDeptPanel();
     renderSatisfactionMeter(state);
@@ -242,6 +244,182 @@ const HotelUI = (() => {
         ? `<a class="operation-card" href="${op.href}" style="--operation-color:${meta?.color ?? '#0d2218'}">${body}</a>`
         : `<button class="operation-card locked" type="button" disabled style="--operation-color:${meta?.color ?? '#0d2218'}">${body}</button>`;
     }).join('');
+  }
+
+  function renderStaffPanel(state = HotelState.get()) {
+    const wrap = document.getElementById('staff-panel');
+    if (!wrap) return;
+
+    const staff = typeof HotelState.getStaffRoster === 'function'
+      ? HotelState.getStaffRoster()
+      : [...(state.staff?.roster ?? [])];
+    const targets = staffAssignmentTargets(state);
+    const coverage = staffCoverage(staff, state);
+    const activeCount = staff.filter(s => s.assignment && s.assignment !== 'rest').length;
+    const status = document.getElementById('staff-status');
+    if (status) status.textContent = `${activeCount}/${staff.length} assigned`;
+
+    if (!staff.length) {
+      wrap.innerHTML = `
+        <div class="roster-empty">
+          <i class="fa-solid fa-user-tie"></i>
+          <strong>No staff hired</strong>
+          <span>Hiring hooks can be added after the first staff economy pass.</span>
+        </div>
+      `;
+      return;
+    }
+
+    wrap.innerHTML = `
+      <div class="staff-overview-grid">
+        <div><span>Assigned</span><strong>${activeCount}/${staff.length}</strong></div>
+        <div><span>Morale</span><strong>${Math.round(state.staff?.morale ?? 75)}%</strong></div>
+        <div><span>Avg Stamina</span><strong>${averageStaffStamina(staff)}%</strong></div>
+        <div><span>Coverage</span><strong>${coverageLabel(coverage)}</strong></div>
+      </div>
+      <div class="staff-coverage-grid">
+        ${coverage.map(renderCoverageCard).join('')}
+      </div>
+      <div class="staff-card-list">
+        ${staff.map(member => renderStaffCard(member, targets)).join('')}
+      </div>
+    `;
+  }
+
+  function renderCoverageCard(item) {
+    return `
+      <div class="staff-coverage-card ${item.status}">
+        <span>${escapeHtml(item.label)}</span>
+        <strong>${item.score}%</strong>
+        <em>${item.copy}</em>
+      </div>
+    `;
+  }
+
+  function renderStaffCard(member, targets) {
+    const current = member.assignment ?? 'rest';
+    const stamina = Math.max(0, Math.min(100, Math.round(member.stamina ?? 80)));
+    const staminaClass = stamina >= 70 ? 'fresh' : stamina >= 40 ? 'tired' : 'spent';
+    const initials = (member.name ?? '?')
+      .split(/\s+/)
+      .map(part => part[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
+    const buttons = targets.map(target => `
+      <button class="staff-assign-btn ${current === target.id ? 'active' : ''}" type="button"
+              data-staff-action="assign" data-staff-id="${escapeHtml(member.id)}" data-assignment="${target.id}">
+        <i class="fa-solid ${target.icon}"></i>
+        ${target.short}
+      </button>
+    `).join('');
+
+    return `
+      <article class="staff-card">
+        <div class="staff-avatar">${escapeHtml(initials)}</div>
+        <div class="staff-card-main">
+          <div class="staff-card-head">
+            <div>
+              <strong>${escapeHtml(member.name)}</strong>
+              <span>${escapeHtml(member.role)} · ${escapeHtml(member.trait ?? 'Reliable')}</span>
+            </div>
+            <span class="staff-assignment ${current === 'rest' ? 'resting' : ''}">
+              ${assignmentLabel(current)}
+            </span>
+          </div>
+          <div class="staff-stat-row">
+            ${staffStat('Speed', member.speed)}
+            ${staffStat('Service', member.service)}
+            ${staffStat('Discipline', member.discipline)}
+          </div>
+          <div class="staff-stamina">
+            <span>Stamina</span>
+            <div class="staff-stamina-bar"><div class="${staminaClass}" style="width:${stamina}%"></div></div>
+            <strong>${stamina}%</strong>
+          </div>
+          <div class="staff-assign-grid">
+            ${buttons}
+            <button class="staff-assign-btn rest ${current === 'rest' ? 'active' : ''}" type="button"
+                    data-staff-action="rest" data-staff-id="${escapeHtml(member.id)}">
+              <i class="fa-solid fa-mug-hot"></i>
+              Rest
+            </button>
+          </div>
+        </div>
+      </article>
+    `;
+  }
+
+  function staffAssignmentTargets(state) {
+    const base = [
+      { id:'lobby', short:'Lobby', icon:'fa-id-card' },
+      { id:'rooms', short:'Rooms', icon:'fa-bell-concierge' },
+      { id:'casino', short:'Casino', icon:'fa-dice' },
+      { id:'restaurant', short:'Food', icon:'fa-utensils' },
+      { id:'bar', short:'Bar', icon:'fa-martini-glass-citrus' },
+      { id:'entertainment', short:'Shows', icon:'fa-masks-theater' },
+      { id:'spa', short:'Spa', icon:'fa-spa' },
+    ];
+    return base.filter(target => target.id === 'lobby' || state.departments[target.id]?.unlocked);
+  }
+
+  function staffCoverage(staff, state) {
+    return staffAssignmentTargets(state).map(target => {
+      const assigned = staff.filter(s => s.assignment === target.id);
+      const deptLevel = Math.max(1, state.departments[target.id]?.level ?? 1);
+      const demand = target.id === 'lobby'
+        ? Math.max(1, Math.ceil((state.guests.population ?? 0) / 18))
+        : Math.max(1, Math.ceil(deptLevel / 2));
+      const raw = assigned.reduce((sum, member) => {
+        const specialtyBonus = member.specialty === target.id ? 1.25 : 1;
+        const staminaMult = Math.max(0.45, (member.stamina ?? 80) / 100);
+        const baseScore = ((member.speed ?? 5) + (member.service ?? 5) + (member.discipline ?? 5)) / 3;
+        return sum + Math.round(baseScore * specialtyBonus * staminaMult);
+      }, 0);
+      const score = Math.max(0, Math.min(100, Math.round((raw / (demand * 8)) * 100)));
+      const status = score >= 85 ? 'covered' : score >= 55 ? 'thin' : 'short';
+      return {
+        ...target,
+        label: assignmentLabel(target.id),
+        score,
+        status,
+        copy: status === 'covered' ? 'Covered' : status === 'thin' ? 'Thin' : 'Short',
+      };
+    });
+  }
+
+  function averageStaffStamina(staff) {
+    if (!staff.length) return 0;
+    return Math.round(staff.reduce((sum, s) => sum + (s.stamina ?? 80), 0) / staff.length);
+  }
+
+  function coverageLabel(coverage) {
+    const short = coverage.filter(item => item.status === 'short').length;
+    if (short) return `${short} Short`;
+    const thin = coverage.filter(item => item.status === 'thin').length;
+    return thin ? `${thin} Thin` : 'Covered';
+  }
+
+  function staffStat(label, value) {
+    return `
+      <span>
+        <em>${label}</em>
+        <strong>${Math.round(value ?? 0)}</strong>
+      </span>
+    `;
+  }
+
+  function assignmentLabel(id) {
+    return {
+      lobby: 'Lobby',
+      rooms: 'Guest Rooms',
+      casino: 'Casino Floor',
+      restaurant: 'Restaurant',
+      bar: 'Bar & Lounge',
+      entertainment: 'Entertainment',
+      spa: 'Spa',
+      rest: 'Resting',
+    }[id] ?? 'Unassigned';
   }
 
   function renderCalendar(state) {
@@ -722,6 +900,25 @@ const HotelUI = (() => {
     });
   }
 
+  function _wireStaffControls() {
+    document.addEventListener('click', e => {
+      const btn = e.target.closest('[data-staff-action]');
+      if (!btn) return;
+
+      const staffId = btn.dataset.staffId;
+      const action = btn.dataset.staffAction;
+      const ok = action === 'rest'
+        ? HotelState.restStaff(staffId)
+        : HotelState.assignStaff(staffId, btn.dataset.assignment);
+      if (!ok) return;
+
+      renderStaffPanel();
+      CasinoShell.toast(action === 'rest'
+        ? 'Staff member is resting.'
+        : `Staff assigned to ${assignmentLabel(btn.dataset.assignment)}.`);
+    });
+  }
+
   function setManagementTab(tabId) {
     if (!tabId || tabId === activeMgmtTab) return;
     activeMgmtTab = tabId;
@@ -734,6 +931,7 @@ const HotelUI = (() => {
       const active = panel.dataset.tabPanel === tabId;
       panel.hidden = !active;
       panel.classList.toggle('active', active);
+      if (active) panel.scrollTo({ top: 0, behavior: 'auto' });
     });
   }
 
@@ -761,6 +959,7 @@ const HotelUI = (() => {
       renderHotelCash();
       renderIncomeDisplay();
       renderGuestRoster();
+      renderStaffPanel();
       renderOperationsPanel();
     }, 5_000);
   }
