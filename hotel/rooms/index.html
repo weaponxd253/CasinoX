@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Floor Ops - Casino X Hotel</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <link rel="stylesheet" href="../../casino-shell.css">
+  <link rel="stylesheet" href="../../casino-mobile.css">
+  <link rel="stylesheet" href="rooms.css">
+
+  <script src="../../wallet.js"></script>
+  <script src="../../casino-shell.js"></script>
+  <script src="../hotel-config.js"></script>
+  <script src="../hotel-state.js"></script>
+  <script src="../hotel-engine.js"></script>
+  <script src="../hotel-bridge.js"></script>
+  <script src="rooms-game.js"></script>
+</head>
+<body>
+  <main class="game-stage floor-ops-shell">
+    <div class="ops-topline">
+      <a class="hotel-back-link" href="../index.html">
+        <i class="fa-solid fa-building"></i>
+        Hotel
+      </a>
+      <div class="ops-hotel-cash">
+        <span>Hotel Cash</span>
+        $<strong id="ops-hotel-cash">0</strong>
+      </div>
+    </div>
+
+    <section class="ops-board" aria-label="Floor Ops">
+      <div class="ops-floor">
+        <div class="ops-room-header">
+          <div>
+            <span class="ops-kicker">Guest Rooms</span>
+            <h2 id="rooms-tier-label">Standard Rooms</h2>
+          </div>
+          <div class="ops-session-meter">
+            <span>Shift Time</span>
+            <strong id="ops-time">1:10</strong>
+            <div class="ops-session-track">
+              <div id="ops-session-fill"></div>
+            </div>
+          </div>
+        </div>
+
+        <section class="staff-lineup" aria-label="Staff">
+          <div class="ops-section-title">Staff Dispatch</div>
+          <div class="staff-grid" id="staff-grid"></div>
+        </section>
+
+        <section class="floor-layout" aria-label="Guest room requests">
+          <div class="ops-section-title">Active Floor</div>
+          <div class="room-grid" id="room-grid"></div>
+        </section>
+      </div>
+
+      <aside class="ops-panel">
+        <div class="ops-panel-title">
+          <i class="fa-solid fa-bell-concierge"></i>
+          Floor Ops
+        </div>
+
+        <div class="selected-brief" id="selected-brief">
+          <span>Selected Request</span>
+          <strong>No request selected</strong>
+          <p>Start a shift, pick a room request, then assign the best available staff member.</p>
+        </div>
+
+        <div class="ops-stats">
+          <div><span>Resolved</span><strong><span id="ops-resolved">0</span>/<span id="ops-target">10</span></strong></div>
+          <div><span>Cash</span><strong>$<span id="ops-earned">0</span></strong></div>
+          <div><span>Perfect</span><strong id="ops-perfect">0</strong></div>
+          <div><span>Complaints</span><strong id="ops-complaints">0</strong></div>
+        </div>
+
+        <div class="ops-boost">
+          <div class="ops-boost-top">
+            <span>Satisfaction Preview</span>
+            <strong>+<span id="ops-sat-preview">0</span></strong>
+          </div>
+          <div class="ops-boost-track">
+            <div id="ops-boost-fill"></div>
+          </div>
+        </div>
+
+        <div class="ops-results" id="ops-results" hidden>
+          <div class="results-heading">
+            <i class="fa-solid fa-clipboard-check"></i>
+            Shift Complete
+          </div>
+          <div class="results-grid">
+            <div><span>Cash</span><strong>$<span id="result-cash">0</span></strong></div>
+            <div><span>Resolved</span><strong id="result-resolved">0</strong></div>
+            <div><span>Complaints</span><strong id="result-complaints">0</strong></div>
+            <div><span>Satisfaction</span><strong>+<span id="result-sat">0</span></strong></div>
+          </div>
+        </div>
+
+        <div class="ops-log" id="ops-log"></div>
+
+        <div class="ops-actions">
+          <button class="primary-ops-btn" id="start-ops-btn" type="button">
+            <i class="fa-solid fa-play"></i>
+            Start Shift
+          </button>
+          <a class="secondary-ops-btn" href="../index.html">
+            <i class="fa-solid fa-arrow-left"></i>
+            Back
+          </a>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      HotelState.init();
+      CasinoShell.mount({
+        name: 'Floor Ops',
+        subtitle: 'Hotel Department',
+        lobbyHref: '../../index.html',
+        footer: 'Casino X - Floor Ops - Guest Rooms'
+      });
+      RoomsGame.init();
+    });
+  </script>
+</body>
+</html>

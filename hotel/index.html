@@ -13,7 +13,7 @@
   <!-- Shell + mobile + hotel styles -->
   <link rel="stylesheet" href="../casino-shell.css">
   <link rel="stylesheet" href="../casino-mobile.css">
-  <link rel="stylesheet" href="hotel.css">
+  <link rel="stylesheet" href="hotel.css?v=panel-tabs">
 
   <!-- Game data + state + engine — MUST load before hotel-ui.js -->
   <script src="../wallet.js"></script>
@@ -24,7 +24,7 @@
   <script src="hotel-guests.js"></script>
   <script src="hotel-guest-pool.js"></script>
   <script src="hotel-bridge.js"></script>
-  <script src="hotel-ui.js"></script>
+  <script src="hotel-ui.js?v=panel-tabs"></script>
 </head>
 
 <body>
@@ -101,45 +101,58 @@
           <span class="bstat-value" id="hotel-guests">5</span>
         </div>
       </div>
-
-      <!-- Department mini-games -->
-      <div class="dept-games-strip">
-        <a href="checkin/index.html" class="dept-game-btn">
-          <span class="dept-game-icon"><i class="fa-solid fa-id-card"></i></span>
-          <span class="dept-game-copy">
-            <span class="dept-game-title">Check-In Rush</span>
-            <span class="dept-game-dept">Lobby operation</span>
-          </span>
-          <i class="fa-solid fa-arrow-right dept-game-arrow"></i>
-        </a>
-      </div>
     </div>
 
     <!-- Right: management panel -->
     <aside class="hotel-mgmt-panel">
+      <nav class="mgmt-tabs" aria-label="Hotel management views">
+        <button class="mgmt-tab active" type="button" data-tab="departments" aria-selected="true">
+          <i class="fa-solid fa-arrow-up-right-dots"></i>
+          Departments
+        </button>
+        <button class="mgmt-tab" type="button" data-tab="guests" aria-selected="false">
+          <i class="fa-solid fa-person-walking"></i>
+          Guests
+        </button>
+        <button class="mgmt-tab" type="button" data-tab="operations" aria-selected="false">
+          <i class="fa-solid fa-gamepad"></i>
+          Operations
+        </button>
+      </nav>
 
-      <!-- Guest roster (named guests from API) -->
-      <div class="mgmt-section-title" style="margin-top:18px;">
-        <i class="fa-solid fa-id-card"></i> Current Guests
-        <span class="pool-status" id="pool-status"></span>
-      </div>
-      <div id="guest-roster" class="guest-roster-wrap">
-        <p class="guest-loading">Fetching guest profiles…</p>
-      </div>
-
-      <!-- Guest system panel -->
-      <div class="mgmt-section-title">
-        <i class="fa-solid fa-person-walking"></i> Guests
-      </div>
-      <div id="guest-panel" class="guest-panel-wrap">
-        <p class="guest-loading">Loading guest data…</p>
+      <div class="mgmt-tab-panel active" id="mgmt-tab-departments" data-tab-panel="departments">
+        <div class="mgmt-section-title" id="dept-mgmt-title">
+          <i class="fa-solid fa-arrow-up-right-dots"></i> Departments
+        </div>
+        <div class="dept-upgrade-list" id="dept-upgrade-list">
+          <!-- Rendered by HotelUI.renderDeptPanel() -->
+        </div>
       </div>
 
-      <div class="mgmt-section-title" style="margin-top:18px;">
-        <i class="fa-solid fa-arrow-up-right-dots"></i> Departments
+      <div class="mgmt-tab-panel" id="mgmt-tab-guests" data-tab-panel="guests" hidden>
+        <div class="mgmt-section-title">
+          <i class="fa-solid fa-person-walking"></i> Guest Overview
+        </div>
+        <div id="guest-panel" class="guest-panel-wrap">
+          <p class="guest-loading">Loading guest data…</p>
+        </div>
+
+        <div class="mgmt-section-title">
+          <i class="fa-solid fa-id-card"></i> Current Guests
+          <span class="pool-status" id="pool-status"></span>
+        </div>
+        <div id="guest-roster" class="guest-roster-wrap">
+          <p class="guest-loading">Fetching guest profiles…</p>
+        </div>
       </div>
-      <div class="dept-upgrade-list" id="dept-upgrade-list">
-        <!-- Rendered by HotelUI.renderDeptPanel() -->
+
+      <div class="mgmt-tab-panel" id="mgmt-tab-operations" data-tab-panel="operations" hidden>
+        <div class="mgmt-section-title">
+          <i class="fa-solid fa-gamepad"></i> Operations
+        </div>
+        <div id="operations-list" class="operations-list">
+          <!-- Rendered by HotelUI.renderOperationsPanel() -->
+        </div>
       </div>
     </aside>
 

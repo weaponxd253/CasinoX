@@ -4,6 +4,9 @@
    Population simulation, guest-type mix, guest income, and
    VIP / High Roller event system.
 
+   v2: Consumes the check-in game boost and keeps the named
+   guest roster in sync with population.
+
    Depends on: hotel-config.js, hotel-state.js
    Called by:  hotel-engine.js (processLiveTick / processBootTick)
    ============================================================ */
@@ -11,8 +14,9 @@
 const HotelGuests = (() => {
 
   /* ── Constants ──────────────────────────────────────────── */
-  const MAX_OVERFILL   = 1.3;   // guests can exceed room capacity by 30%
+  const MAX_OVERFILL    = 1.3;   // guests can exceed room capacity by 30%
   const VIP_BASE_CHANCE = 0.025; // per tick probability when eligible
+  const BOOST_HIT_RATE  = 0.7;   // chance a remaining boost charge fires this tick
 
   /* ────────────────────────────────────────────────────────────
      POPULATION MODEL
@@ -23,16 +27,11 @@ const HotelGuests = (() => {
     return HotelConfig.UPGRADE_CATALOG.rooms?.[lvl - 1]?.capacity ?? 10;
   }
 
-  /**
-   * The population the hotel should converge toward given
-   * current reputation, satisfaction, and room capacity.
-   */
   function targetPopulation(state) {
     const rep      = state.currencies.reputation;
     const sat      = state.satisfaction.current;
     const capacity = getRoomCapacity(state);
 
-    // Reputation drives base demand; satisfaction scales it
     const repDemand = Math.floor(2 + rep * 0.75);
     const satScale  = sat >= 75 ? 1.0
                     : sat >= 60 ? 0.85
@@ -47,18 +46,36 @@ const HotelGuests = (() => {
 
   /**
    * Run one population tick (called every 60 s).
-   * Returns { population, checkInRate, checkOutRate }
+   * Now consumes one boost charge with a 70% probability — if it
+   * fires, an extra arrival is added regardless of normal odds.
    */
   function tickPopulation(state) {
     const current  = state.guests.population;
     const target   = targetPopulation(state);
     const sat      = state.satisfaction.current;
     const capacity = getRoomCapacity(state);
+    const hardCap  = Math.floor(capacity * MAX_OVERFILL);
 
-    // ── Check-in probability ──
+    // ── Check-in probability (idle / organic) ──
     const deficit      = Math.max(0, target - current);
     const checkInBase  = Math.min(0.90, deficit * 0.28);
     const checkIn      = sat < 40 ? checkInBase * 0.25 : checkInBase;
+    const organicArrive = Math.random() < checkIn ? 1 : 0;
+
+    // ── Boost-driven extra arrival ──
+    // Try to consume one boost charge; if it fires, +1 arrival even at full
+    // organic odds. Boost is gated by room hard-cap so it can't overfill.
+    let boostArrive = 0;
+    const boostRemaining = state.guests.checkInBoostRemaining ?? 0;
+    if (boostRemaining > 0 && current + organicArrive < hardCap) {
+      if (Math.random() < BOOST_HIT_RATE) {
+        boostArrive = window.HotelState
+          ? HotelState.consumeCheckInBoost()
+          : 1;
+      }
+    }
+
+    const arrive = organicArrive + boostArrive;
 
     // ── Check-out probability ──
     const overcrowded   = current > capacity;
@@ -67,33 +84,113 @@ const HotelGuests = (() => {
                         : overcrowded ? 0.22
                         : 0.04;
 
-    // Determine arrivals and departures for this tick
-    const arrive = Math.random() < checkIn ? 1 : 0;
     const depart = Math.random() < checkOutBase
                  ? (overcrowded ? Math.min(current, 2) : Math.min(current, 1))
                  : 0;
 
-    const newPop = Math.max(
-      0,
-      Math.min(Math.floor(capacity * MAX_OVERFILL), current + arrive - depart)
-    );
+    const newPop = Math.max(0, Math.min(hardCap, current + arrive - depart));
 
     // Approximate hourly rates for display (each tick = ~1 min)
     const checkInRate  = Math.round(checkIn  * 60 * 10) / 10;
     const checkOutRate = Math.round(checkOutBase * 60 * 10) / 10;
 
-    return { population: newPop, checkInRate, checkOutRate };
+    return { population: newPop, checkInRate, checkOutRate, arrive, depart };
+  }
+
+  /* ────────────────────────────────────────────────────────────
+     ROSTER SYNC
+     Keeps the named-guest roster aligned with population.
+     • Adds synthetic entries when arrivals exceed roster size
+     • Removes oldest/expired entries when departures happen
+     ─────────────────────────────────────────────────────────── */
+
+  function syncRoster(state, { arrive, depart }) {
+    if (!window.HotelState) return;
+    const now = Date.now();
+
+    // First: prune any expired entries (their checkOutAt has passed)
+    HotelState.pruneExpiredFromRoster(now);
+
+    const rosterSize = HotelState.getRosterCount();
+    const targetSize = state.guests.population;
+    const mix        = state.guests.mix;
+
+    // Add synthetic entries to match population
+    if (rosterSize < targetSize) {
+      const toAdd = targetSize - rosterSize;
+      for (let i = 0; i < toAdd; i++) {
+        const type = pickTypeFromMix(mix);
+        HotelState.addGuestToRoster(buildSynthetic(type, now));
+      }
+    }
+
+    // Remove entries if population dropped (prefer earliest checkOutAt = "ready to leave")
+    if (rosterSize > targetSize) {
+      const toRemove = rosterSize - targetSize;
+      const roster   = HotelState.getRoster()
+        .slice()
+        .sort((a, b) => a.checkOutAt - b.checkOutAt);   // earliest first
+      for (let i = 0; i < toRemove && i < roster.length; i++) {
+        HotelState.removeGuestFromRoster(roster[i].id);
+      }
+    }
+  }
+
+  /** Build a synthetic ("simulated") roster entry of the given type. */
+  function buildSynthetic(typeId, now = Date.now()) {
+    const cfg = HotelConfig.GUEST_TYPES[typeId] ?? HotelConfig.GUEST_TYPES.budgetTraveler;
+    const ipm = cfg.incomePerGuestPerMin ?? 2;
+
+    // Stay duration: vary by type. 15–60 real minutes for standard types,
+    // shorter for special events (vip/highRoller already have visitDurationHours).
+    let stayMs;
+    if (cfg.visitDurationHours) {
+      const { min, max } = cfg.visitDurationHours;
+      stayMs = (min + Math.random() * (max - min)) * 60 * 60_000; // hours
+    } else if (typeId === 'budgetTraveler') {
+      stayMs = (15 + Math.random() * 15) * 60_000;
+    } else if (typeId === 'tourist') {
+      stayMs = (25 + Math.random() * 25) * 60_000;
+    } else if (typeId === 'gambler') {
+      stayMs = (10 + Math.random() * 20) * 60_000;
+    } else if (typeId === 'businessGuest') {
+      stayMs = (35 + Math.random() * 30) * 60_000;
+    } else {
+      stayMs = (20 + Math.random() * 20) * 60_000;
+    }
+
+    const stayMinutes = stayMs / 60_000;
+    const totalIncome = Math.round(ipm * stayMinutes);
+
+    return {
+      type:          typeId,
+      name:          null,                  // synthetic guests are unnamed
+      preferences:   [],
+      incomePerMin:  ipm,
+      totalIncome,
+      checkedInAt:   now,
+      checkOutAt:    now + stayMs,
+      source:        'simulated',
+    };
+  }
+
+  /** Weighted-random guest type pick from a mix object. */
+  function pickTypeFromMix(mix) {
+    const entries = Object.entries(mix).filter(([, p]) => p > 0);
+    if (entries.length === 0) return 'budgetTraveler';
+    const r = Math.random();
+    let acc = 0;
+    for (const [id, p] of entries) {
+      acc += p;
+      if (r <= acc) return id;
+    }
+    return entries[entries.length - 1][0];
   }
 
   /* ────────────────────────────────────────────────────────────
      GUEST MIX
      ─────────────────────────────────────────────────────────── */
 
-  /**
-   * Build a proportional guest-type mix from the current reputation.
-   * Higher-tier types unlock and gradually grow their share,
-   * but the first unlocked type always stays dominant.
-   */
   function calculateMix(reputation) {
     const { GUEST_TYPES } = HotelConfig;
 
@@ -101,12 +198,10 @@ const HotelGuests = (() => {
       .filter(g => !g.isSpecialEvent && reputation >= g.reputationRequired)
       .sort((a, b) => a.reputationRequired - b.reputationRequired);
 
-    // Empty edge case
     const zero = {};
     Object.keys(GUEST_TYPES).forEach(id => zero[id] = 0);
     if (unlocked.length === 0) return { ...zero, budgetTraveler: 1.0 };
 
-    // Each tier gets weight 1/(rank), creating a natural long tail
     const weights = unlocked.map((_, i) => 1 / (i + 1));
     const total   = weights.reduce((a, b) => a + b, 0);
 
@@ -122,67 +217,53 @@ const HotelGuests = (() => {
      GUEST INCOME
      ─────────────────────────────────────────────────────────── */
 
-  /**
-   * Calculate hotel cash earned by guest spending in `minutes`.
-   * This is separate from department passive income — it represents
-   * what guests spend on services, tips, room upgrades, etc.
-   */
-  function calculateGuestIncome(guests, minutes) {
-    const { mix, population } = guests;
-    if (!population || population <= 0) return 0;
-
-    let total = 0;
-    Object.entries(mix).forEach(([typeId, proportion]) => {
-      if (proportion <= 0) return;
-      const type = HotelConfig.GUEST_TYPES[typeId];
-      if (!type) return;
-      total += population * proportion * type.incomePerGuestPerMin * minutes;
-    });
-
-    return Math.floor(total);
+  function calculateGuestIncome({ mix, population }, minutes = 1) {
+    if (!mix || !population) return 0;
+    let perMin = 0;
+    for (const [id, pct] of Object.entries(mix)) {
+      if (pct <= 0) continue;
+      const cfg = HotelConfig.GUEST_TYPES[id];
+      if (!cfg) continue;
+      perMin += (cfg.incomePerGuestPerMin ?? 0) * pct * population;
+    }
+    return Math.round(perMin * minutes);
   }
 
   /* ────────────────────────────────────────────────────────────
-     SPECIAL GUESTS  (VIP / High Roller)
+     SPECIAL EVENTS
      ─────────────────────────────────────────────────────────── */
 
-  /**
-   * Check whether special guests arrive or depart this tick.
-   * Returns an array of event objects for hotel-engine to process.
-   */
   function checkSpecialGuests(state) {
-    const rep        = state.currencies.reputation;
-    const depts      = state.departments;
-    const barLevel   = depts.bar?.level  ?? 0;
-    const spaLevel   = depts.spa?.level  ?? 0;
-    const casinoLevel= depts.casino?.level ?? 1;
-    const events     = [];
+    const events = [];
+    const rep    = state.currencies.reputation;
+    const now    = Date.now();
 
-    // ── VIP arrival ──
-    if (!state.guests.vipPresent && rep >= 12) {
-      const chance = VIP_BASE_CHANCE + barLevel * 0.008 + spaLevel * 0.008;
-      if (Math.random() < chance) {
-        const durationMs = (2 + Math.random() * 6) * 3_600_000;   // 2–8 hours
-        events.push({ type: 'vip_arrival', departAt: Date.now() + durationMs });
-      }
-    }
-
-    // ── VIP departure ──
-    if (state.guests.vipPresent && state.guests.vipDepartsAt &&
-        Date.now() >= state.guests.vipDepartsAt) {
+    // VIP departure
+    if (state.guests.vipPresent && state.guests.vipDepartsAt && now >= state.guests.vipDepartsAt) {
       events.push({ type: 'vip_departure' });
     }
 
-    // ── High Roller (rarer — needs casino Lv 3 + rep 20) ──
-    if (!state.guests.highRollerPresent && rep >= 20 && casinoLevel >= 3) {
-      if (Math.random() < 0.004) {
-        events.push({ type: 'high_roller_arrival' });
+    // VIP arrival
+    if (!state.guests.vipPresent && rep >= HotelConfig.GUEST_TYPES.vip.reputationRequired) {
+      if (Math.random() < VIP_BASE_CHANCE) {
+        const { min, max } = HotelConfig.GUEST_TYPES.vip.visitDurationHours;
+        const hours = min + Math.random() * (max - min);
+        events.push({ type: 'vip_arrival', departAt: now + hours * 60 * 60_000 });
       }
     }
 
-    // ── High Roller flag auto-clear after 4 hours ──
-    // (HR visits are tracked as a flag, not a timer, so we clear after a
-    //  random duration so they don't persist forever)
+    // High Roller arrival
+    const hr = HotelConfig.GUEST_TYPES.highRoller;
+    const casinoLevel = state.departments.casino?.level ?? 0;
+    if (
+      !state.guests.highRollerPresent &&
+      rep >= hr.reputationRequired &&
+      casinoLevel >= (hr.requiresCasinoLevel ?? 1) &&
+      Math.random() < VIP_BASE_CHANCE * 0.4
+    ) {
+      events.push({ type: 'high_roller_arrival' });
+    }
+
     if (state.guests.highRollerPresent && Math.random() < 0.008) {
       events.push({ type: 'high_roller_departure' });
     }
@@ -191,13 +272,9 @@ const HotelGuests = (() => {
   }
 
   /* ────────────────────────────────────────────────────────────
-     SATISFACTION ROLLING AVERAGE
+     ROLLING SATISFACTION AVERAGE
      ─────────────────────────────────────────────────────────── */
 
-  /**
-   * Exponential moving average of satisfaction.
-   * Used by the reputation formula (sat consistently above 80 = rep boost).
-   */
   function updateRollingAverage(state) {
     const current = state.satisfaction.current;
     const prev    = state.satisfaction.rollingAverage ?? current;
@@ -206,18 +283,17 @@ const HotelGuests = (() => {
 
   /* ────────────────────────────────────────────────────────────
      OFFLINE RESTORE
-     Quickly snap population to a reasonable value after the
-     player was away for a long time.
      ─────────────────────────────────────────────────────────── */
 
   function restoreFromOffline(state, elapsedMs) {
     const LONG_ABSENCE_MS = 30 * 60_000;   // 30 minutes
-    if (elapsedMs < LONG_ABSENCE_MS) return null;   // short absence — use normal tick
+    if (elapsedMs < LONG_ABSENCE_MS) return null;
 
-    // After a long absence, population stabilises toward target
+    // Prune anyone whose stay ended while the player was away
+    if (window.HotelState) HotelState.pruneExpiredFromRoster(Date.now());
+
     const target = targetPopulation(state);
     const current = state.guests.population;
-    // Snap 70% of the way toward target
     const restored = Math.round(current + (target - current) * 0.7);
     const mix      = calculateMix(state.currencies.reputation);
     const rollingAverage = updateRollingAverage(state);
@@ -227,9 +303,11 @@ const HotelGuests = (() => {
       checkInRate:   state.guests.checkInRate,
       checkOutRate:  state.guests.checkOutRate,
       mix,
-      guestIncome:   0,    // handled by the income calc elsewhere
+      guestIncome:   0,
       specialEvents: [],
       rollingAverage,
+      arrive: Math.max(0, restored - current),
+      depart: Math.max(0, current - restored),
     };
   }
 
@@ -238,27 +316,44 @@ const HotelGuests = (() => {
      ─────────────────────────────────────────────────────────── */
 
   function tick(state) {
-    const { population, checkInRate, checkOutRate } = tickPopulation(state);
-    const mix            = calculateMix(state.currencies.reputation);
-    const guestIncome    = calculateGuestIncome({ mix, population }, 1);   // 1 min
-    const specialEvents  = checkSpecialGuests(state);
-    const rollingAverage = updateRollingAverage(state);
+    const popResult       = tickPopulation(state);
+    const mix             = calculateMix(state.currencies.reputation);
+    const guestIncome     = calculateGuestIncome({ mix, population: popResult.population }, 1);
+    const specialEvents   = checkSpecialGuests(state);
+    const rollingAverage  = updateRollingAverage(state);
 
-    return { population, checkInRate, checkOutRate, mix, guestIncome, specialEvents, rollingAverage };
+    // Roster sync happens AFTER setGuestData would write the new population.
+    // We pass arrive/depart hints to syncRoster — it works against the
+    // CURRENT state (caller will write the new population after this).
+    // We need the new population reflected for syncRoster, so write it
+    // into a shallow clone for the sync step.
+    const stateForSync = {
+      ...state,
+      guests: { ...state.guests, population: popResult.population, mix }
+    };
+    syncRoster(stateForSync, popResult);
+
+    return {
+      population:    popResult.population,
+      checkInRate:   popResult.checkInRate,
+      checkOutRate:  popResult.checkOutRate,
+      mix,
+      guestIncome,
+      specialEvents,
+      rollingAverage,
+    };
   }
 
   /* ────────────────────────────────────────────────────────────
      UI HELPERS
      ─────────────────────────────────────────────────────────── */
 
-  /** Guest type the player is closest to unlocking next. */
   function nextUnlock(reputation) {
     return Object.values(HotelConfig.GUEST_TYPES)
       .filter(g => !g.isSpecialEvent && g.reputationRequired > reputation)
       .sort((a, b) => a.reputationRequired - b.reputationRequired)[0] ?? null;
   }
 
-  /** Friendly label for a guest count relative to capacity. */
   function occupancyLabel(population, capacity) {
     const pct = capacity > 0 ? Math.round((population / capacity) * 100) : 0;
     if (pct >= 120) return 'Overbooked';
@@ -269,7 +364,6 @@ const HotelGuests = (() => {
     return 'Near Empty';
   }
 
-  /** Summary object the UI panel uses — one call to build the whole panel. */
   function uiSummary(state) {
     const capacity   = getRoomCapacity(state);
     const population = state.guests.population;
@@ -297,6 +391,10 @@ const HotelGuests = (() => {
       vipPresent:     state.guests.vipPresent,
       highRollerPresent: state.guests.highRollerPresent,
       target:         targetPopulation(state),
+
+      // ── NEW IN v2 ──
+      rosterCount:    state.guests.roster?.length ?? 0,
+      checkInBoost:   state.guests.checkInBoostRemaining ?? 0,
     };
   }
 
@@ -310,6 +408,11 @@ const HotelGuests = (() => {
     getRoomCapacity,
     targetPopulation,
     uiSummary,
+
+    // exposed for tests / debugging
+    syncRoster,
+    buildSynthetic,
+    pickTypeFromMix,
   };
 })();
 

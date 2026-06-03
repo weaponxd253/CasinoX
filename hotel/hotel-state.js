@@ -8,7 +8,7 @@
 
 const HotelState = (() => {
   const STORAGE_KEY = 'hotelGameState';
-  const SCHEMA_VERSION = 1;
+  const SCHEMA_VERSION = 2;
 
   let _state = null;
 
@@ -81,6 +81,9 @@ const HotelState = (() => {
         vipPresent:          false,
         highRollerPresent:   false,
         vipDepartsAt:        null,
+        roster:              [],
+        checkInBoostRemaining: 0,
+        rosterIdCounter:     0,
         stats: { totalHosted:0, vipsHosted:0, highRollersHosted:0, totalSpent:0 },
       },
       entertainment: {
@@ -133,18 +136,28 @@ const HotelState = (() => {
     const v = state?.meta?.version ?? 0;
     // v0 → v1: add casinoBridge if missing
     if (v < 1) {
+      state.meta = state.meta ?? {};
       state.meta.version  = 1;
       state.casinoBridge  = state.casinoBridge  ?? createNewSave().casinoBridge;
       state.guests        = state.guests        ?? createNewSave().guests;
       state.achievements  = state.achievements  ?? createNewSave().achievements;
     }
     const fresh = createNewSave();
+    state.guests = state.guests ?? fresh.guests;
+    state.guests.mix = state.guests.mix ?? fresh.guests.mix;
+    state.guests.stats = state.guests.stats ?? fresh.guests.stats;
+    if (!Array.isArray(state.guests.roster)) state.guests.roster = [];
+    if (typeof state.guests.checkInBoostRemaining !== 'number') state.guests.checkInBoostRemaining = 0;
+    if (typeof state.guests.rosterIdCounter !== 'number') {
+      state.guests.rosterIdCounter = state.guests.roster.length;
+    }
     state.entertainment = state.entertainment ?? fresh.entertainment;
     state.entertainment.schedule = state.entertainment.schedule ?? fresh.entertainment.schedule;
     state.entertainment.schedule.bookings = state.entertainment.schedule.bookings ?? [];
     state.entertainment.stats = state.entertainment.stats ?? fresh.entertainment.stats;
     state.calendar = state.calendar ?? fresh.calendar;
     state.calendar.reports = state.calendar.reports ?? [];
+    state.meta.version = SCHEMA_VERSION;
     return state;
   }
 
@@ -341,6 +354,96 @@ const HotelState = (() => {
     save();
   }
 
+  function addGuestToRoster(guest) {
+    if (!guest || !guest.type) return null;
+
+    const now = Date.now();
+    const cfg = HotelConfig.GUEST_TYPES[guest.type];
+    const ipm = guest.incomePerMin ?? cfg?.incomePerGuestPerMin ?? 2;
+    const total = guest.totalIncome ?? Math.round((20 + Math.random() * 20) * ipm);
+    const stayMs = Math.max(60_000, Math.round((total / Math.max(0.1, ipm)) * 60_000));
+
+    _state.guests.roster = _state.guests.roster ?? [];
+    _state.guests.rosterIdCounter = (_state.guests.rosterIdCounter ?? _state.guests.roster.length) + 1;
+
+    const entry = {
+      id:            guest.id ?? `guest_${String(_state.guests.rosterIdCounter).padStart(5, '0')}`,
+      type:          guest.type,
+      name:          guest.name ?? null,
+      lastName:      guest.lastName ?? null,
+      flagEmoji:     guest.flagEmoji ?? '',
+      origin:        guest.origin ?? null,
+      roomNumber:    guest.roomAssigned ?? guest.roomNumber ?? null,
+      roomType:      guest.roomType ?? null,
+      partySize:     guest.partySize ?? 1,
+      preferences:   Array.isArray(guest.preferences) ? guest.preferences : [],
+      matchQuality:  guest.matchQuality ?? null,
+      isReturning:   !!guest.isReturning,
+      checkedInAt:   guest.checkedInAt ?? now,
+      checkOutAt:    guest.checkOutAt ?? now + stayMs,
+      incomePerMin:  ipm,
+      totalIncome:   total,
+      incomeCollected: 0,
+      source:        guest.source ?? 'checkin_game',
+    };
+
+    _state.guests.roster.push(entry);
+    _state.guests.stats.totalHosted++;
+    _state.guests.population = Math.max(_state.guests.population, _state.guests.roster.length);
+    save();
+    return entry;
+  }
+
+  function removeGuestFromRoster(guestId) {
+    const roster = _state.guests.roster ?? [];
+    const idx = roster.findIndex(g => g.id === guestId);
+    if (idx === -1) return false;
+    roster.splice(idx, 1);
+    _state.guests.population = Math.max(0, Math.min(_state.guests.population, roster.length + 1));
+    save();
+    return true;
+  }
+
+  function pruneExpiredFromRoster(now = Date.now()) {
+    const roster = _state.guests.roster ?? [];
+    const before = roster.length;
+    _state.guests.roster = roster.filter(g => g.checkOutAt > now);
+    const removed = before - _state.guests.roster.length;
+    if (removed > 0) save();
+    return removed;
+  }
+
+  function getRoster() {
+    return [...(_state.guests.roster ?? [])];
+  }
+
+  function getRosterCount() {
+    return (_state.guests.roster ?? []).length;
+  }
+
+  const CHECK_IN_BOOST_CAP = 30;
+
+  function applyCheckInBoost(n) {
+    if (!Number.isFinite(n) || n <= 0) return _state.guests.checkInBoostRemaining ?? 0;
+    const current = _state.guests.checkInBoostRemaining ?? 0;
+    const next = Math.min(CHECK_IN_BOOST_CAP, current + Math.round(n));
+    _state.guests.checkInBoostRemaining = next;
+    save();
+    return next;
+  }
+
+  function consumeCheckInBoost() {
+    const current = _state.guests.checkInBoostRemaining ?? 0;
+    if (current <= 0) return 0;
+    _state.guests.checkInBoostRemaining = current - 1;
+    save();
+    return 1;
+  }
+
+  function getCheckInBoost() {
+    return _state.guests.checkInBoostRemaining ?? 0;
+  }
+
   function resetSave() {
     _state = createNewSave();
     save();
@@ -361,6 +464,9 @@ const HotelState = (() => {
     setGuestData, setVipPresent,
     bookEntertainmentShow, cancelEntertainmentShow,
     setCalendar, addCalendarReport,
+    addGuestToRoster, removeGuestFromRoster, pruneExpiredFromRoster,
+    getRoster, getRosterCount,
+    applyCheckInBoost, consumeCheckInBoost, getCheckInBoost,
     unlockAchievement, tickAchievementProgress,
   };
 })();

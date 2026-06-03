@@ -198,6 +198,26 @@ const CheckInGame = (() => {
     // Commit to pool
     HotelGuestPool.commitGuest({ ...activeGuest, roomAssigned: room.number });
 
+    if (typeof HotelState.addGuestToRoster === 'function') {
+      HotelState.addGuestToRoster({
+        id:           activeGuest.id,
+        type:         activeGuest.type,
+        name:         activeGuest.name,
+        lastName:     activeGuest.lastName,
+        flagEmoji:    activeGuest.flagEmoji,
+        origin:       activeGuest.origin,
+        roomAssigned: room.number,
+        roomType:     room.type,
+        partySize:    activeGuest.partySize ?? 1,
+        preferences:  activeGuest.preferences ?? [],
+        matchQuality: match.quality,
+        isReturning:  activeGuest.isReturning,
+        totalIncome:  activeGuest.totalIncome,
+        incomePerMin: activeGuest.incomePerMin,
+        source:       'checkin_game',
+      });
+    }
+
     // Sound & visual feedback
     if (match.quality === 'perfect') {
       CasinoShell.sound.win();
@@ -344,6 +364,10 @@ const CheckInGame = (() => {
       const state = HotelState.get();
       const newSat = Math.min(100, state.satisfaction.current + satBoost);
       HotelState.setSatisfaction(newSat);
+    }
+
+    if (checkedIn.length > 0 && typeof HotelState.applyCheckInBoost === 'function') {
+      HotelState.applyCheckInBoost(checkedIn.length);
     }
 
     // Score label

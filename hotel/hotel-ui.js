@@ -8,6 +8,7 @@
 
 const HotelUI = (() => {
   let selectedDeptId = null;
+  let activeMgmtTab = 'departments';
 
   /* ── Bootstrap ───────────────────────────────────────────── */
   function init() {
@@ -26,6 +27,7 @@ const HotelUI = (() => {
     _wireNameEdit();
     _wireFloorSelection();
     _wireCalendarControls();
+    _wireManagementTabs();
     HotelBridge.syncCasinoSnapshot();
 
     // Subscribe to bridge events for visual feedback
@@ -60,6 +62,9 @@ const HotelUI = (() => {
     renderStats(state);
     renderCalendar(state);
     renderBuildingView();
+    renderGuestRoster(state);
+    renderGuestPanel(state);
+    renderOperationsPanel(state);
     renderDeptPanel();
     renderSatisfactionMeter(state);
   }
@@ -98,6 +103,145 @@ const HotelUI = (() => {
     setEl('hotel-tier',         `Tier ${state.meta.hotelTier}`);
     setEl('hotel-name-display', state.meta.hotelName);
     setEl('hotel-guests',       state.guests.population);
+  }
+
+  function renderGuestRoster(state = HotelState.get()) {
+    const wrap = document.getElementById('guest-roster');
+    if (!wrap) return;
+
+    const roster = typeof HotelState.getRoster === 'function'
+      ? HotelState.getRoster()
+      : [...(state.guests.roster ?? [])];
+    const active = roster
+      .filter(guest => !guest.checkOutAt || guest.checkOutAt > Date.now())
+      .sort((a, b) => (a.checkOutAt ?? Infinity) - (b.checkOutAt ?? Infinity));
+
+    const status = document.getElementById('pool-status');
+    if (status) {
+      const boost = state.guests.checkInBoostRemaining ?? 0;
+      status.textContent = `${active.length} current${boost > 0 ? ` · ${boost} boost` : ''}`;
+    }
+
+    if (!active.length) {
+      wrap.innerHTML = `
+        <div class="roster-empty">
+          <i class="fa-solid fa-address-book"></i>
+          <strong>No current roster guests</strong>
+          <span>Run Check-In Rush to add named guests to the persistent roster.</span>
+        </div>
+      `;
+      return;
+    }
+
+    wrap.innerHTML = active.map(renderRosterCard).join('');
+  }
+
+  function renderRosterCard(guest) {
+    const type = HotelConfig.GUEST_TYPES[guest.type] ?? {};
+    const name = guest.name
+      ? guest.name
+      : `${type.label ?? guest.type ?? 'Guest'} ${guest.id ? `#${String(guest.id).slice(-4)}` : ''}`.trim();
+    const room = guest.roomNumber ? `Room ${guest.roomNumber}` : 'Room pending';
+    const party = guest.partySize > 1 ? `Party of ${guest.partySize}` : 'Solo stay';
+    const time = formatStayRemaining(guest.checkOutAt);
+    const match = matchMeta(guest.matchQuality);
+    const source = sourceLabel(guest.source);
+    const origin = guest.origin ? `<span>${escapeHtml(guest.origin)}</span>` : '';
+
+    return `
+      <article class="roster-card">
+        <div class="roster-avatar ${guest.source === 'simulated' ? 'simulated' : ''}">
+          ${guest.flagEmoji ? escapeHtml(guest.flagEmoji) : `<i class="fa-solid fa-user"></i>`}
+        </div>
+        <div class="roster-main">
+          <div class="roster-head">
+            <div>
+              <strong>${escapeHtml(name)}</strong>
+              <span>${escapeHtml(type.label ?? guest.type ?? 'Guest')}</span>
+            </div>
+            <span class="roster-source ${source.key}">${source.label}</span>
+          </div>
+          <div class="roster-meta">
+            <span><i class="fa-solid fa-door-closed"></i>${escapeHtml(room)}</span>
+            <span><i class="fa-solid fa-users"></i>${party}</span>
+            ${origin}
+          </div>
+          <div class="roster-stay">
+            <div>
+              <span>Stay Timer</span>
+              <strong class="${time.expired ? 'expired' : ''}">${time.label}</strong>
+            </div>
+            <div>
+              <span>Match</span>
+              <strong class="match-${match.key}">${match.label}</strong>
+            </div>
+          </div>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderGuestPanel(state = HotelState.get()) {
+    const wrap = document.getElementById('guest-panel');
+    if (!wrap) return;
+    const summary = window.HotelGuests?.uiSummary?.(state);
+    if (!summary) {
+      wrap.innerHTML = '<p class="guest-loading">Guest simulation is starting...</p>';
+      return;
+    }
+
+    const mix = summary.activeMix.slice(0, 3).map(item => `
+      <div class="guest-mix-row">
+        <span>${item.icon ?? '👤'} ${escapeHtml(item.label ?? item.id)}</span>
+        <strong>${Math.round(item.pct * 100)}%</strong>
+      </div>
+    `).join('');
+
+    wrap.innerHTML = `
+      <div class="guest-overview-grid">
+        <div><span>Occupancy</span><strong>${summary.population}/${summary.capacity}</strong></div>
+        <div><span>Demand</span><strong>${summary.occupancyLabel}</strong></div>
+        <div><span>Arrivals</span><strong>${summary.checkInRate}/h</strong></div>
+        <div><span>Departures</span><strong>${summary.checkOutRate}/h</strong></div>
+      </div>
+      <div class="guest-mix-panel">
+        ${mix || '<span class="guest-loading">No active guest mix yet.</span>'}
+      </div>
+    `;
+  }
+
+  function renderOperationsPanel(state = HotelState.get()) {
+    const wrap = document.getElementById('operations-list');
+    if (!wrap) return;
+
+    const operations = [
+      { dept:'lobby', title:'Check-In Rush', subtitle:'Lobby operation', href:'checkin/index.html', icon:'fa-id-card', always:true },
+      { dept:'casino', title:'Casino Floor', subtitle:'Slots, blackjack, and table games', href:'../casino.html', icon:'fa-dice' },
+      { dept:'rooms', title:'Floor Ops', subtitle:'Guest rooms operation', href:'rooms/index.html', icon:'fa-bell-concierge' },
+      { dept:'restaurant', title:'Tasting Room', subtitle:'Restaurant operation', href:'restaurant/index.html', icon:'fa-utensils' },
+      { dept:'bar', title:'Bar Shift', subtitle:'Bar & lounge operation', href:'bar/index.html', icon:'fa-martini-glass-citrus' },
+      { dept:'entertainment', title:'Show Lineup', subtitle:'Entertainment operation', href:'entertainment/index.html', icon:'fa-masks-theater' },
+      { dept:'spa', title:'Spa Rush', subtitle:'Spa & wellness operation', href:'spa/index.html', icon:'fa-spa' },
+    ];
+
+    wrap.innerHTML = operations.map(op => {
+      const dept = state.departments[op.dept];
+      const enabled = op.always || (dept?.unlocked && (dept.level ?? 0) > 0);
+      const meta = HotelConfig.DEPT_META[op.dept];
+      const level = dept?.level ?? 0;
+      const tag = enabled ? (op.dept === 'lobby' ? 'Open' : `Lv ${level}`) : dept?.unlocked ? 'Build' : `Rep ${HotelConfig.DEPT_UNLOCK_REP[op.dept] ?? 1}`;
+      const body = `
+        <span class="operation-icon"><i class="fa-solid ${op.icon}"></i></span>
+        <span class="operation-copy">
+          <strong>${op.title}</strong>
+          <span>${op.subtitle}</span>
+        </span>
+        <span class="operation-status">${tag}</span>
+      `;
+      return enabled
+        ? `<a class="operation-card" href="${op.href}" style="--operation-color:${meta?.color ?? '#0d2218'}">${body}</a>`
+        : `<button class="operation-card locked" type="button" disabled style="--operation-color:${meta?.color ?? '#0d2218'}">${body}</button>`;
+    }).join('');
   }
 
   function renderCalendar(state) {
@@ -429,6 +573,9 @@ const HotelUI = (() => {
 
   function deptMiniGameLabel(deptId) {
     if (deptId === 'lobby') return 'Check-In Rush';
+    if (deptId === 'casino') return 'Casino Games';
+    if (deptId === 'rooms') return 'Floor Ops';
+    if (deptId === 'restaurant') return 'Tasting Room';
     if (deptId === 'bar') return 'Bar Shift';
     if (deptId === 'spa') return 'Spa Rush';
     if (deptId === 'entertainment') return 'Show Lineup';
@@ -437,6 +584,9 @@ const HotelUI = (() => {
 
   function deptMiniGameIcon(deptId) {
     if (deptId === 'lobby') return 'fa-id-card';
+    if (deptId === 'casino') return 'fa-dice';
+    if (deptId === 'rooms') return 'fa-bell-concierge';
+    if (deptId === 'restaurant') return 'fa-utensils';
     if (deptId === 'bar') return 'fa-martini-glass-citrus';
     if (deptId === 'spa') return 'fa-spa';
     if (deptId === 'entertainment') return 'fa-masks-theater';
@@ -444,7 +594,7 @@ const HotelUI = (() => {
   }
 
   function setMgmtTitle(html) {
-    const title = document.querySelector('.mgmt-section-title');
+    const title = document.getElementById('dept-mgmt-title');
     if (title) title.innerHTML = html;
   }
 
@@ -488,8 +638,20 @@ const HotelUI = (() => {
             window.location.href = 'checkin/index.html';
             return;
           }
+          if (deptId === 'casino') {
+            window.location.href = '../casino.html';
+            return;
+          }
+          if (deptId === 'rooms') {
+            window.location.href = 'rooms/index.html';
+            return;
+          }
           if (deptId === 'bar') {
             window.location.href = 'bar/index.html';
+            return;
+          }
+          if (deptId === 'restaurant') {
+            window.location.href = 'restaurant/index.html';
             return;
           }
           if (deptId === 'spa') {
@@ -554,11 +716,33 @@ const HotelUI = (() => {
     });
   }
 
+  function _wireManagementTabs() {
+    document.querySelectorAll('[data-tab]').forEach(btn => {
+      btn.addEventListener('click', () => setManagementTab(btn.dataset.tab));
+    });
+  }
+
+  function setManagementTab(tabId) {
+    if (!tabId || tabId === activeMgmtTab) return;
+    activeMgmtTab = tabId;
+    document.querySelectorAll('[data-tab]').forEach(btn => {
+      const active = btn.dataset.tab === tabId;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    document.querySelectorAll('[data-tab-panel]').forEach(panel => {
+      const active = panel.dataset.tabPanel === tabId;
+      panel.hidden = !active;
+      panel.classList.toggle('active', active);
+    });
+  }
+
   function selectDepartment(deptId) {
     if (!deptId) return;
+    setManagementTab('departments');
     selectedDeptId = deptId;
     renderDeptPanel();
-    const panel = document.querySelector('.hotel-mgmt-panel');
+    const panel = document.getElementById('mgmt-tab-departments');
     if (panel) panel.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -576,6 +760,8 @@ const HotelUI = (() => {
     setInterval(() => {
       renderHotelCash();
       renderIncomeDisplay();
+      renderGuestRoster();
+      renderOperationsPanel();
     }, 5_000);
   }
 
@@ -629,6 +815,43 @@ const HotelUI = (() => {
   function calendarReportText(report) {
     const showText = report.shows?.length ? ` · ${report.shows.length} show${report.shows.length === 1 ? '' : 's'}` : '';
     return `${phaseLabel(report.phase)} report: +$${fmt(report.income)}${showText}`;
+  }
+
+  function formatStayRemaining(checkOutAt) {
+    if (!checkOutAt) return { label: 'Open stay', expired: false };
+    const remaining = checkOutAt - Date.now();
+    if (remaining <= 0) return { label: 'Checking out', expired: true };
+    const mins = Math.ceil(remaining / 60_000);
+    if (mins < 60) return { label: `${mins}m`, expired: false };
+    const hrs = Math.floor(mins / 60);
+    const rem = mins % 60;
+    return { label: rem ? `${hrs}h ${rem}m` : `${hrs}h`, expired: false };
+  }
+
+  function matchMeta(matchQuality) {
+    return {
+      perfect: { key: 'perfect', label: 'Perfect' },
+      good: { key: 'good', label: 'Good' },
+      acceptable: { key: 'acceptable', label: 'Acceptable' },
+      wrong: { key: 'wrong', label: 'Poor' },
+    }[matchQuality] ?? { key: 'unknown', label: 'Unrated' };
+  }
+
+  function sourceLabel(source) {
+    return {
+      checkin_game: { key: 'checkin', label: 'Check-In' },
+      simulated: { key: 'simulated', label: 'Sim' },
+    }[source] ?? { key: 'other', label: 'Hotel' };
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    }[ch]));
   }
 
   return { init, renderAll, renderBuildingView, renderDeptPanel, renderHotelCash, selectDepartment };

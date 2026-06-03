@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tasting Room — Casino X Hotel</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <link rel="stylesheet" href="../../casino-shell.css">
+  <link rel="stylesheet" href="restaurant.css">
+
+  <script src="../../wallet.js"></script>
+  <script src="../../casino-shell.js"></script>
+  <script src="../hotel-config.js"></script>
+  <script src="../hotel-state.js"></script>
+  <script src="../hotel-engine.js"></script>
+  <script src="../hotel-bridge.js"></script>
+  <script src="restaurant-game.js"></script>
+</head>
+<body>
+  <main class="game-stage tasting-shell">
+    <div class="tasting-topline">
+      <a class="hotel-back-link" href="../index.html">
+        <i class="fa-solid fa-building"></i>
+        Hotel
+      </a>
+      <div class="tasting-cash">
+        <span>Hotel Cash</span>
+        $<strong id="restaurant-hotel-cash">0</strong>
+      </div>
+    </div>
+
+    <section class="tasting-board" aria-label="Tasting Room">
+      <div class="dining-room">
+        <div class="room-glow"></div>
+        <div class="table-scene">
+          <div class="table-guests" id="table-guests"></div>
+          <div class="tasting-table">
+            <div class="plate-grid" id="plate-grid"></div>
+            <div class="table-center">
+              <span id="table-number">Table</span>
+              <strong id="table-persona">Closed</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="course-rail" id="course-rail" aria-label="Selected tasting flight"></div>
+
+        <section class="pantry" aria-label="Pantry">
+          <div class="pantry-head">
+            <span>Pantry</span>
+            <strong>Build the flight</strong>
+          </div>
+          <div class="dish-grid" id="dish-grid"></div>
+        </section>
+      </div>
+
+      <aside class="tasting-panel">
+        <div class="panel-title">
+          <i class="fa-solid fa-utensils"></i>
+          Tasting Room
+        </div>
+
+        <div class="table-brief">
+          <span class="brief-label">Tonight's Table</span>
+          <strong id="brief-title">Restaurant not built</strong>
+          <p id="brief-copy">Build the Restaurant department to open a tasting room shift.</p>
+          <div class="craving-tags" id="craving-tags"></div>
+        </div>
+
+        <!-- Balance card: harmony bar + radar chart (replaces old text breakdown) -->
+        <div class="balance-card">
+          <div class="balance-top">
+            <span>Harmony</span>
+            <strong><span id="harmony-score">0</span>%</strong>
+          </div>
+          <div class="harmony-track">
+            <div id="harmony-fill"></div>
+          </div>
+          <canvas id="flavor-radar" aria-label="Flavor balance radar chart"></canvas>
+          <div class="radar-legend">
+            <div class="radar-legend-item">
+              <span class="radar-legend-line target"></span>
+              Table target
+            </div>
+            <div class="radar-legend-item">
+              <span class="radar-legend-line current"></span>
+              Your flight
+            </div>
+          </div>
+        </div>
+
+        <div class="tasting-stats">
+          <div><span>Tables</span><strong><span id="tables-served">0</span>/<span id="tables-target">4</span></strong></div>
+          <div><span>Revenue</span><strong>$<span id="tasting-earned">0</span></strong></div>
+          <div><span>Signatures</span><strong id="signature-count">0</strong></div>
+          <div><span>Room</span><strong id="room-mood">Quiet</strong></div>
+        </div>
+
+        <div class="tasting-results" id="tasting-results" hidden>
+          <div class="results-heading">
+            <i class="fa-solid fa-receipt"></i>
+            Service Complete
+          </div>
+          <div class="results-grid">
+            <div><span>Cash</span><strong>$<span id="result-cash">0</span></strong></div>
+            <div><span>Tables</span><strong id="result-tables">0</strong></div>
+            <div><span>Signatures</span><strong id="result-signatures">0</strong></div>
+            <div><span>Satisfaction</span><strong>+<span id="result-sat">0</span></strong></div>
+          </div>
+        </div>
+
+        <div class="tasting-log" id="tasting-log"></div>
+
+        <div class="tasting-actions">
+          <button class="primary-tasting-btn" id="start-tasting-btn" type="button">
+            <i class="fa-solid fa-play"></i>
+            Open Service
+          </button>
+          <button class="secondary-tasting-btn" id="fire-course-btn" type="button" disabled>
+            <i class="fa-solid fa-bell-concierge"></i>
+            Fire Flight
+          </button>
+          <button class="ghost-tasting-btn" id="clear-flight-btn" type="button" disabled>
+            <i class="fa-solid fa-rotate-left"></i>
+            Clear
+          </button>
+          <a class="ghost-tasting-btn" href="../index.html">
+            <i class="fa-solid fa-arrow-left"></i>
+            Back
+          </a>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      HotelState.init();
+      CasinoShell.mount({
+        name: 'Tasting Room',
+        subtitle: 'Hotel Department',
+        lobbyHref: '../../index.html',
+        footer: 'Casino X · Tasting Room · Hotel Department'
+      });
+      RestaurantGame.init();
+    });
+  </script>
+</body>
+</html>
