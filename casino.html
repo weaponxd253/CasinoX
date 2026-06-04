@@ -12,12 +12,12 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <!-- Shell first, lobby styles second, mobile last -->
-  <link rel="stylesheet" href="casino-shell.css?v=theme-controls">
-  <link rel="stylesheet" href="lobby.css">
+  <link rel="stylesheet" href="casino-shell.css?v=casino-nav-v1">
+  <link rel="stylesheet" href="lobby.css?v=casino-nav-v1">
   <link rel="stylesheet" href="casino-mobile.css">
 
   <script src="wallet.js"></script>
-  <script src="casino-shell.js?v=theme-controls"></script>
+  <script src="casino-shell.js?v=casino-nav-v1"></script>
 </head>
 
 <body>
@@ -38,6 +38,9 @@
       <button class="shell-pill shell-icon-btn shell-bonus" id="shell-bonus-btn" aria-label="Daily bonus" title="Daily bonus">
         <i class="fa-solid fa-gift"></i>
       </button>
+      <a class="pill-btn hotel-return-btn" href="hotel/index.html" aria-label="Return to Hotel Lobby">
+        <i class="fa-solid fa-hotel"></i> Hotel Lobby
+      </a>
       <button class="pill-btn" id="cashier-btn" aria-label="Cashier — top up to $100">
         <i class="fa-solid fa-coins"></i> Cashier
       </button>
@@ -57,16 +60,6 @@
 
   <!-- Game grid -->
   <section class="game-grid">
-
-    <!-- Hotel Manager -->
-    <a class="game-card live" href="hotel/index.html">
-      <div class="game-emblem">🏨</div>
-      <div class="game-name">Hotel Manager</div>
-      <p class="game-tag">Build your resort empire. Upgrade departments, attract guests, earn hotel cash.</p>
-      <div class="game-meta">Management · Phase 1</div>
-      <span class="enter-btn">Manage</span>
-    </a>
-
     <!-- Slot machine -->
     <a class="game-card live" href="slots/index.html">
       <div class="game-emblem">🎰</div>

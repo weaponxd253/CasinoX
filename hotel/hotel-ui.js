@@ -9,6 +9,7 @@
 const HotelUI = (() => {
   let selectedDeptId = null;
   let activeMgmtTab = 'departments';
+  let activeStaffView = 'coverage';
 
   /* ── Bootstrap ───────────────────────────────────────────── */
   function init() {
@@ -168,15 +169,9 @@ const HotelUI = (() => {
             <span><i class="fa-solid fa-users"></i>${party}</span>
             ${origin}
           </div>
-          <div class="roster-stay">
-            <div>
-              <span>Stay Timer</span>
-              <strong class="${time.expired ? 'expired' : ''}">${time.label}</strong>
-            </div>
-            <div>
-              <span>Match</span>
-              <strong class="match-${match.key}">${match.label}</strong>
-            </div>
+          <div class="roster-kpis">
+            <span class="${time.expired ? 'expired' : ''}"><i class="fa-solid fa-clock"></i>${time.label}</span>
+            <span class="match-${match.key}"><i class="fa-solid fa-bed"></i>${match.label}</span>
           </div>
         </div>
       </article>
@@ -290,6 +285,7 @@ const HotelUI = (() => {
           <strong>No staff hired</strong>
           <span>Review applications below to open your first staff shift.</span>
         </div>
+        ${renderStaffViewTabs(applications, reports, events)}
         ${renderApplicationsPanel(applications, state)}
       `;
       return;
@@ -305,21 +301,58 @@ const HotelUI = (() => {
         <div><span>Paid</span><strong>$${fmtShort(state.staff?.payrollPaidTotal ?? 0)}</strong></div>
       </div>
       ${renderStaffWarnings(warnings)}
-      <div class="staff-coverage-grid">
-        ${coverage.map(renderCoverageCard).join('')}
+      ${renderStaffViewTabs(applications, reports, events)}
+      ${renderStaffView(activeStaffView, { coverage, applications, state, market, events, reports, moraleHistory, staff, targets })}
+    `;
+  }
+
+  function renderStaffViewTabs(applications, reports, events) {
+    const tabs = [
+      { id:'coverage', label:'Coverage', icon:'fa-chart-simple', count:null },
+      { id:'roster', label:'Roster', icon:'fa-users-gear', count:null },
+      { id:'hiring', label:'Hiring', icon:'fa-file-signature', count:applications.length },
+      { id:'activity', label:'Activity', icon:'fa-clipboard-list', count:(events.length || reports.length) ? Math.max(events.length, reports.length) : null },
+    ];
+    return `
+      <div class="staff-view-tabs" role="tablist" aria-label="Staff sections">
+        ${tabs.map(tab => `
+          <button type="button" data-staff-view="${tab.id}" class="${activeStaffView === tab.id ? 'active' : ''}" aria-selected="${activeStaffView === tab.id ? 'true' : 'false'}">
+            <i class="fa-solid ${tab.icon}"></i>
+            ${tab.label}
+            ${tab.count ? `<span>${tab.count}</span>` : ''}
+          </button>
+        `).join('')}
       </div>
-      ${renderApplicationsPanel(applications, state, market)}
-      ${renderStaffEvents(events)}
-      <div class="staff-report-panel">
-        <div class="staff-subtitle">
-          <i class="fa-solid fa-clipboard-list"></i>
-          Shift Reports
+    `;
+  }
+
+  function renderStaffView(view, data) {
+    if (view === 'hiring') {
+      return renderApplicationsPanel(data.applications, data.state, data.market);
+    }
+    if (view === 'activity') {
+      return `
+        ${renderStaffEvents(data.events)}
+        <div class="staff-report-panel">
+          <div class="staff-subtitle">
+            <i class="fa-solid fa-clipboard-list"></i>
+            Shift Reports
+          </div>
+          ${data.reports.length ? data.reports.slice(0, 4).map(renderStaffReport).join('') : '<p class="staff-report-empty">Advance time or train staff to generate reports.</p>'}
+          ${renderMoraleHistory(data.moraleHistory)}
         </div>
-        ${reports.length ? reports.slice(0, 3).map(renderStaffReport).join('') : '<p class="staff-report-empty">Advance time or train staff to generate reports.</p>'}
-        ${renderMoraleHistory(moraleHistory)}
-      </div>
-      <div class="staff-card-list">
-        ${staff.map(member => renderStaffCard(member, targets)).join('')}
+      `;
+    }
+    if (view === 'roster') {
+      return `
+        <div class="staff-card-list compact-roster">
+          ${data.staff.map(member => renderStaffCard(member, data.targets)).join('')}
+        </div>
+      `;
+    }
+    return `
+      <div class="staff-coverage-grid">
+        ${data.coverage.map(renderCoverageCard).join('')}
       </div>
     `;
   }
@@ -420,6 +453,10 @@ const HotelUI = (() => {
             <div>
               <strong>${escapeHtml(warning.title)}</strong>
               <span>${escapeHtml(warning.detail)}</span>
+              <div class="staff-warning-actions">
+                <button type="button" data-staff-view="roster">Assign staff</button>
+                <button type="button" data-staff-view="hiring">Review applicants</button>
+              </div>
             </div>
           </div>
         `).join('')}
@@ -1177,6 +1214,13 @@ const HotelUI = (() => {
 
   function _wireStaffControls() {
     document.addEventListener('click', e => {
+      const viewBtn = e.target.closest('[data-staff-view]');
+      if (viewBtn) {
+        activeStaffView = viewBtn.dataset.staffView || 'coverage';
+        renderStaffPanel();
+        return;
+      }
+
       const btn = e.target.closest('[data-staff-action]');
       if (!btn) return;
 

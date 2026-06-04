@@ -292,7 +292,12 @@ const CasinoShell = (function () {
   }
 
   function injectHeader() {
-    const lobby = cfg.lobbyHref || '../index.html';
+    const lobby = cfg.lobbyHref || '../casino.html';
+    const hotelOperation = String(lobby).includes('../..');
+    const lobbyLabel = cfg.lobbyLabel || (hotelOperation ? 'Hotel Lobby' : 'Casino Floor');
+    const hotel = cfg.hotelHref === undefined
+      ? (hotelOperation ? '' : '../hotel/index.html')
+      : cfg.hotelHref;
     const header = document.createElement('header');
     header.className = 'shell-header';
     header.innerHTML = `
@@ -305,7 +310,8 @@ const CasinoShell = (function () {
           <span class="chip"></span> $<span id="shell-balance-amt">0.00</span>
         </div>
         ${progressHTML()}
-        <a class="shell-pill" href="${lobby}"><i class="fa-solid fa-dice"></i> Lobby</a>
+        <a class="shell-pill" href="${lobby}"><i class="fa-solid fa-dice"></i> ${lobbyLabel}</a>
+        ${hotel ? `<a class="shell-pill shell-hotel-link" href="${hotel}"><i class="fa-solid fa-hotel"></i> Hotel Lobby</a>` : ''}
         <button class="shell-pill shell-icon-btn" id="shell-theme-btn" aria-label="Switch to light theme" title="Switch to light theme"><i id="shell-theme-icon" class="fa-solid fa-moon"></i></button>
         <button class="shell-pill shell-icon-btn" id="shell-sound-btn" aria-label="Toggle sound"><i id="shell-sound-icon" class="fa-solid fa-volume-high"></i></button>
       </div>`;
@@ -314,7 +320,9 @@ const CasinoShell = (function () {
   }
 
   function injectOverlays() {
-    const lobby = cfg.lobbyHref || '../index.html';
+    const lobby = cfg.lobbyHref || '../casino.html';
+    const hotelOperation = String(lobby).includes('../..');
+    const lobbyLabel = cfg.lobbyLabel || (hotelOperation ? 'Hotel Lobby' : 'Casino Floor');
     const html = `
       <div id="shell-toasts"></div>
       <canvas id="shell-confetti"></canvas>
@@ -324,7 +332,7 @@ const CasinoShell = (function () {
           <h3>💸 Out of Chips</h3><p>You've run out of funds.</p>
           <div class="shell-modal-actions">
             <button class="btn primary" id="shell-cashier">Cashier · $100</button>
-            <a class="btn secondary" href="${lobby}">Lobby</a>
+            <a class="btn secondary" href="${lobby}">${lobbyLabel}</a>
           </div>
         </div>
       </div>

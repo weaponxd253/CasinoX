@@ -193,6 +193,13 @@ h1, h2, h3 {
 }
 .shell-pill:hover { background: rgba(201, 168, 76, 0.25); border-color: var(--gold); }
 .shell-icon-btn { padding: 7px 12px; }
+.shell-hotel-link {
+  background: rgba(0, 0, 0, 0.18);
+  color: var(--text-dim);
+}
+.shell-hotel-link:hover {
+  color: var(--gold-light);
+}
 
 /* Balance pill */
 .shell-balance {
