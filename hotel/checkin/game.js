@@ -41,6 +41,7 @@ const CheckInGame = (() => {
   let sessionEnd     = 0;
   let patienceEnd    = 0;
   let patienceTotal  = 0;
+  let staffEffect    = null;
   let raf            = null;
   let countdownVal   = 3;
 
@@ -126,6 +127,7 @@ const CheckInGame = (() => {
 
     sessionMs  = diff.duration * 1000;
     sessionEnd = Date.now() + sessionMs;
+    staffEffect = HotelState.getStaffEffect?.('lobby') ?? null;
     results    = [];
     rooms      = _generateRooms();
     guestQueue = _buildGuestQueue();
@@ -160,7 +162,7 @@ const CheckInGame = (() => {
     }
 
     activeGuest  = guestQueue.shift();
-    patienceTotal = (BASE_PATIENCE[activeGuest.type] ?? 20000) * diff.patience;
+    patienceTotal = (BASE_PATIENCE[activeGuest.type] ?? 20000) * diff.patience * (staffEffect?.patienceMult ?? 1);
     if (activeGuest.isReturning) patienceTotal *= 1.3;   // returning guests wait longer
     patienceEnd  = Date.now() + patienceTotal;
 
@@ -335,6 +337,9 @@ const CheckInGame = (() => {
     else if (isOk)                    quality = 'acceptable';
     else                              quality = 'wrong';
 
+    if ((staffEffect?.qualityBonus ?? 0) >= 1 && quality === 'acceptable' && prefRate >= .5) {
+      quality = 'good';
+    }
     return { quality, typeRank, isFirst, isOk, matches, prefRate };
   }
 
@@ -353,10 +358,11 @@ const CheckInGame = (() => {
     const missed    = results.filter(r => r.outcome === 'timeout');
 
     // Reward calculation
-    const cashBonus   = checkedIn.reduce((s, r) =>
+    const baseCashBonus = checkedIn.reduce((s, r) =>
       s + Math.round((r.room?.label?.startsWith('Presidential') ? 350 : r.income * 0.25)), 0);
+    const cashBonus   = Math.round(baseCashBonus * (staffEffect?.incomeMult ?? 1));
     const matchRate   = checkedIn.length > 0 ? perfect.length / checkedIn.length : 0;
-    const satBoost    = Math.round(matchRate * 18);   // up to +18 satisfaction
+    const satBoost    = Math.round(matchRate * 18) + (checkedIn.length ? (staffEffect?.satisfactionBonus ?? 0) : 0);
 
     // Apply rewards to hotel state
     if (cashBonus > 0) HotelState.addHotelCash(cashBonus);
@@ -369,6 +375,7 @@ const CheckInGame = (() => {
     if (checkedIn.length > 0 && typeof HotelState.applyCheckInBoost === 'function') {
       HotelState.applyCheckInBoost(checkedIn.length);
     }
+    HotelState.applyStaffFatigue?.('lobby', checkedIn.length ? 3 : 1);
 
     // Score label
     const total   = results.length;
@@ -406,6 +413,12 @@ const CheckInGame = (() => {
         <i class="fa-solid fa-face-smile"></i>
         <span>Satisfaction Boost</span>
         <strong>+${satBoost}%</strong>
+      </div>` : ''}
+      ${staffEffect?.assignedCount ? `
+      <div class="reward-row">
+        <i class="fa-solid fa-user-tie"></i>
+        <span>Front Desk Coverage</span>
+        <strong>${staffEffect.score}% · ${staffEffect.label}</strong>
       </div>` : ''}
       `;
 
@@ -571,6 +584,7 @@ const CheckInGame = (() => {
         <span>👥 ${diff.guests} guests</span>
         <span>⏱ ${diff.duration}s</span>
         <span>🏨 Lobby Lv ${lobbyLevel}</span>
+        ${HotelState.getStaffEffect?.('lobby')?.assignedCount ? `<span>👔 Staff ${HotelState.getStaffEffect('lobby').score}%</span>` : ''}
       </div>`;
   }
 

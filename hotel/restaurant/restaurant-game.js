@@ -63,6 +63,7 @@ const RestaurantGame = (() => {
     service = {
       active: true,
       restaurantLevel,
+      staffEffect: HotelState.getStaffEffect?.('restaurant') ?? null,
       target: Math.min(7, 3 + restaurantLevel),
       served: 0,
       earned: 0,
@@ -78,7 +79,7 @@ const RestaurantGame = (() => {
     clearLog();
     nextTable();
     updateStats();
-    log('Service opened. Shape each table around mood, not orders.', 'gold');
+    log(`Service opened. Restaurant staff coverage: ${service.staffEffect?.score ?? 0}% ${service.staffEffect?.label ?? 'Short'}.`, 'gold');
   }
 
   function nextTable() {
@@ -117,10 +118,11 @@ const RestaurantGame = (() => {
   function fireFlight() {
     if (!service?.active || service.selected.length !== MAX_COURSES) return;
     const score = scoreFlight(service.selected, service.table);
+    score.harmony = Math.min(100, score.harmony + Math.round((service.staffEffect?.qualityBonus ?? 0) * 4));
     const base = service.selected.reduce((sum, dish) => sum + dish.value, 0);
     const tableBonus = service.table.guests * 8;
     const levelBonus = service.restaurantLevel * 14;
-    const earned = Math.round((base + tableBonus + levelBonus) * (0.55 + score.harmony / 180));
+    const earned = Math.round((base + tableBonus + levelBonus) * (0.55 + score.harmony / 180) * (service.staffEffect?.incomeMult ?? 1));
 
     service.served++;
     service.earned += earned;
@@ -141,11 +143,12 @@ const RestaurantGame = (() => {
     const cash = service.earned;
     const signatures = service.signatures;
     const served = service.served;
-    const satBonus = Math.max(0, Math.min(8, signatures * 2 + Math.round(service.lastHarmony / 35) - 1));
+    const satBonus = Math.max(0, Math.min(8, signatures * 2 + Math.round(service.lastHarmony / 35) - 1 + (service.staffEffect?.satisfactionBonus ?? 0)));
     const currentSat = HotelState.getSatisfaction();
 
     HotelState.addHotelCash(cash);
     HotelState.setSatisfaction(currentSat + satBonus);
+    HotelState.applyStaffFatigue?.('restaurant', served ? 4 : 1);
     HotelEngine.recalculateReputation(HotelState.get());
     HotelBridge.applyHotelToCasino(HotelState.get());
     CasinoShell.awardXp(Math.max(14, Math.round(cash / 5)));

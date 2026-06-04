@@ -8,7 +8,7 @@
 
 const HotelState = (() => {
   const STORAGE_KEY = 'hotelGameState';
-  const SCHEMA_VERSION = 3;
+  const SCHEMA_VERSION = 6;
 
   let _state = null;
 
@@ -89,15 +89,20 @@ const HotelState = (() => {
       staff: {
         morale: 78,
         payrollPerDay: 0,
+        payrollPaidTotal: 0,
+        applicantIdCounter: 0,
+        lastApplicationDay: 0,
+        applications: [],
+        reports: [],
         roster: [
-          { id:'front_desk_maya', name:'Maya Chen', role:'Front Desk', specialty:'lobby', assignment:'lobby', speed:7, service:8, discipline:7, stamina:92, trait:'Warm Welcome' },
-          { id:'housekeeping_rosa', name:'Rosa Bell', role:'Housekeeping', specialty:'rooms', assignment:'rooms', speed:8, service:7, discipline:8, stamina:88, trait:'Fast Turnover' },
-          { id:'runner_eli', name:'Eli Grant', role:'Room Service', specialty:'rooms', assignment:'rooms', speed:9, service:6, discipline:6, stamina:84, trait:'Quick Runner' },
-          { id:'host_nadia', name:'Nadia Vale', role:'Casino Host', specialty:'casino', assignment:'casino', speed:6, service:9, discipline:7, stamina:86, trait:'VIP Whisperer' },
-          { id:'chef_marco', name:'Marco Reyes', role:'Restaurant Crew', specialty:'restaurant', assignment:'restaurant', speed:7, service:8, discipline:6, stamina:82, trait:'Tasting Notes' },
-          { id:'security_owen', name:'Owen Price', role:'Security', specialty:'casino', assignment:'casino', speed:6, service:5, discipline:9, stamina:90, trait:'Calm Floor' },
-          { id:'engineer_ivy', name:'Ivy Stone', role:'Maintenance', specialty:'rooms', assignment:'rest', speed:6, service:5, discipline:9, stamina:96, trait:'Quiet Fixes' },
-          { id:'spa_lina', name:'Lina Park', role:'Spa Attendant', specialty:'spa', assignment:'rest', speed:6, service:9, discipline:7, stamina:91, trait:'Guest Recovery' },
+          { id:'front_desk_maya', name:'Maya Chen', role:'Front Desk', specialty:'lobby', assignment:'lobby', speed:7, service:8, discipline:7, stamina:92, trait:'Warm Welcome', level:1, xp:0, wage:42, trainingCount:0, promotionTier:0 },
+          { id:'housekeeping_rosa', name:'Rosa Bell', role:'Housekeeping', specialty:'rooms', assignment:'rooms', speed:8, service:7, discipline:8, stamina:88, trait:'Fast Turnover', level:1, xp:0, wage:38, trainingCount:0, promotionTier:0 },
+          { id:'runner_eli', name:'Eli Grant', role:'Room Service', specialty:'rooms', assignment:'rest', speed:9, service:6, discipline:6, stamina:84, trait:'Quick Runner', level:1, xp:0, wage:34, trainingCount:0, promotionTier:0 },
+          { id:'host_nadia', name:'Nadia Vale', role:'Casino Host', specialty:'casino', assignment:'casino', speed:6, service:9, discipline:7, stamina:86, trait:'VIP Whisperer', level:1, xp:0, wage:58, trainingCount:0, promotionTier:0 },
+          { id:'chef_marco', name:'Marco Reyes', role:'Restaurant Crew', specialty:'restaurant', assignment:'rest', speed:7, service:8, discipline:6, stamina:82, trait:'Tasting Notes', level:1, xp:0, wage:46, trainingCount:0, promotionTier:0 },
+          { id:'security_owen', name:'Owen Price', role:'Security', specialty:'casino', assignment:'rest', speed:6, service:5, discipline:9, stamina:90, trait:'Calm Floor', level:1, xp:0, wage:44, trainingCount:0, promotionTier:0 },
+          { id:'engineer_ivy', name:'Ivy Stone', role:'Maintenance', specialty:'rooms', assignment:'rest', speed:6, service:5, discipline:9, stamina:96, trait:'Quiet Fixes', level:1, xp:0, wage:48, trainingCount:0, promotionTier:0 },
+          { id:'spa_lina', name:'Lina Park', role:'Spa Attendant', specialty:'spa', assignment:'rest', speed:6, service:9, discipline:7, stamina:91, trait:'Guest Recovery', level:1, xp:0, wage:40, trainingCount:0, promotionTier:0 },
         ],
       },
       entertainment: {
@@ -177,12 +182,28 @@ const HotelState = (() => {
     }
     if (typeof state.staff.morale !== 'number') state.staff.morale = fresh.staff.morale;
     if (typeof state.staff.payrollPerDay !== 'number') state.staff.payrollPerDay = fresh.staff.payrollPerDay;
+    if (typeof state.staff.payrollPaidTotal !== 'number') state.staff.payrollPaidTotal = 0;
+    if (typeof state.staff.applicantIdCounter !== 'number') state.staff.applicantIdCounter = 0;
+    if (typeof state.staff.lastApplicationDay !== 'number') state.staff.lastApplicationDay = 0;
+    if (!Array.isArray(state.staff.applications)) state.staff.applications = [];
+    if (!Array.isArray(state.staff.reports)) state.staff.reports = [];
     state.staff.roster = state.staff.roster.map((member, idx) => ({
       ...fresh.staff.roster[idx % fresh.staff.roster.length],
       ...member,
       assignment: member.assignment ?? member.specialty ?? 'rest',
       stamina: Math.max(0, Math.min(100, Math.round(member.stamina ?? 85))),
+      speed: Math.max(1, Math.min(10, Math.round(member.speed ?? 5))),
+      service: Math.max(1, Math.min(10, Math.round(member.service ?? 5))),
+      discipline: Math.max(1, Math.min(10, Math.round(member.discipline ?? 5))),
+      level: Math.max(1, Math.round(member.level ?? 1)),
+      xp: Math.max(0, Math.round(member.xp ?? 0)),
+      wage: Math.max(20, Math.round(member.wage ?? fresh.staff.roster[idx % fresh.staff.roster.length].wage ?? 36)),
+      trainingCount: Math.max(0, Math.round(member.trainingCount ?? 0)),
+      promotionTier: Math.max(0, Math.min(3, Math.round(member.promotionTier ?? 0))),
     }));
+    normalizeStaffAssignments(state);
+    ensureStaffApplications(state);
+    state.staff.payrollPerDay = calculatePayrollPerDay(state.staff.roster);
     state.meta.version = SCHEMA_VERSION;
     return state;
   }
@@ -214,6 +235,8 @@ const HotelState = (() => {
   function init() {
     _state = load();
     _state.meta.lastOpened = Date.now();
+    ensureStaffApplications(_state);
+    _state.staff.payrollPerDay = calculatePayrollPerDay(_state.staff.roster);
     save();
     return _state;
   }
@@ -474,21 +497,288 @@ const HotelState = (() => {
     return [...(_state.staff?.roster ?? [])];
   }
 
+  function getStaffReports() {
+    return [...(_state.staff?.reports ?? [])];
+  }
+
+  function calculatePayrollPerDay(roster = _state.staff?.roster ?? []) {
+    return roster.reduce((sum, member) => sum + Math.round(member.wage ?? 36), 0);
+  }
+
+  function getTrainingCost(member) {
+    if (!member) return 0;
+    const level = Math.max(1, member.level ?? 1);
+    const count = Math.max(0, member.trainingCount ?? 0);
+    return Math.round(120 + level * 55 + count * 35);
+  }
+
+  const PROMOTION_LADDER = [
+    { tier:0, label:'Associate', next:'Senior', reqLevel:2, reqBestStat:8, cost:650, wage:14, coverageBoost:0 },
+    { tier:1, label:'Senior', next:'Lead', reqLevel:4, reqBestStat:9, cost:1600, wage:24, coverageBoost:0.10 },
+    { tier:2, label:'Lead', next:'Manager', reqLevel:6, reqBestStat:10, cost:3600, wage:42, coverageBoost:0.22 },
+    { tier:3, label:'Manager', next:null, reqLevel:null, reqBestStat:null, cost:null, wage:0, coverageBoost:0.38 },
+  ];
+
+  const DEPARTMENT_TITLE_TRACKS = {
+    frontDesk: ['Front Desk Agent', 'Concierge', 'Guest Relations Lead', 'Lobby Manager'],
+    housekeeping: ['Room Attendant', 'Floor Captain', 'Rooms Supervisor', 'Executive Housekeeper'],
+    roomService: ['Service Runner', 'Suite Runner', 'Guest Services Lead', 'Rooms Service Manager'],
+    casinoHost: ['Casino Host', 'VIP Host', 'Player Development Lead', 'Casino Floor Manager'],
+    security: ['Security Officer', 'Floor Control Officer', 'Security Lead', 'Risk Manager'],
+    restaurant: ['Dining Server', 'Dining Captain', 'Maître d’', 'Dining Director'],
+    bar: ['Bartender', 'Mixologist', 'Bar Lead', 'Lounge Manager'],
+    entertainment: ['Stage Liaison', 'Stage Manager', 'Production Lead', 'Entertainment Director'],
+    spa: ['Spa Attendant', 'Therapist', 'Wellness Lead', 'Spa Director'],
+    rooms: ['Rooms Associate', 'Rooms Specialist', 'Rooms Lead', 'Rooms Manager'],
+    lobby: ['Lobby Associate', 'Concierge', 'Guest Relations Lead', 'Lobby Manager'],
+    casino: ['Casino Associate', 'Casino Specialist', 'Pit Lead', 'Casino Manager'],
+  };
+
+  const APPLICANT_BLUEPRINTS = [
+    { role:'Front Desk', specialty:'lobby', desiredDepartment:'lobby', names:['Avery Holt', 'Nora Kim', 'Theo Marsh'], traits:['Polished Welcome', 'Fast Check-In', 'Guest Memory'], stats:{ speed:6, service:8, discipline:6 }, wage:38 },
+    { role:'Housekeeping', specialty:'rooms', desiredDepartment:'rooms', names:['June Patel', 'Miles Reed', 'Clara Vos'], traits:['Sharp Turnover', 'Quiet Detail', 'Linen Lead'], stats:{ speed:8, service:6, discipline:8 }, wage:36 },
+    { role:'Room Service', specialty:'rooms', desiredDepartment:'rooms', names:['Sam Ortega', 'Leah Ford', 'Noel Banks'], traits:['Fast Runner', 'Tray Balance', 'Late Shift'], stats:{ speed:8, service:7, discipline:6 }, wage:34 },
+    { role:'Casino Host', specialty:'casino', desiredDepartment:'casino', names:['Bianca Stone', 'Drew Vale', 'Rina Cole'], traits:['VIP Read', 'Table Charm', 'Comp Sense'], stats:{ speed:6, service:8, discipline:7 }, wage:52 },
+    { role:'Security', specialty:'casino', desiredDepartment:'casino', names:['Grant Pike', 'Tessa Ward', 'Malik Cross'], traits:['Calm Floor', 'Risk Watch', 'Steady Post'], stats:{ speed:6, service:5, discipline:9 }, wage:44 },
+    { role:'Restaurant Crew', specialty:'restaurant', desiredDepartment:'restaurant', names:['Ana Silva', 'Bennett Shaw', 'Mina Frost'], traits:['Table Rhythm', 'Menu Memory', 'Warm Service'], stats:{ speed:7, service:8, discipline:6 }, wage:42 },
+    { role:'Bar Crew', specialty:'bar', desiredDepartment:'bar', names:['Iris Quinn', 'Cal West', 'Sofia Lane'], traits:['Fast Pour', 'Regulars Know', 'Clean Close'], stats:{ speed:8, service:7, discipline:6 }, wage:40 },
+    { role:'Entertainment Crew', specialty:'entertainment', desiredDepartment:'entertainment', names:['Rafi Moon', 'Elena Fox', 'Jules Penn'], traits:['Stage Timing', 'Crowd Pulse', 'Show Runner'], stats:{ speed:7, service:6, discipline:7 }, wage:46 },
+    { role:'Spa Attendant', specialty:'spa', desiredDepartment:'spa', names:['Priya Wells', 'Omar Lin', 'Mae Rivers'], traits:['Quiet Luxury', 'Guest Recovery', 'Wellness Notes'], stats:{ speed:5, service:9, discipline:7 }, wage:39 },
+  ];
+
+  function availableApplicationBlueprints(state = _state) {
+    return APPLICANT_BLUEPRINTS.filter(bp =>
+      bp.desiredDepartment === 'lobby' || state.departments?.[bp.desiredDepartment]?.unlocked
+    );
+  }
+
+  function generateStaffApplicant(state = _state) {
+    state.staff.applicantIdCounter = (state.staff.applicantIdCounter ?? 0) + 1;
+    const pool = availableApplicationBlueprints(state);
+    const bp = pool[(state.staff.applicantIdCounter - 1) % Math.max(1, pool.length)] ?? APPLICANT_BLUEPRINTS[0];
+    const repBoost = Math.min(3, Math.floor((state.currencies?.reputation ?? 1) / 20));
+    const variation = ((state.staff.applicantIdCounter * 7) % 3) - 1;
+    const level = 1 + (state.staff.applicantIdCounter % 5 === 0 ? 1 : 0);
+    const name = bp.names[(state.staff.applicantIdCounter - 1) % bp.names.length];
+    const trait = bp.traits[(state.staff.applicantIdCounter + 1) % bp.traits.length];
+    const stats = {
+      speed: Math.max(3, Math.min(10, bp.stats.speed + variation + repBoost)),
+      service: Math.max(3, Math.min(10, bp.stats.service + ((variation + 1) % 3 - 1) + repBoost)),
+      discipline: Math.max(3, Math.min(10, bp.stats.discipline - variation + repBoost)),
+    };
+    const wage = Math.round(bp.wage + repBoost * 5 + level * 4 + Math.max(...Object.values(stats)));
+    return {
+      id: `applicant_${String(state.staff.applicantIdCounter).padStart(4, '0')}`,
+      name,
+      role: bp.role,
+      specialty: bp.specialty,
+      desiredDepartment: bp.desiredDepartment,
+      speed: stats.speed,
+      service: stats.service,
+      discipline: stats.discipline,
+      stamina: Math.max(70, Math.min(100, 82 + ((state.staff.applicantIdCounter * 11) % 17))),
+      trait,
+      level,
+      wage,
+      onboardingCost: Math.round(wage * (level + 5)),
+      status: 'new',
+      appliedAtDay: state.calendar?.day ?? 1,
+      reviewNote: '',
+    };
+  }
+
+  function normalizeStaffApplicant(applicant) {
+    const fallback = APPLICANT_BLUEPRINTS[0];
+    return {
+      id: applicant.id ?? `applicant_${Date.now()}`,
+      name: applicant.name ?? 'New Applicant',
+      role: applicant.role ?? fallback.role,
+      specialty: applicant.specialty ?? fallback.specialty,
+      desiredDepartment: applicant.desiredDepartment ?? fallback.desiredDepartment,
+      trait: applicant.trait ?? fallback.traits[0],
+      appliedAtDay: applicant.appliedAtDay ?? 1,
+      ...applicant,
+      speed: Math.max(1, Math.min(10, Math.round(applicant.speed ?? fallback.stats.speed))),
+      service: Math.max(1, Math.min(10, Math.round(applicant.service ?? fallback.stats.service))),
+      discipline: Math.max(1, Math.min(10, Math.round(applicant.discipline ?? fallback.stats.discipline))),
+      stamina: Math.max(0, Math.min(100, Math.round(applicant.stamina ?? 84))),
+      level: Math.max(1, Math.round(applicant.level ?? 1)),
+      wage: Math.max(20, Math.round(applicant.wage ?? 36)),
+      onboardingCost: Math.max(80, Math.round(applicant.onboardingCost ?? 220)),
+      status: ['new', 'reviewed', 'shortlisted'].includes(applicant.status) ? applicant.status : 'new',
+      reviewNote: applicant.reviewNote ?? '',
+    };
+  }
+
+  function ensureStaffApplications(state = _state) {
+    state.staff = state.staff ?? createNewSave().staff;
+    state.staff.applications = (state.staff.applications ?? []).map(normalizeStaffApplicant).slice(0, 6);
+    const currentDay = state.calendar?.day ?? 1;
+    const shouldRefresh = state.staff.applications.length === 0 || state.staff.lastApplicationDay !== currentDay;
+    if (!shouldRefresh) return state.staff.applications;
+
+    const keep = state.staff.applications.filter(app => app.status === 'shortlisted');
+    state.staff.applications = keep.slice(0, 2);
+    while (state.staff.applications.length < 4) {
+      state.staff.applications.push(generateStaffApplicant(state));
+    }
+    state.staff.lastApplicationDay = currentDay;
+    return state.staff.applications;
+  }
+
+  function staffTitleTrack(member) {
+    if (!member) return DEPARTMENT_TITLE_TRACKS.lobby;
+    const role = String(member.role ?? '').toLowerCase();
+    if (role.includes('front')) return DEPARTMENT_TITLE_TRACKS.frontDesk;
+    if (role.includes('housekeeping')) return DEPARTMENT_TITLE_TRACKS.housekeeping;
+    if (role.includes('room service')) return DEPARTMENT_TITLE_TRACKS.roomService;
+    if (role.includes('casino host')) return DEPARTMENT_TITLE_TRACKS.casinoHost;
+    if (role.includes('security')) return DEPARTMENT_TITLE_TRACKS.security;
+    if (role.includes('restaurant')) return DEPARTMENT_TITLE_TRACKS.restaurant;
+    if (role.includes('bar')) return DEPARTMENT_TITLE_TRACKS.bar;
+    if (role.includes('entertainment')) return DEPARTMENT_TITLE_TRACKS.entertainment;
+    if (role.includes('spa')) return DEPARTMENT_TITLE_TRACKS.spa;
+    return DEPARTMENT_TITLE_TRACKS[member.specialty] ?? DEPARTMENT_TITLE_TRACKS.lobby;
+  }
+
+  function getPromotionTitle(member) {
+    const tier = Math.max(0, Math.min(3, member?.promotionTier ?? 0));
+    return staffTitleTrack(member)[tier] ?? `${PROMOTION_LADDER[tier].label} ${member?.role ?? 'Staff'}`;
+  }
+
+  function getStaffStatCap(member) {
+    return 10 + Math.max(0, Math.min(3, member?.promotionTier ?? 0));
+  }
+
+  function getPromotionInfo(member) {
+    if (!member) return { eligible:false, reason:'Missing staff' };
+    const tier = Math.max(0, Math.min(3, member.promotionTier ?? 0));
+    const current = PROMOTION_LADDER[tier];
+    const next = PROMOTION_LADDER[tier + 1];
+    if (!next) {
+      return { eligible:false, maxed:true, title:getPromotionTitle(member), label:current.label, reason:'Max promotion' };
+    }
+    const bestStat = Math.max(member.speed ?? 0, member.service ?? 0, member.discipline ?? 0);
+    const levelOk = (member.level ?? 1) >= current.reqLevel;
+    const statOk = bestStat >= current.reqBestStat;
+    const cost = current.cost;
+    const eligible = levelOk && statOk;
+    return {
+      eligible,
+      tier,
+      nextTier:tier + 1,
+      label:current.label,
+      nextLabel:next.label,
+      title:getPromotionTitle(member),
+      nextTitle:staffTitleTrack(member)[tier + 1] ?? `${next.label} ${member.role}`,
+      cost,
+      reqLevel:current.reqLevel,
+      reqBestStat:current.reqBestStat,
+      bestStat,
+      levelOk,
+      statOk,
+      coverageBoost:next.coverageBoost,
+      reason: eligible ? 'Ready' : `Requires Lv ${current.reqLevel} and one stat ${current.reqBestStat}+`,
+    };
+  }
+
+  function getStaffForAssignment(assignment) {
+    return (_state.staff?.roster ?? []).filter(member => member.assignment === assignment);
+  }
+
+  function getStaffSlotLimit(assignment, state = _state) {
+    if (!assignment || assignment === 'rest') return Infinity;
+    const dept = state.departments?.[assignment];
+    if (assignment !== 'lobby' && (!dept?.unlocked || (dept.level ?? 0) <= 0)) return 0;
+    const level = Math.max(1, dept?.level ?? 1);
+    if (assignment === 'lobby') return Math.min(3, 1 + Math.floor(level / 3) + Math.max(0, (state.meta?.hotelTier ?? 1) - 1));
+    return Math.min(3, 1 + Math.floor((level - 1) / 2));
+  }
+
+  function getStaffSlotInfo(assignment, state = _state) {
+    const limit = getStaffSlotLimit(assignment, state);
+    const used = assignment === 'rest'
+      ? (_state.staff?.roster ?? []).filter(member => member.assignment === 'rest').length
+      : (state.staff?.roster ?? []).filter(member => member.assignment === assignment).length;
+    const available = limit === Infinity ? Infinity : Math.max(0, limit - used);
+    return { assignment, used, limit, available, full: limit !== Infinity && used >= limit };
+  }
+
+  function normalizeStaffAssignments(state = _state) {
+    const used = {};
+    (state.staff?.roster ?? []).forEach(member => {
+      const assignment = member.assignment ?? 'rest';
+      if (assignment === 'rest') {
+        member.assignment = 'rest';
+        return;
+      }
+      const limit = getStaffSlotLimit(assignment, state);
+      const count = used[assignment] ?? 0;
+      if (limit <= 0 || count >= limit) {
+        member.assignment = 'rest';
+        return;
+      }
+      used[assignment] = count + 1;
+    });
+  }
+
+  function getStaffCoverage(assignment, state = _state) {
+    const staff = state.staff?.roster ?? [];
+    const assigned = staff.filter(member => member.assignment === assignment);
+    const deptLevel = Math.max(1, state.departments?.[assignment]?.level ?? 1);
+    const demand = assignment === 'lobby'
+      ? Math.max(1, Math.ceil((state.guests?.population ?? 0) / 18))
+      : Math.max(1, Math.ceil(deptLevel / 2));
+    const raw = assigned.reduce((sum, member) => {
+      const specialtyBonus = member.specialty === assignment ? 1.25 : 1;
+      const staminaMult = Math.max(0.45, (member.stamina ?? 80) / 100);
+      const baseScore = ((member.speed ?? 5) + (member.service ?? 5) + (member.discipline ?? 5)) / 3;
+      const promotion = PROMOTION_LADDER[Math.max(0, Math.min(3, member.promotionTier ?? 0))]?.coverageBoost ?? 0;
+      return sum + baseScore * specialtyBonus * staminaMult * (1 + promotion);
+    }, 0);
+    const ratio = raw / Math.max(1, demand * 8);
+    const score = Math.max(0, Math.min(100, Math.round(ratio * 100)));
+    const status = score >= 85 ? 'covered' : score >= 55 ? 'thin' : 'short';
+    const slots = getStaffSlotInfo(assignment, state);
+    return { assignment, assigned, assignedCount: assigned.length, demand, raw, ratio, score, status, slots };
+  }
+
+  function getStaffEffect(assignment, state = _state) {
+    const coverage = getStaffCoverage(assignment, state);
+    const ratio = Math.max(0, Math.min(1.25, coverage.ratio));
+    const moraleMult = 0.9 + Math.max(0, Math.min(100, state.staff?.morale ?? 75)) / 500;
+    return {
+      ...coverage,
+      label: coverage.status === 'covered' ? 'Covered' : coverage.status === 'thin' ? 'Thin' : 'Short',
+      moraleMult,
+      patienceMult: 1 + Math.min(0.35, ratio * 0.28 * moraleMult),
+      speedMult: 1 - Math.min(0.22, ratio * 0.18 * moraleMult),
+      incomeMult: 1 + Math.min(0.16, ratio * 0.12 * moraleMult),
+      qualityBonus: coverage.score >= 85 ? 1 : coverage.score >= 55 ? 0.5 : 0,
+      satisfactionBonus: coverage.score >= 85 ? 2 : coverage.score >= 55 ? 1 : 0,
+    };
+  }
+
   function assignStaff(staffId, assignment) {
     const member = _state.staff?.roster?.find(s => s.id === staffId);
-    if (!member) return false;
-    member.assignment = assignment || 'rest';
+    if (!member) return { ok:false, reason:'missing_staff' };
+    const target = assignment || 'rest';
+    if (target !== 'rest' && member.assignment !== target) {
+      const slots = getStaffSlotInfo(target);
+      if (slots.full) return { ok:false, reason:'slots_full', slots };
+    }
+    member.assignment = target;
     save();
-    return true;
+    return { ok:true, member };
   }
 
   function restStaff(staffId) {
     const member = _state.staff?.roster?.find(s => s.id === staffId);
-    if (!member) return false;
+    if (!member) return { ok:false, reason:'missing_staff' };
     member.assignment = 'rest';
     member.stamina = Math.min(100, Math.round((member.stamina ?? 80) + 8));
     save();
-    return true;
+    return { ok:true, member };
   }
 
   function adjustStaffStamina(staffId, delta) {
@@ -499,6 +789,258 @@ const HotelState = (() => {
     return true;
   }
 
+  function trainStaff(staffId, stat) {
+    const allowed = ['speed', 'service', 'discipline'];
+    if (!allowed.includes(stat)) return { ok:false, reason:'invalid_stat' };
+    const member = _state.staff?.roster?.find(s => s.id === staffId);
+    if (!member) return { ok:false, reason:'missing_staff' };
+    const cap = getStaffStatCap(member);
+    if ((member[stat] ?? 0) >= cap) return { ok:false, reason:'maxed' };
+
+    const cost = getTrainingCost(member);
+    if (!spendHotelCash(cost)) return { ok:false, reason:'cash', cost };
+
+    member[stat] = Math.min(cap, Math.round((member[stat] ?? 1) + 1));
+    member.trainingCount = (member.trainingCount ?? 0) + 1;
+    member.xp = (member.xp ?? 0) + 18;
+    const required = staffXpRequired(member.level ?? 1);
+    if (member.xp >= required) {
+      member.xp -= required;
+      member.level = (member.level ?? 1) + 1;
+      member.wage = Math.round((member.wage ?? 36) + 6);
+    } else {
+      member.wage = Math.round((member.wage ?? 36) + 2);
+    }
+    _state.staff.morale = clampPct((_state.staff.morale ?? 75) + 1);
+    _state.staff.payrollPerDay = calculatePayrollPerDay();
+    addStaffReport({
+      type: 'training',
+      title: `${member.name} trained ${stat}`,
+      detail: `${statLabel(stat)} increased to ${member[stat]}. Payroll is now $${_state.staff.payrollPerDay}/day.`,
+      tone: 'good',
+    }, false);
+    save();
+    return { ok:true, member, cost };
+  }
+
+  function staffXpRequired(level = 1) {
+    return 36 + Math.max(1, level) * 14;
+  }
+
+  function promoteStaff(staffId) {
+    const member = _state.staff?.roster?.find(s => s.id === staffId);
+    if (!member) return { ok:false, reason:'missing_staff' };
+    const info = getPromotionInfo(member);
+    if (!info.eligible) return { ok:false, reason:'requirements', info };
+    if (!spendHotelCash(info.cost)) return { ok:false, reason:'cash', cost:info.cost, info };
+
+    member.promotionTier = info.nextTier;
+    member.wage = Math.round((member.wage ?? 36) + (PROMOTION_LADDER[info.tier]?.wage ?? 0));
+    member.xp = (member.xp ?? 0) + 12;
+    _state.staff.morale = clampPct((_state.staff.morale ?? 75) + 3);
+    _state.staff.payrollPerDay = calculatePayrollPerDay();
+    addStaffReport({
+      type: 'promotion',
+      title: `${member.name} promoted`,
+      detail: `${member.name} is now ${getPromotionTitle(member)}. Stat cap ${getStaffStatCap(member)}. Payroll is now $${_state.staff.payrollPerDay}/day.`,
+      tone: 'good',
+    }, false);
+    save();
+    return { ok:true, member, info:getPromotionInfo(member) };
+  }
+
+  function departmentFitScore(person, department = person?.desiredDepartment ?? person?.specialty ?? 'lobby') {
+    if (!person) return 0;
+    const weights = {
+      lobby: { speed:0.3, service:0.45, discipline:0.25 },
+      rooms: { speed:0.35, service:0.25, discipline:0.4 },
+      casino: { speed:0.2, service:0.38, discipline:0.42 },
+      restaurant: { speed:0.35, service:0.4, discipline:0.25 },
+      bar: { speed:0.42, service:0.38, discipline:0.2 },
+      entertainment: { speed:0.35, service:0.35, discipline:0.3 },
+      spa: { speed:0.18, service:0.52, discipline:0.3 },
+    }[department] ?? { speed:0.33, service:0.34, discipline:0.33 };
+    const raw = (person.speed ?? 5) * weights.speed + (person.service ?? 5) * weights.service + (person.discipline ?? 5) * weights.discipline;
+    const specialtyBonus = person.specialty === department ? 8 : 0;
+    return Math.max(0, Math.min(100, Math.round(raw * 10 + specialtyBonus)));
+  }
+
+  function fitLabel(score) {
+    if (score >= 88) return 'Excellent Fit';
+    if (score >= 75) return 'Good Fit';
+    if (score >= 62) return 'Workable Fit';
+    return 'Risky Fit';
+  }
+
+  function applicationReviewNote(applicant) {
+    const score = departmentFitScore(applicant, applicant.desiredDepartment);
+    const bestStat = [
+      ['speed', applicant.speed ?? 0],
+      ['service', applicant.service ?? 0],
+      ['discipline', applicant.discipline ?? 0],
+    ].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'service';
+    return `${fitLabel(score)} for ${deptLabel(applicant.desiredDepartment)}. Strongest area: ${statLabel(bestStat)}.`;
+  }
+
+  function getStaffApplications() {
+    ensureStaffApplications(_state);
+    save();
+    return [...(_state.staff?.applications ?? [])];
+  }
+
+  function reviewStaffApplication(applicantId) {
+    const applicant = _state.staff?.applications?.find(app => app.id === applicantId);
+    if (!applicant) return { ok:false, reason:'missing_applicant' };
+    applicant.status = applicant.status === 'shortlisted' ? 'shortlisted' : 'reviewed';
+    applicant.reviewNote = applicationReviewNote(applicant);
+    save();
+    return { ok:true, applicant };
+  }
+
+  function shortlistStaffApplication(applicantId) {
+    const applicant = _state.staff?.applications?.find(app => app.id === applicantId);
+    if (!applicant) return { ok:false, reason:'missing_applicant' };
+    applicant.status = applicant.status === 'shortlisted' ? 'reviewed' : 'shortlisted';
+    if (!applicant.reviewNote) applicant.reviewNote = applicationReviewNote(applicant);
+    save();
+    return { ok:true, applicant };
+  }
+
+  function rejectStaffApplication(applicantId) {
+    const applications = _state.staff?.applications ?? [];
+    const idx = applications.findIndex(app => app.id === applicantId);
+    if (idx === -1) return { ok:false, reason:'missing_applicant' };
+    const [applicant] = applications.splice(idx, 1);
+    save();
+    return { ok:true, applicant };
+  }
+
+  function hireStaffApplication(applicantId) {
+    const applications = _state.staff?.applications ?? [];
+    const idx = applications.findIndex(app => app.id === applicantId);
+    if (idx === -1) return { ok:false, reason:'missing_applicant' };
+    const applicant = applications[idx];
+    if (applicant.status === 'new') return { ok:false, reason:'needs_review', applicant };
+
+    const assignment = applicant.desiredDepartment ?? applicant.specialty ?? 'rest';
+    const dept = _state.departments?.[assignment];
+    if (assignment !== 'lobby' && (!dept?.unlocked || (dept.level ?? 0) <= 0)) {
+      return { ok:false, reason:'department_locked', applicant };
+    }
+    const slots = getStaffSlotInfo(assignment);
+    if (slots.full) return { ok:false, reason:'slots_full', applicant, slots };
+    if (!spendHotelCash(applicant.onboardingCost ?? 0)) {
+      return { ok:false, reason:'cash', applicant, cost:applicant.onboardingCost ?? 0 };
+    }
+
+    const member = {
+      id: `staff_${String(Date.now()).slice(-6)}_${String(Math.random()).slice(2, 5)}`,
+      name: applicant.name,
+      role: applicant.role,
+      specialty: applicant.specialty,
+      assignment,
+      speed: applicant.speed,
+      service: applicant.service,
+      discipline: applicant.discipline,
+      stamina: applicant.stamina,
+      trait: applicant.trait,
+      level: applicant.level ?? 1,
+      xp: 0,
+      wage: applicant.wage,
+      trainingCount: 0,
+      promotionTier: 0,
+      hiredAtDay: _state.calendar?.day ?? 1,
+      source: 'application',
+    };
+    applications.splice(idx, 1);
+    _state.staff.roster = _state.staff.roster ?? [];
+    _state.staff.roster.push(member);
+    _state.staff.morale = clampPct((_state.staff.morale ?? 75) + 1);
+    _state.staff.payrollPerDay = calculatePayrollPerDay();
+    addStaffReport({
+      type: 'hiring',
+      title: `${member.name} hired`,
+      detail: `${getPromotionTitle(member)} joined ${deptLabel(assignment)}. Payroll is now $${_state.staff.payrollPerDay}/day.`,
+      tone: 'good',
+    }, false);
+    ensureStaffApplications(_state);
+    save();
+    return { ok:true, member, cost:applicant.onboardingCost ?? 0 };
+  }
+
+  function processStaffPayroll(context = {}) {
+    const payroll = Math.round(calculatePayrollPerDay() / 4);
+    const paid = payroll <= 0 || spendHotelCash(payroll);
+    const coverage = staffCoverageSummary(_state);
+    const avgStamina = averageStaffStamina(_state.staff?.roster ?? []);
+    const shortCount = coverage.filter(item => item.status === 'short').length;
+    const thinCount = coverage.filter(item => item.status === 'thin').length;
+    const coverageScore = coverage.length
+      ? Math.round(coverage.reduce((sum, item) => sum + item.score, 0) / coverage.length)
+      : 0;
+
+    let moraleDelta = 0;
+    if (paid) moraleDelta += 1; else moraleDelta -= 8;
+    if (coverageScore >= 80) moraleDelta += 1;
+    if (shortCount > 0) moraleDelta -= shortCount;
+    if (avgStamina < 45) moraleDelta -= 2;
+    if (avgStamina > 78) moraleDelta += 1;
+
+    _state.staff.morale = clampPct((_state.staff.morale ?? 75) + moraleDelta);
+    _state.staff.payrollPerDay = calculatePayrollPerDay();
+    if (paid) _state.staff.payrollPaidTotal = (_state.staff.payrollPaidTotal ?? 0) + payroll;
+
+    const report = {
+      id: `staff_report_${Date.now()}`,
+      createdAt: Date.now(),
+      type: 'shift',
+      title: paid ? 'Staff shift settled' : 'Payroll missed',
+      detail: paid
+        ? `Payroll $${payroll}. Coverage ${coverageScore}%. Morale ${moraleDelta >= 0 ? '+' : ''}${moraleDelta}.`
+        : `Could not cover $${payroll} payroll. Morale ${moraleDelta}.`,
+      tone: paid && moraleDelta >= 0 ? 'good' : paid ? 'warn' : 'bad',
+      payroll,
+      paid,
+      moraleDelta,
+      coverageScore,
+      shortCount,
+      thinCount,
+      avgStamina,
+      day: context.day,
+      phase: context.phase,
+    };
+    addStaffReport(report, false);
+    save();
+    return report;
+  }
+
+  function addStaffReport(report, shouldSave = true) {
+    _state.staff.reports = _state.staff.reports ?? [];
+    _state.staff.reports.unshift({
+      id: report.id ?? `staff_report_${Date.now()}`,
+      createdAt: report.createdAt ?? Date.now(),
+      ...report,
+    });
+    _state.staff.reports = _state.staff.reports.slice(0, 8);
+    if (shouldSave) save();
+  }
+
+  function applyStaffFatigue(assignment, amount = 3) {
+    if (!assignment || !Number.isFinite(amount)) return [];
+    const changed = [];
+    (_state.staff?.roster ?? []).forEach(member => {
+      if (member.assignment === assignment) {
+        member.stamina = Math.max(0, Math.min(100, Math.round((member.stamina ?? 80) - amount)));
+        changed.push(member.id);
+      } else if (member.assignment === 'rest') {
+        member.stamina = Math.max(0, Math.min(100, Math.round((member.stamina ?? 80) + Math.max(1, Math.round(amount / 2)))));
+        changed.push(member.id);
+      }
+    });
+    if (changed.length) save();
+    return changed;
+  }
+
   function resetSave() {
     _state = createNewSave();
     save();
@@ -507,6 +1049,38 @@ const HotelState = (() => {
   /* ── Helpers ─────────────────────────────────────────────── */
   function round(n) {
     return Math.max(0, parseFloat(Number(n).toFixed(2)));
+  }
+
+  function clampPct(value) {
+    return Math.max(0, Math.min(100, Math.round(value)));
+  }
+
+  function averageStaffStamina(roster) {
+    if (!roster.length) return 0;
+    return Math.round(roster.reduce((sum, member) => sum + (member.stamina ?? 80), 0) / roster.length);
+  }
+
+  function staffCoverageSummary(state = _state) {
+    const ids = ['lobby', 'rooms', 'casino', 'restaurant', 'bar', 'entertainment', 'spa']
+      .filter(id => id === 'lobby' || state.departments?.[id]?.unlocked);
+    return ids.map(id => getStaffCoverage(id, state));
+  }
+
+  function statLabel(stat) {
+    return { speed:'Speed', service:'Service', discipline:'Discipline' }[stat] ?? stat;
+  }
+
+  function deptLabel(id) {
+    return {
+      lobby: 'Lobby',
+      rooms: 'Guest Rooms',
+      casino: 'Casino Floor',
+      restaurant: 'Restaurant',
+      bar: 'Bar & Lounge',
+      entertainment: 'Entertainment',
+      spa: 'Spa',
+      rest: 'Resting',
+    }[id] ?? 'Hotel';
   }
 
   return {
@@ -522,7 +1096,11 @@ const HotelState = (() => {
     addGuestToRoster, removeGuestFromRoster, pruneExpiredFromRoster,
     getRoster, getRosterCount,
     applyCheckInBoost, consumeCheckInBoost, getCheckInBoost,
-    getStaffRoster, assignStaff, restStaff, adjustStaffStamina,
+    getStaffRoster, getStaffReports, getStaffForAssignment, getStaffSlotLimit, getStaffSlotInfo, getStaffCoverage, getStaffEffect,
+    calculatePayrollPerDay, getTrainingCost, getPromotionInfo, getPromotionTitle, getStaffStatCap, staffXpRequired,
+    assignStaff, restStaff, adjustStaffStamina, trainStaff, promoteStaff, processStaffPayroll, applyStaffFatigue,
+    getStaffApplications, reviewStaffApplication, shortlistStaffApplication, rejectStaffApplication, hireStaffApplication,
+    departmentFitScore,
     unlockAchievement, tickAchievementProgress,
   };
 })();

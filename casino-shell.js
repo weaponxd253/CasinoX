@@ -140,11 +140,31 @@ const CasinoShell = (function () {
       document.body.classList.toggle('dark-theme', !light);
       document.body.classList.toggle('light', light);
       localStorage.setItem(THEME_KEY, light ? 'light' : 'dark');
-      const i = document.getElementById('shell-theme-icon');
-      if (i) i.className = light ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+      syncThemeControls(light ? 'light' : 'dark');
     },
     toggle() { this.apply(this.get() === 'light' ? 'dark' : 'light'); }
   };
+
+  function syncThemeControls(mode = theme.get()) {
+    const light = mode === 'light';
+    document.querySelectorAll('#shell-theme-icon, #theme-icon, [data-theme-icon]').forEach(icon => {
+      icon.className = light ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    });
+    document.querySelectorAll('#shell-theme-btn, #theme-toggle, [data-theme-toggle]').forEach(btn => {
+      btn.setAttribute('aria-label', light ? 'Switch to dark theme' : 'Switch to light theme');
+      btn.setAttribute('aria-pressed', light ? 'true' : 'false');
+      btn.title = light ? 'Switch to dark theme' : 'Switch to light theme';
+    });
+  }
+
+  function wireThemeControls() {
+    document.querySelectorAll('#shell-theme-btn, #theme-toggle, [data-theme-toggle]').forEach(btn => {
+      if (btn.dataset.themeWired === '1') return;
+      btn.dataset.themeWired = '1';
+      btn.addEventListener('click', () => theme.toggle());
+    });
+    syncThemeControls();
+  }
 
   /* ───────── SOUND ───────── */
   let actx = null;
@@ -286,11 +306,10 @@ const CasinoShell = (function () {
         </div>
         ${progressHTML()}
         <a class="shell-pill" href="${lobby}"><i class="fa-solid fa-dice"></i> Lobby</a>
-        <button class="shell-pill shell-icon-btn" id="shell-theme-btn" aria-label="Toggle theme"><i id="shell-theme-icon" class="fa-solid fa-moon"></i></button>
+        <button class="shell-pill shell-icon-btn" id="shell-theme-btn" aria-label="Switch to light theme" title="Switch to light theme"><i id="shell-theme-icon" class="fa-solid fa-moon"></i></button>
         <button class="shell-pill shell-icon-btn" id="shell-sound-btn" aria-label="Toggle sound"><i id="shell-sound-icon" class="fa-solid fa-volume-high"></i></button>
       </div>`;
     document.body.insertBefore(header, document.body.firstChild);
-    document.getElementById('shell-theme-btn').addEventListener('click', () => theme.toggle());
     document.getElementById('shell-sound-btn').addEventListener('click', () => sound.toggle());
   }
 
@@ -357,6 +376,7 @@ const CasinoShell = (function () {
   function setup() {
     injectOverlays();
     theme.apply(theme.get());
+    wireThemeControls();
     sound._sync();
     profile.load();
 

@@ -12,12 +12,12 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <!-- Shell first, lobby styles second, mobile last -->
-  <link rel="stylesheet" href="casino-shell.css">
+  <link rel="stylesheet" href="casino-shell.css?v=theme-controls">
   <link rel="stylesheet" href="lobby.css">
   <link rel="stylesheet" href="casino-mobile.css">
 
   <script src="wallet.js"></script>
-  <script src="casino-shell.js"></script>
+  <script src="casino-shell.js?v=theme-controls"></script>
 </head>
 
 <body>
@@ -120,24 +120,8 @@
   </footer>
 
   <script>
-    // ── Shell: applies saved theme immediately (sets data-theme on <html>)
-    //    and wires the meta-game (XP bar, bonus button, overlays).
-    //    Must run BEFORE the theme toggle listener so the icon is correct. ──
+    // ── Shell: applies saved theme and wires meta-game controls/overlays. ──
     CasinoShell.standalone({ lobbyHref: 'casino.html' });
-
-    // ── Theme toggle: delegate entirely to the shell so every page
-    //    stays in sync — shell writes data-theme + the theme key. ──
-    (function () {
-      const icon    = document.getElementById('theme-icon');
-      const syncIcon = () =>
-        (icon.className = CasinoShell.theme.get() === 'light'
-          ? 'fa-solid fa-sun' : 'fa-solid fa-moon');
-      syncIcon();   // set correct icon on load
-      document.getElementById('theme-toggle').addEventListener('click', () => {
-        CasinoShell.theme.toggle();
-        syncIcon();
-      });
-    })();
 
     // ── Shared bankroll display ──
     (function () {

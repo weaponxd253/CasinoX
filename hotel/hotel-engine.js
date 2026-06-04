@@ -25,7 +25,8 @@ const HotelEngine = (() => {
       if (!dept.unlocked || dept.level === 0) continue;
       const stats = UPGRADE_CATALOG[id]?.[dept.level - 1];
       if (!stats) continue;
-      const ipm = stats.ipm ?? 0;
+      const staffEffect = HotelState.getStaffEffect?.(id, state);
+      const ipm = Math.round((stats.ipm ?? 0) * (staffEffect?.incomeMult ?? 1));
       baseIpm += ipm;
       breakdown[id] = ipm;
     }
@@ -293,7 +294,9 @@ const HotelEngine = (() => {
     let deptTotal = 0;
     for (const [id, dept] of Object.entries(state.departments)) {
       if (!dept.unlocked || dept.level === 0) continue;
-      deptTotal += UPGRADE_CATALOG[id]?.[dept.level - 1]?.ipm ?? 0;
+      const base = UPGRADE_CATALOG[id]?.[dept.level - 1]?.ipm ?? 0;
+      const staffEffect = HotelState.getStaffEffect?.(id, state);
+      deptTotal += Math.round(base * (staffEffect?.incomeMult ?? 1));
     }
     const satMult    = satisfactionMultiplier(state.satisfaction.current);
     const activeMult = (state.ticker.activeMultiplierExpiry > Date.now())
@@ -385,6 +388,7 @@ const HotelEngine = (() => {
     const activeShows = activeEntertainmentBookings(state, before.day, before.phase);
     const income = calculatePhaseIncome(state, phaseMinutes);
     if (income > 0) HotelState.addHotelCash(income);
+    const staffReport = HotelState.processStaffPayroll?.({ day: before.day, phase: before.phase }) ?? null;
 
     let guestResult = null;
     if (window.HotelGuests) {
@@ -412,6 +416,7 @@ const HotelEngine = (() => {
       shows: activeShows.map(show => show.label),
       trafficBoost: activeShows.reduce((sum, show) => sum + (show.effects?.trafficBoost ?? 0), 0),
       satisfactionBoost: activeShows.reduce((sum, show) => sum + (show.effects?.satisfactionBoost ?? 0), 0),
+      staffReport,
     };
     HotelState.addCalendarReport(report);
     return report;

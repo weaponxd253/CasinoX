@@ -65,6 +65,7 @@ const RoomsGame = (() => {
     shift = {
       active: true,
       roomsLevel,
+      staffEffect: HotelState.getStaffEffect?.('rooms') ?? null,
       startedAt: now,
       endsAt: now + SHIFT_MS,
       target: 8 + roomsLevel * 2,
@@ -83,7 +84,7 @@ const RoomsGame = (() => {
     $('start-ops-btn').innerHTML = '<i class="fa-solid fa-spinner"></i> On Shift';
     hideResults();
     clearLog();
-    log('Floor Ops opened. Prioritize urgent rooms and match staff specialties.', 'gold');
+    log(`Floor Ops opened. Room staff coverage: ${shift.staffEffect?.score ?? 0}% ${shift.staffEffect?.label ?? 'Short'}.`, 'gold');
     spawnRequests(3);
     ensureSelection();
     updateAll();
@@ -103,7 +104,7 @@ const RoomsGame = (() => {
     const options = REQUESTS.filter(r => !r.vip || shift.roomsLevel >= 3 || Math.random() < 0.16);
     const template = options[Math.floor(Math.random() * options.length)];
     const now = Date.now();
-    const patience = Math.round(template.patience * Math.max(0.78, 1.06 - shift.roomsLevel * 0.035));
+    const patience = Math.round(template.patience * Math.max(0.78, 1.06 - shift.roomsLevel * 0.035) * (shift.staffEffect?.patienceMult ?? 1));
     return {
       ...template,
       requestId: `req_${shift.spawned}_${now}_${room.id}`,
@@ -157,7 +158,7 @@ const RoomsGame = (() => {
     request.matched = match;
     staff.request = request;
     staff.startedAt = now;
-    staff.doneAt = now + Math.round(request.duration * staff.speed * slowPenalty);
+    staff.doneAt = now + Math.round(request.duration * staff.speed * slowPenalty * (shift.staffEffect?.speedMult ?? 1));
     shift.selectedRequestId = null;
     ensureSelection();
     CasinoShell.sound.tone(match ? 660 : 420, 'sine', 0.08, 0.2);
@@ -203,7 +204,7 @@ const RoomsGame = (() => {
     const patienceLeft = Math.max(0, (request.patienceEnd - Date.now()) / request.patience);
     const fast = patienceLeft > 0.45;
     const perfect = request.matched && fast;
-    const earned = Math.round(request.cash + shift.roomsLevel * 7 + (perfect ? request.cash * 0.55 : request.matched ? request.cash * 0.18 : 0));
+    const earned = Math.round((request.cash + shift.roomsLevel * 7 + (perfect ? request.cash * 0.55 : request.matched ? request.cash * 0.18 : 0)) * (shift.staffEffect?.incomeMult ?? 1));
     const sat = perfect ? request.sat : request.matched ? Math.max(1, request.sat - 1) : 0;
 
     request.status = 'done';
@@ -240,9 +241,10 @@ const RoomsGame = (() => {
     clearInterval(timer);
     shift.active = false;
 
-    const satBonus = Math.max(0, Math.min(9, Math.round(shift.satPoints / 3) - shift.complaints));
+    const satBonus = Math.max(0, Math.min(9, Math.round(shift.satPoints / 3) - shift.complaints + (shift.staffEffect?.satisfactionBonus ?? 0)));
     HotelState.addHotelCash(shift.earned);
     HotelState.setSatisfaction(HotelState.getSatisfaction() + satBonus);
+    HotelState.applyStaffFatigue?.('rooms', shift.resolved ? 4 : 1);
     HotelEngine.recalculateReputation(HotelState.get());
     HotelBridge.applyHotelToCasino(HotelState.get());
     CasinoShell.awardXp(Math.max(10, Math.round(shift.earned / 5)));
