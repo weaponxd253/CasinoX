@@ -259,9 +259,27 @@ const HotelUI = (() => {
     const reports = typeof HotelState.getStaffReports === 'function'
       ? HotelState.getStaffReports()
       : [...(state.staff?.reports ?? [])];
+    const moraleHistory = typeof HotelState.getStaffMoraleHistory === 'function'
+      ? HotelState.getStaffMoraleHistory()
+      : [...(state.staff?.moraleHistory ?? [])];
+    const events = typeof HotelState.getStaffEvents === 'function'
+      ? HotelState.getStaffEvents()
+      : [...(state.staff?.events ?? [])];
     const applications = typeof HotelState.getStaffApplications === 'function'
       ? HotelState.getStaffApplications()
       : [...(state.staff?.applications ?? [])];
+    const market = HotelState.getStaffMarket?.(state) ?? { label:'Stable Market', applicantNote:'Applicant quality is steady.', qualityShift:0, wagePressure:0 };
+    const warnings = HotelState.getStaffWarnings?.(state) ?? coverage
+      .filter(item => item.status !== 'covered')
+      .map(item => ({
+        id: item.id,
+        label: item.label,
+        status: item.status,
+        tone: item.status === 'short' ? 'bad' : 'warn',
+        score: item.score,
+        title: `${item.label} ${item.status === 'short' ? 'is short staffed' : 'is thin'}`,
+        detail: item.status === 'short' ? `Coverage is ${item.score}%. Guests will feel slower service.` : `Coverage is ${item.score}%. Service has little slack.`,
+      }));
     const status = document.getElementById('staff-status');
     if (status) status.textContent = `${activeCount}/${staff.length} assigned · ${applications.length} apps`;
 
@@ -286,16 +304,19 @@ const HotelUI = (() => {
         <div><span>Payroll</span><strong>$${fmtShort(HotelState.calculatePayrollPerDay?.(staff) ?? state.staff?.payrollPerDay ?? 0)}/day</strong></div>
         <div><span>Paid</span><strong>$${fmtShort(state.staff?.payrollPaidTotal ?? 0)}</strong></div>
       </div>
+      ${renderStaffWarnings(warnings)}
       <div class="staff-coverage-grid">
         ${coverage.map(renderCoverageCard).join('')}
       </div>
-      ${renderApplicationsPanel(applications, state)}
+      ${renderApplicationsPanel(applications, state, market)}
+      ${renderStaffEvents(events)}
       <div class="staff-report-panel">
         <div class="staff-subtitle">
           <i class="fa-solid fa-clipboard-list"></i>
           Shift Reports
         </div>
         ${reports.length ? reports.slice(0, 3).map(renderStaffReport).join('') : '<p class="staff-report-empty">Advance time or train staff to generate reports.</p>'}
+        ${renderMoraleHistory(moraleHistory)}
       </div>
       <div class="staff-card-list">
         ${staff.map(member => renderStaffCard(member, targets)).join('')}
@@ -303,15 +324,24 @@ const HotelUI = (() => {
     `;
   }
 
-  function renderApplicationsPanel(applications, state = HotelState.get()) {
+  function renderApplicationsPanel(applications, state = HotelState.get(), market = HotelState.getStaffMarket?.(state)) {
     const newCount = applications.filter(app => app.status === 'new').length;
     const shortlistCount = applications.filter(app => app.status === 'shortlisted').length;
+    const qualityText = market?.qualityShift > 0 ? `+${market.qualityShift} quality` : market?.qualityShift < 0 ? `${market.qualityShift} quality` : 'steady quality';
+    const wageText = market?.wagePressure > 0 ? `+$${fmtShort(market.wagePressure)} wage pressure` : 'normal wages';
     return `
       <div class="staff-applications-panel">
         <div class="staff-subtitle">
           <i class="fa-solid fa-file-signature"></i>
           Applications
           <span>${newCount} new · ${shortlistCount} shortlisted</span>
+        </div>
+        <div class="staff-market-card ${marketClass(market)}">
+          <div>
+            <strong>${escapeHtml(market?.label ?? 'Stable Market')}</strong>
+            <span>${escapeHtml(market?.applicantNote ?? 'Applicant quality is steady.')}</span>
+          </div>
+          <em>${escapeHtml(qualityText)} · ${escapeHtml(wageText)}</em>
         </div>
         <div class="staff-application-list">
           ${applications.length ? applications.map(app => renderApplicationCard(app, state)).join('') : '<p class="staff-report-empty">No applications are waiting. Advance to the next hotel day for a fresh batch.</p>'}
@@ -325,6 +355,7 @@ const HotelUI = (() => {
     const target = applicant.desiredDepartment ?? applicant.specialty ?? 'lobby';
     const slots = HotelState.getStaffSlotInfo?.(target, state) ?? { used:0, limit:1, full:false };
     const fit = HotelState.departmentFitScore?.(applicant, target) ?? 0;
+    const traitEffect = HotelState.getStaffTraitEffect?.(applicant, target) ?? { trait:applicant.trait, applies:false, copy:'Reliable personality fit' };
     const reviewed = status !== 'new';
     const canHire = reviewed && !slots.full && HotelState.getCash() >= (applicant.onboardingCost ?? 0);
     const note = applicant.reviewNote || 'Review this application to estimate department fit.';
@@ -341,12 +372,14 @@ const HotelUI = (() => {
           <span><i class="fa-solid fa-building-user"></i>${assignmentLabel(target)}</span>
           <span><i class="fa-solid fa-chart-simple"></i>${reviewed ? `${fit}% ${fitText(fit)}` : 'Unreviewed'}</span>
           <span><i class="fa-solid fa-door-open"></i>${slotText(slots)}</span>
+          ${applicant.marketLabel ? `<span><i class="fa-solid fa-briefcase"></i>${escapeHtml(applicant.marketLabel)}</span>` : ''}
         </div>
         <div class="staff-stat-row">
           ${staffStat('Speed', applicant.speed, 10)}
           ${staffStat('Service', applicant.service, 10)}
           ${staffStat('Discipline', applicant.discipline, 10)}
         </div>
+        ${renderTraitBadge(traitEffect)}
         <p class="staff-application-note">${escapeHtml(note)}</p>
         <div class="staff-application-actions">
           <button type="button" data-staff-action="review-application" data-applicant-id="${escapeHtml(applicant.id)}" ${reviewed ? 'disabled' : ''}>
@@ -372,6 +405,42 @@ const HotelUI = (() => {
         <span>${escapeHtml(item.label)}</span>
         <strong>${item.score}%</strong>
         <em>${item.copy} · ${slotText(item.slots)}</em>
+        ${item.traitCopy ? `<small>${escapeHtml(item.traitCopy)}</small>` : ''}
+      </div>
+    `;
+  }
+
+  function renderStaffWarnings(warnings) {
+    if (!warnings.length) return '';
+    return `
+      <div class="staff-warning-panel">
+        ${warnings.slice(0, 3).map(warning => `
+          <div class="staff-warning-card ${warning.tone ?? 'warn'}">
+            <i class="fa-solid ${warning.tone === 'bad' ? 'fa-triangle-exclamation' : 'fa-circle-exclamation'}"></i>
+            <div>
+              <strong>${escapeHtml(warning.title)}</strong>
+              <span>${escapeHtml(warning.detail)}</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function renderMoraleHistory(history) {
+    if (!history.length) return '';
+    return `
+      <div class="staff-morale-history">
+        <div class="staff-subtitle compact">
+          <i class="fa-solid fa-heart-pulse"></i>
+          Morale History
+        </div>
+        ${history.slice(0, 4).map(entry => `
+          <div class="staff-morale-entry ${entry.tone ?? ''}">
+            <span>${escapeHtml(entry.reason ?? 'Morale changed')}</span>
+            <strong>${entry.delta > 0 ? '+' : ''}${Math.round(entry.delta ?? 0)} · ${Math.round(entry.value ?? 0)}%</strong>
+          </div>
+        `).join('')}
       </div>
     `;
   }
@@ -381,6 +450,30 @@ const HotelUI = (() => {
       <div class="staff-report ${report.tone ?? ''}">
         <strong>${escapeHtml(report.title ?? 'Staff report')}</strong>
         <span>${escapeHtml(report.detail ?? '')}</span>
+      </div>
+    `;
+  }
+
+  function renderStaffEvents(events) {
+    if (!events.length) return '';
+    return `
+      <div class="staff-events-panel">
+        <div class="staff-subtitle">
+          <i class="fa-solid fa-bolt"></i>
+          Staff Events
+          <span>${events.length} recent</span>
+        </div>
+        <div class="staff-event-list">
+          ${events.slice(0, 3).map(event => `
+            <div class="staff-event-card ${event.tone ?? ''}">
+              <i class="fa-solid ${staffEventIcon(event.type)}"></i>
+              <div>
+                <strong>${escapeHtml(event.title ?? 'Staff event')}</strong>
+                <span>${escapeHtml(event.detail ?? '')}</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
       </div>
     `;
   }
@@ -408,6 +501,8 @@ const HotelUI = (() => {
     const xpNeed = HotelState.staffXpRequired?.(member.level ?? 1) ?? 50;
     const promotion = HotelState.getPromotionInfo?.(member) ?? {};
     const statCap = HotelState.getStaffStatCap?.(member) ?? 10;
+    const fireImpact = HotelState.getFireStaffImpact?.(member) ?? { moraleDelta:-3, label:'Morale hit' };
+    const traitEffect = HotelState.getStaffTraitEffect?.(member, current) ?? { trait:member.trait, applies:false, copy:'Reliable personality fit' };
 
     return `
       <article class="staff-card">
@@ -427,6 +522,7 @@ const HotelUI = (() => {
             ${staffStat('Service', member.service, statCap)}
             ${staffStat('Discipline', member.discipline, statCap)}
           </div>
+          ${renderTraitBadge(traitEffect)}
           <div class="staff-stamina">
             <span>Stamina</span>
             <div class="staff-stamina-bar"><div class="${staminaClass}" style="width:${stamina}%"></div></div>
@@ -450,6 +546,15 @@ const HotelUI = (() => {
             </div>
             <button type="button" data-staff-action="promote" data-staff-id="${escapeHtml(member.id)}" ${promotion.eligible ? '' : 'disabled'}>
               Promote
+            </button>
+          </div>
+          <div class="staff-fire-row">
+            <div>
+              <span>Termination</span>
+              <strong>${escapeHtml(fireImpact.label)} · Morale ${fireImpact.moraleDelta}</strong>
+            </div>
+            <button type="button" data-staff-action="fire" data-staff-id="${escapeHtml(member.id)}">
+              <i class="fa-solid fa-user-slash"></i> Fire
             </button>
           </div>
           <div class="staff-assign-grid">
@@ -488,6 +593,7 @@ const HotelUI = (() => {
       const effect = HotelState.getStaffEffect?.(target.id, state);
       const score = effect?.score ?? 0;
       const status = effect?.status ?? 'short';
+      const traitActive = effect?.traitSummary?.active ?? [];
       return {
         ...target,
         label: assignmentLabel(target.id),
@@ -495,6 +601,7 @@ const HotelUI = (() => {
         status,
         slots: effect?.slots ?? target.slots,
         copy: status === 'covered' ? `+${Math.round(((effect?.incomeMult ?? 1) - 1) * 100)}% income` : status === 'thin' ? 'Thin' : 'Short',
+        traitCopy: traitActive.length ? `Traits: ${traitActive.map(item => item.trait).join(', ')}` : '',
       };
     });
   }
@@ -515,6 +622,25 @@ const HotelUI = (() => {
     if (short) return `${short} Short`;
     const thin = coverage.filter(item => item.status === 'thin').length;
     return thin ? `${thin} Thin` : 'Covered';
+  }
+
+  function marketClass(market) {
+    const score = market?.score ?? 0;
+    if (score >= 2) return 'good';
+    if (score < 0) return 'warn';
+    return 'neutral';
+  }
+
+  function staffEventIcon(type) {
+    return {
+      praise: 'fa-comment-dots',
+      service_moment: 'fa-gauge-high',
+      breakthrough: 'fa-arrow-trend-up',
+      burnout: 'fa-fire-extinguisher',
+      sick_day: 'fa-kit-medical',
+      conflict: 'fa-people-arrows',
+      poaching: 'fa-handshake',
+    }[type] ?? 'fa-bolt';
   }
 
   function fitText(score) {
@@ -538,6 +664,19 @@ const HotelUI = (() => {
         <em>${label}</em>
         <strong>${Math.round(value ?? 0)}/${cap}</strong>
       </span>
+    `;
+  }
+
+  function renderTraitBadge(effect) {
+    const trait = effect?.trait || 'Reliable';
+    return `
+      <div class="staff-trait-badge ${effect?.applies ? 'active' : 'inactive'}">
+        <i class="fa-solid ${effect?.applies ? 'fa-star' : 'fa-puzzle-piece'}"></i>
+        <div>
+          <strong>${escapeHtml(trait)}</strong>
+          <span>${escapeHtml(effect?.applies ? effect.copy : `Best in ${assignmentLabel(effect?.department)} · inactive here`)}</span>
+        </div>
+      </div>
     `;
   }
 
@@ -1125,6 +1264,18 @@ const HotelUI = (() => {
         return;
       }
 
+      if (action === 'fire') {
+        const result = HotelState.fireStaff?.(staffId);
+        if (!result?.ok) {
+          CasinoShell.toast(result?.reason === 'last_staff' ? 'You need at least one staff member on payroll.' : 'Could not fire staff member.');
+          return;
+        }
+        renderIncomeDisplay();
+        renderStaffPanel();
+        CasinoShell.toast(`${result.member.name} let go. Morale ${result.impact.moraleDelta}.`);
+        return;
+      }
+
       const result = action === 'rest'
         ? HotelState.restStaff(staffId)
         : HotelState.assignStaff(staffId, btn.dataset.assignment);
@@ -1235,7 +1386,8 @@ const HotelUI = (() => {
   function calendarReportText(report) {
     const showText = report.shows?.length ? ` · ${report.shows.length} show${report.shows.length === 1 ? '' : 's'}` : '';
     const staffText = report.staffReport ? ` · Payroll $${fmt(report.staffReport.payroll ?? 0)}` : '';
-    return `${phaseLabel(report.phase)} report: +$${fmt(report.income)}${showText}${staffText}`;
+    const eventText = report.staffReport?.staffEvent ? ` · ${report.staffReport.staffEvent.title}` : '';
+    return `${phaseLabel(report.phase)} report: +$${fmt(report.income)}${showText}${staffText}${eventText}`;
   }
 
   function formatStayRemaining(checkOutAt) {
