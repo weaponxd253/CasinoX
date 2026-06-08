@@ -29,6 +29,7 @@ const HotelUI = (() => {
     _wireFloorSelection();
     _wireCalendarControls();
     _wireManagementTabs();
+    _wireCommandCenter();
     _wireStaffControls();
     HotelBridge.syncCasinoSnapshot();
 
@@ -63,6 +64,7 @@ const HotelUI = (() => {
     renderIncomeDisplay();
     renderStats(state);
     renderCalendar(state);
+    renderCommandCenter(state);
     renderBuildingView();
     renderGuestRoster(state);
     renderGuestPanel(state);
@@ -106,6 +108,191 @@ const HotelUI = (() => {
     setEl('hotel-tier',         `Tier ${state.meta.hotelTier}`);
     setEl('hotel-name-display', state.meta.hotelName);
     setEl('hotel-guests',       state.guests.population);
+  }
+
+  function renderCommandCenter(state = HotelState.get()) {
+    const strip = document.getElementById('hotel-command-strip');
+    const feed = document.getElementById('hotel-activity-feed');
+    const priorities = commandPriorities(state);
+    const primary = priorities[0] ?? {
+      tone: 'good',
+      icon: 'fa-circle-check',
+      label: 'Stable',
+      detail: 'Hotel is operating smoothly',
+      action: 'departments',
+      actionLabel: 'Review departments',
+    };
+    const summary = priorities.slice(0, 4);
+
+    if (strip) {
+      strip.innerHTML = `
+        <div class="command-primary ${primary.tone}">
+          <span class="command-icon"><i class="fa-solid ${primary.icon}"></i></span>
+          <div>
+            <span>Recommended</span>
+            <strong>${escapeHtml(primary.label)}</strong>
+            <em>${escapeHtml(primary.detail)}</em>
+          </div>
+          <button type="button" data-command-action="${primary.action}" ${primary.dept ? `data-command-dept="${primary.dept}"` : ''}>
+            ${escapeHtml(primary.actionLabel)}
+          </button>
+        </div>
+        <div class="command-chips">
+          ${summary.map(item => `
+            <button type="button" class="command-chip ${item.tone}" data-command-action="${item.action}" ${item.dept ? `data-command-dept="${item.dept}"` : ''}>
+              <i class="fa-solid ${item.icon}"></i>
+              <span>${escapeHtml(item.label)}</span>
+            </button>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    if (feed) {
+      const events = activityEvents(state, priorities).slice(0, 4);
+      feed.innerHTML = `
+        <div class="activity-feed-title">
+          <span><i class="fa-solid fa-wave-square"></i> Live Notes</span>
+          <strong>${events.length}</strong>
+        </div>
+        <div class="activity-feed-list">
+          ${events.map(event => `
+            <button type="button" class="activity-feed-item ${event.tone}" data-command-action="${event.action}" ${event.dept ? `data-command-dept="${event.dept}"` : ''}>
+              <i class="fa-solid ${event.icon}"></i>
+              <span>${escapeHtml(event.text)}</span>
+            </button>
+          `).join('')}
+        </div>
+      `;
+    }
+  }
+
+  function commandPriorities(state) {
+    const items = [];
+    const cash = HotelState.getCash();
+    const staff = typeof HotelState.getStaffRoster === 'function'
+      ? HotelState.getStaffRoster()
+      : [...(state.staff?.roster ?? [])];
+    const applications = typeof HotelState.getStaffApplications === 'function'
+      ? HotelState.getStaffApplications()
+      : [...(state.staff?.applications ?? [])];
+    const coverage = staffCoverage(staff, state);
+    const shortCoverage = coverage.filter(item => item.status === 'short');
+    const thinCoverage = coverage.filter(item => item.status === 'thin');
+    const upgrade = bestAffordableUpgrade(state, cash);
+    const guestSummary = window.HotelGuests?.uiSummary?.(state);
+
+    if (shortCoverage.length) {
+      items.push({
+        tone: 'bad',
+        icon: 'fa-triangle-exclamation',
+        label: `${shortCoverage.length} staff gaps`,
+        detail: `${shortCoverage[0].label} needs coverage first`,
+        action: 'staff',
+        actionLabel: 'Assign staff',
+      });
+    }
+    if (upgrade) {
+      items.push({
+        tone: 'good',
+        icon: 'fa-arrow-up-right-dots',
+        label: `${upgrade.meta.label} upgrade`,
+        detail: `$${fmtShort(upgrade.next.cost)} buys ${upgrade.next.label}`,
+        action: 'dept',
+        dept: upgrade.id,
+        actionLabel: 'View upgrade',
+      });
+    }
+    if (applications.length) {
+      items.push({
+        tone: 'warn',
+        icon: 'fa-file-signature',
+        label: `${applications.length} applicants`,
+        detail: 'Review hires before the next rush',
+        action: 'hiring',
+        actionLabel: 'Review applicants',
+      });
+    }
+    if (guestSummary && guestSummary.population >= guestSummary.capacity) {
+      items.push({
+        tone: 'warn',
+        icon: 'fa-bed',
+        label: 'Rooms capped',
+        detail: `${guestSummary.population}/${guestSummary.capacity} guests in house`,
+        action: 'dept',
+        dept: 'rooms',
+        actionLabel: 'Open rooms',
+      });
+    }
+    if (thinCoverage.length && !shortCoverage.length) {
+      items.push({
+        tone: 'warn',
+        icon: 'fa-gauge-high',
+        label: `${thinCoverage.length} thin areas`,
+        detail: `${thinCoverage[0].label} has little slack`,
+        action: 'staff',
+        actionLabel: 'Check coverage',
+      });
+    }
+    if ((state.satisfaction?.current ?? 100) < 80) {
+      items.push({
+        tone: 'bad',
+        icon: 'fa-face-frown',
+        label: 'Satisfaction dip',
+        detail: `${state.satisfaction.current}% satisfaction needs attention`,
+        action: 'staff',
+        actionLabel: 'Find cause',
+      });
+    }
+    items.push({
+      tone: 'neutral',
+      icon: 'fa-gamepad',
+      label: 'Operations ready',
+      detail: 'Run a department shift for active progress',
+      action: 'operations',
+      actionLabel: 'Open operations',
+    });
+    return items;
+  }
+
+  function activityEvents(state, priorities) {
+    const events = priorities.map(item => ({
+      tone: item.tone,
+      icon: item.icon,
+      text: `${item.label}: ${item.detail}`,
+      action: item.action,
+      dept: item.dept,
+    }));
+    const ipm = HotelEngine.currentIpm(state);
+    events.push({
+      tone: 'good',
+      icon: 'fa-sack-dollar',
+      text: `Hotel income is $${fmt(ipm)}/min`,
+      action: 'departments',
+    });
+    events.push({
+      tone: 'neutral',
+      icon: 'fa-calendar-day',
+      text: `${phaseLabel(state.calendar?.phase ?? 'morning')} phase is active`,
+      action: 'operations',
+    });
+    return events;
+  }
+
+  function bestAffordableUpgrade(state, cash) {
+    const { FLOOR_ORDER, DEPT_META, UPGRADE_CATALOG } = HotelConfig;
+    return FLOOR_ORDER
+      .filter(id => id !== 'lobby')
+      .map(id => {
+        const dept = state.departments[id];
+        if (!dept?.unlocked) return null;
+        const catalog = UPGRADE_CATALOG[id] ?? [];
+        const next = catalog[dept.level ?? 0];
+        if (!next || cash < next.cost) return null;
+        return { id, dept, next, meta: DEPT_META[id] };
+      })
+      .filter(Boolean)
+      .sort((a, b) => (b.next.ipm ?? 0) - (a.next.ipm ?? 0))[0] ?? null;
   }
 
   function renderGuestRoster(state = HotelState.get()) {
@@ -798,14 +985,14 @@ const HotelUI = (() => {
 
       if (id === 'lobby') {
         return `
-          <div class="hotel-floor floor-lobby">
+          <div class="hotel-floor floor-lobby ${selectedDeptId === id ? 'selected' : ''}" data-floor-dept="${id}" role="button" tabindex="0" aria-label="Open ${meta.label}">
             <div class="floor-interior">
               <span class="floor-icon">${meta.icon}</span>
               <div class="floor-info">
                 <div class="floor-name">${meta.label}</div>
                 <div class="floor-level">Lv ${dept.level} · ${stats?.label ?? ''}</div>
               </div>
-              <div class="floor-dots">
+              <div class="floor-dots" title="Current guests">
                 ${_guestDots(Math.min(4, state.guests.population))}
               </div>
             </div>
@@ -816,7 +1003,7 @@ const HotelUI = (() => {
       if (isLocked) {
         const reqRep = HotelConfig.DEPT_UNLOCK_REP[id] ?? 99;
         return `
-          <div class="hotel-floor floor-locked">
+          <div class="hotel-floor floor-locked ${selectedDeptId === id ? 'selected' : ''}" data-floor-dept="${id}" role="button" tabindex="0" aria-label="Open ${meta.label}">
             <div class="floor-interior">
               <span class="floor-icon locked-icon">🚧</span>
               <div class="floor-info">
@@ -828,11 +1015,10 @@ const HotelUI = (() => {
           </div>`;
       }
 
-      const activityLevel = Math.min(dept.level, 3);
-      const activityDots  = '●'.repeat(activityLevel) + '○'.repeat(3 - activityLevel);
+      const rowState = floorState(id, dept, state, isMax);
 
       return `
-        <div class="hotel-floor floor-active" style="--dept-color:${meta.color};--dept-accent:${meta.accent}">
+        <div class="hotel-floor floor-active ${selectedDeptId === id ? 'selected' : ''}" data-floor-dept="${id}" role="button" tabindex="0" aria-label="Open ${meta.label}" style="--dept-color:${meta.color};--dept-accent:${meta.accent}">
           <div class="floor-interior">
             <span class="floor-icon">${meta.icon}</span>
             <div class="floor-info">
@@ -843,7 +1029,7 @@ const HotelUI = (() => {
               </div>
             </div>
             <div class="floor-activity">
-              <span class="activity-dots" title="Activity level">${activityDots}</span>
+              <span class="floor-state ${rowState.tone}" title="${escapeHtml(rowState.detail)}"><i class="fa-solid ${rowState.icon}"></i>${escapeHtml(rowState.label)}</span>
               ${stats?.ipm ? `<span class="floor-ipm">$${stats.ipm}/m</span>` : ''}
             </div>
           </div>
@@ -854,6 +1040,30 @@ const HotelUI = (() => {
 
   function _guestDots(n) {
     return Array.from({ length: n }, () => '<span class="guest-dot">🚶</span>').join('');
+  }
+
+  function floorState(id, dept, state, isMax) {
+    const cash = HotelState.getCash();
+    const catalog = HotelConfig.UPGRADE_CATALOG[id] ?? [];
+    const next = catalog[dept?.level ?? 0];
+    const staff = typeof HotelState.getStaffRoster === 'function'
+      ? HotelState.getStaffRoster()
+      : [...(state.staff?.roster ?? [])];
+    const coverage = staffCoverage(staff, state).find(item => item.id === id);
+
+    if (coverage?.status === 'short') {
+      return { tone: 'bad', icon: 'fa-triangle-exclamation', label: 'Staff', detail: 'Short staffed' };
+    }
+    if (next && cash >= next.cost) {
+      return { tone: 'good', icon: 'fa-arrow-up-right-dots', label: 'Up', detail: `${next.label} is affordable` };
+    }
+    if (isMax) {
+      return { tone: 'maxed', icon: 'fa-circle-check', label: 'Max', detail: 'Fully upgraded' };
+    }
+    if (coverage?.status === 'thin') {
+      return { tone: 'warn', icon: 'fa-gauge-high', label: 'Thin', detail: 'Coverage has little slack' };
+    }
+    return { tone: 'neutral', icon: 'fa-ellipsis', label: 'OK', detail: 'Operating normally' };
   }
 
   /* ── Department upgrade panel ─────────────────────────────── */
@@ -1119,6 +1329,7 @@ const HotelUI = (() => {
         if (action === 'back') {
           selectedDeptId = null;
           renderDeptPanel();
+          renderBuildingView();
           return;
         }
         if (action === 'minigame') {
@@ -1164,10 +1375,10 @@ const HotelUI = (() => {
 
     document.addEventListener('keydown', e => {
       if (e.key !== 'Enter' && e.key !== ' ') return;
-      const card = e.target.closest?.('.dept-card[data-dept]');
+      const card = e.target.closest?.('.dept-card[data-dept], .hotel-floor[data-floor-dept]');
       if (!card) return;
       e.preventDefault();
-      selectDepartment(card.dataset.dept);
+      selectDepartment(card.dataset.dept || card.dataset.floorDept);
     });
   }
 
@@ -1209,6 +1420,37 @@ const HotelUI = (() => {
   function _wireManagementTabs() {
     document.querySelectorAll('[data-tab]').forEach(btn => {
       btn.addEventListener('click', () => setManagementTab(btn.dataset.tab));
+    });
+  }
+
+  function _wireCommandCenter() {
+    document.addEventListener('click', e => {
+      const actionEl = e.target.closest('[data-command-action]');
+      if (!actionEl) return;
+      const action = actionEl.dataset.commandAction;
+      if (action === 'dept') {
+        selectDepartment(actionEl.dataset.commandDept);
+        return;
+      }
+      if (action === 'hiring') {
+        activeStaffView = 'hiring';
+        setManagementTab('staff');
+        renderStaffPanel();
+        return;
+      }
+      if (action === 'staff') {
+        activeStaffView = 'coverage';
+        setManagementTab('staff');
+        renderStaffPanel();
+        return;
+      }
+      setManagementTab(action);
+    });
+
+    document.addEventListener('click', e => {
+      const floor = e.target.closest('.hotel-floor[data-floor-dept]');
+      if (!floor) return;
+      selectDepartment(floor.dataset.floorDept);
     });
   }
 
@@ -1356,6 +1598,7 @@ const HotelUI = (() => {
     setManagementTab('departments');
     selectedDeptId = deptId;
     renderDeptPanel();
+    renderBuildingView();
     const panel = document.getElementById('mgmt-tab-departments');
     if (panel) panel.scrollTo({ top: 0, behavior: 'smooth' });
   }
