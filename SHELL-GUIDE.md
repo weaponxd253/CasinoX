@@ -63,8 +63,9 @@ the game.
   games should style off `[data-theme]` via the tokens above — no per-game theme
   code required.
 - **No Bootstrap needed** for shell chrome (modal/toast are built in).
-- The shell **supersedes `casino-theme.css`** for new games. The slot/blackjack
-  can migrate to it later; until then both files can coexist.
+- The shell **supersedes `casino-theme.css`** for new games. Existing games now
+  use `casino-shell.css` plus their own local styles; `casino-theme.css` is
+  retained only for legacy cleanup review.
 
 See `coinflip/` for a complete ~50-line reference game.
 
@@ -84,5 +85,5 @@ CasinoShell.awardXp(bet);   // 1 XP per $1 wagered, min 1; auto handles level-up
 - **Daily bonus:** one claim per day, a 7-day escalating streak
   ($50→$750, resets on a missed day). The gift button glows when ready and the
   shell auto-opens the claim modal once per session.
-- **Blackjack** won't participate until it's migrated onto the shell (it still
-  has its own header). Add the `awardXp` line during that migration.
+- **Blackjack** is already migrated onto the shell and calls `awardXp` when a
+  hand is dealt. Use it as the higher-complexity reference for chip betting.

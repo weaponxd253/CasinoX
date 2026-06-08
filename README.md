@@ -31,7 +31,7 @@ casino/
 ├── casino-mobile.css       ← Full mobile layout pass (link last on every page)
 ├── wallet.js               ← Shared bankroll via localStorage
 │
-├── casino-theme.css        ← Legacy shared stylesheet (lobby + BJ only)
+├── casino-theme.css        ← Legacy stylesheet retained for older theme rules
 ├── SHELL-GUIDE.md          ← How to add a new game
 └── README.md               ← This file
 │
@@ -41,10 +41,10 @@ casino/
 │   └── script.js           ← Game logic
 │
 ├── blackjack/
-│   ├── index.html          ← Own header (not yet on shell)
-│   ├── styles.css          ← BJ-specific styles (own :root tokens)
+│   ├── index.html          ← On the shell ✓
+│   ├── styles.css          ← Blackjack-specific table styles
 │   ├── betting.css         ← Chip + wager UI
-│   ├── script.js           ← Game logic + betting system
+│   ├── script.js           ← Game logic + betting system + XP
 │   └── sounds/
 │       └── README.txt      ← Drop card-draw.mp3 · win.wav · lose.wav here
 │
@@ -223,9 +223,9 @@ See `coinflip/` for a complete working example in ~50 lines of JS.
 
 ## Known Issues & Outstanding Work
 
-**Blackjack not yet on the shell.** It predates the shell and has its own `:root` tokens, theme code, and header. Theme consistency is managed by keeping its `applyTheme()` writing to the same `localStorage` key as the shell, but any future shell improvements (new meta-game features, mobile polish) won't reach Blackjack until it's migrated. It also doesn't earn XP.
+**Blackjack is now on the shell.** It mounts `CasinoShell`, shares the same bankroll/header controls as the other live casino games, and awards XP when a hand is dealt. Its table and chip UI still keep their own game-specific styles.
 
-**`casino-theme.css` is legacy.** It still powers the lobby's `.casino-header` / `.logo-title` / `.pill-btn` classes and Blackjack's light-theme rules. Once Blackjack is on the shell, this file can be deleted and the lobby's dependencies moved into `casino-shell.css`.
+**`casino-theme.css` is legacy.** It remains in the repo for older theme/header rules, but the active casino pages use `casino-shell.css`, per-game styles, and `casino-mobile.css`. Future cleanup can confirm whether anything still references it and remove it if not.
 
 **Blackjack needs audio files.** The deck API call and card animations work; sounds don't play until you add `card-draw.mp3`, `win.wav`, and `lose.wav` to `blackjack/sounds/`. Shell-based games use synthesised Web Audio and need no files.
 
@@ -235,7 +235,7 @@ See `coinflip/` for a complete working example in ~50 lines of JS.
 
 ## Planned Features
 
-- [ ] Migrate Blackjack onto the shell (retires `casino-theme.css`, adds XP)
+- [x] Migrate Blackjack onto the shell and award XP on wagers
 - [ ] Persistent player profile page (lifetime stats, achievements)
 - [ ] Daily bonus timer (free-chip refill every N hours)
 - [ ] Roulette Royale (simplified red/black/number board, GSAP wheel spin)
