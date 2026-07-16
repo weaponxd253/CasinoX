@@ -60,6 +60,7 @@ const HotelUI = (() => {
   /* ── Full render ─────────────────────────────────────────── */
   function renderAll() {
     const state = HotelState.get();
+    renderGuideFrame(state);
     renderHotelCash();
     renderIncomeDisplay();
     renderStats(state);
@@ -72,6 +73,12 @@ const HotelUI = (() => {
     renderOperationsPanel(state);
     renderDeptPanel();
     renderSatisfactionMeter(state);
+  }
+
+  function renderGuideFrame(state = HotelState.get()) {
+    const step = currentGuidedStep(state);
+    document.body.dataset.guidedStep = step ?? '';
+    document.body.classList.toggle('guided-onboarding-active', !!step);
   }
 
   /* ── Hotel cash ──────────────────────────────────────────── */
@@ -113,7 +120,9 @@ const HotelUI = (() => {
   function renderCommandCenter(state = HotelState.get()) {
     const strip = document.getElementById('hotel-command-strip');
     const feed = document.getElementById('hotel-activity-feed');
-    const priorities = commandPriorities(state);
+    const guided = isGuidedOnboarding();
+    const priorities = guided ? [guidedPriority(state)] : commandPriorities(state);
+    const onboarding = isPhaseOneOnboarding() || guided;
     const primary = priorities[0] ?? {
       tone: 'good',
       icon: 'fa-circle-check',
@@ -122,11 +131,13 @@ const HotelUI = (() => {
       action: 'departments',
       actionLabel: 'Review departments',
     };
-    const summary = priorities.slice(0, 4);
+    const summary = guided ? [] : onboarding ? priorities.slice(1, 3) : priorities.slice(0, 4);
 
     if (strip) {
       strip.innerHTML = `
-        <div class="command-primary ${primary.tone}">
+        ${isPhaseOneOnboarding() ? renderOnboardingIntro() : ''}
+        ${guided ? renderGuidedIntro(state) : ''}
+        <div class="command-primary ${primary.tone} ${onboarding ? 'onboarding-primary' : ''}">
           <span class="command-icon"><i class="fa-solid ${primary.icon}"></i></span>
           <div>
             <span>Recommended</span>
@@ -137,8 +148,8 @@ const HotelUI = (() => {
             ${escapeHtml(primary.actionLabel)}
           </button>
         </div>
-        <div class="command-chips">
-          ${summary.map(item => `
+        <div class="command-chips ${guided ? 'guide-progress-panel' : ''}">
+          ${guided ? renderGuideProgress(state) : summary.map(item => `
             <button type="button" class="command-chip ${item.tone}" data-command-action="${item.action}" ${item.dept ? `data-command-dept="${item.dept}"` : ''}>
               <i class="fa-solid ${item.icon}"></i>
               <span>${escapeHtml(item.label)}</span>
@@ -149,10 +160,10 @@ const HotelUI = (() => {
     }
 
     if (feed) {
-      const events = activityEvents(state, priorities).slice(0, 4);
+      const events = activityEvents(state, priorities).slice(0, onboarding ? 1 : 4);
       feed.innerHTML = `
-        <div class="activity-feed-title">
-          <span><i class="fa-solid fa-wave-square"></i> Live Notes</span>
+        <div class="activity-feed-title ${onboarding ? 'onboarding-notes-title' : ''}">
+          <span><i class="fa-solid fa-wave-square"></i> ${onboarding ? 'Hotel Notes' : 'Live Notes'}</span>
           <strong>${events.length}</strong>
         </div>
         <div class="activity-feed-list">
@@ -167,9 +178,177 @@ const HotelUI = (() => {
     }
   }
 
+  function isPhaseOneOnboarding() {
+    return HotelState.isOnboardingActive?.() ?? false;
+  }
+
+  function isGuidedOnboarding() {
+    return HotelState.isGuidedOnboardingActive?.() ?? false;
+  }
+
+  function currentGuidedStep(state = HotelState.get()) {
+    return HotelState.isGuidedOnboardingActive?.()
+      ? state.onboarding?.guidedStep ?? 'assign_staff'
+      : null;
+  }
+
+  function renderOnboardingIntro() {
+    return `
+      <div class="onboarding-intro">
+        <div>
+          <span>New Manager Start</span>
+          <strong>Fix one service issue, then advance time to see the hotel respond.</strong>
+        </div>
+        <button type="button" data-onboarding-action="dismiss">Skip guidance</button>
+      </div>
+    `;
+  }
+
+  function completePhaseOne(reason) {
+    const changed = HotelState.completeOnboarding?.(reason);
+    if (changed) renderCommandCenter(HotelState.get());
+    return changed;
+  }
+
+  function completeGuidedStep(expectedStep, report = null) {
+    const changed = HotelState.advanceGuidedOnboarding?.(expectedStep, report);
+    if (changed) renderAll();
+    return changed;
+  }
+
+  function markGuidedOperationStart(deptId) {
+    if (isPhaseOneOnboarding()) {
+      completePhaseOne('operation');
+      return;
+    }
+    if (deptId === 'lobby') completeGuidedStep('run_checkin');
+  }
+
+  function renderGuidedIntro(state = HotelState.get()) {
+    const meta = guidedStepMeta(state);
+    return `
+      <div class="onboarding-intro guide-step-intro">
+        <div>
+          <span>Guided Setup · Step ${meta.number} of 5</span>
+          <strong>${escapeHtml(meta.title)}</strong>
+        </div>
+        <button type="button" data-onboarding-action="dismiss">End guidance</button>
+      </div>
+    `;
+  }
+
+  function guidedPriority(state = HotelState.get()) {
+    const meta = guidedStepMeta(state);
+    return {
+      tone: meta.tone,
+      icon: meta.icon,
+      label: meta.label,
+      detail: meta.detail,
+      action: meta.action,
+      actionLabel: meta.actionLabel,
+      dept: meta.dept,
+    };
+  }
+
+  function guidedStepMeta(state = HotelState.get()) {
+    const step = currentGuidedStep(state) ?? 'assign_staff';
+    const upgrade = guidedUpgradeTarget(state, HotelState.getCash());
+    const report = state.onboarding?.lastGuideReport ?? {};
+    return {
+      assign_staff: {
+        number: 1,
+        tone: 'warn',
+        icon: 'fa-user-tie',
+        title: 'Cover service',
+        label: 'Assign one staff member',
+        detail: 'Put an available worker on Restaurant coverage so service stabilizes.',
+        action: 'staff',
+        actionLabel: 'Open staff',
+      },
+      upgrade_department: {
+        number: 2,
+        tone: 'good',
+        icon: 'fa-arrow-up-right-dots',
+        title: 'Improve the hotel',
+        label: upgrade ? `Upgrade ${upgrade.meta.label}` : 'Choose an upgrade',
+        detail: upgrade ? `$${fmtShort(upgrade.next.cost)} buys ${upgrade.next.label}.` : 'Pick an affordable department upgrade.',
+        action: upgrade ? 'dept' : 'departments',
+        dept: upgrade?.id,
+        actionLabel: 'Open upgrade',
+      },
+      run_checkin: {
+        number: 3,
+        tone: 'neutral',
+        icon: 'fa-id-card',
+        title: 'Bring in guests',
+        label: 'Run Check-In Rush',
+        detail: 'Open the lobby operation and check in guests to build your roster.',
+        action: 'operations',
+        actionLabel: 'Open operations',
+      },
+      advance_time: {
+        number: 4,
+        tone: 'warn',
+        icon: 'fa-forward-step',
+        title: 'See the results',
+        label: 'Advance time',
+        detail: 'Advance the hotel phase to collect income, pay payroll, and update service.',
+        action: 'advance_time',
+        actionLabel: 'Highlight button',
+      },
+      review_report: {
+        number: 5,
+        tone: 'good',
+        icon: 'fa-clipboard-check',
+        title: 'Review your hotel',
+        label: 'Review the shift report',
+        detail: report.summary ?? 'Check what changed, then continue building.',
+        action: 'review_report',
+        actionLabel: 'Complete guide',
+      },
+    }[step];
+  }
+
+  function renderGuideProgress(state = HotelState.get()) {
+    const current = currentGuidedStep(state) ?? 'assign_staff';
+    const steps = [
+      ['assign_staff', 'Staff'],
+      ['upgrade_department', 'Upgrade'],
+      ['run_checkin', 'Check-In'],
+      ['advance_time', 'Time'],
+      ['review_report', 'Report'],
+    ];
+    const currentIndex = Math.max(0, steps.findIndex(([id]) => id === current));
+    return `
+      <div class="guide-progress-list">
+        ${steps.map(([id, label], index) => `
+          <span class="${index < currentIndex ? 'done' : id === current ? 'active' : ''}">
+            <i class="fa-solid ${index < currentIndex ? 'fa-check' : id === current ? 'fa-location-dot' : 'fa-circle'}"></i>
+            ${label}
+          </span>
+        `).join('')}
+      </div>
+      ${current === 'review_report' ? renderGuideReport(state) : ''}
+    `;
+  }
+
+  function renderGuideReport(state = HotelState.get()) {
+    const report = state.onboarding?.lastGuideReport;
+    if (!report) return '<p class="guide-report-empty">Advance time to generate the first report.</p>';
+    return `
+      <div class="guide-report-card">
+        <div><span>Income</span><strong>+$${fmt(report.income ?? 0)}</strong></div>
+        <div><span>Payroll</span><strong>$${fmt(report.payroll ?? 0)}</strong></div>
+        <div><span>Satisfaction</span><strong>${fmt(report.satBefore ?? 0)}% -> ${fmt(report.satAfter ?? 0)}%</strong></div>
+        <div><span>Coverage</span><strong>${fmt(report.shortBefore ?? 0)} short -> ${fmt(report.shortAfter ?? 0)} short</strong></div>
+      </div>
+    `;
+  }
+
   function commandPriorities(state) {
     const items = [];
     const cash = HotelState.getCash();
+    const onboarding = isPhaseOneOnboarding();
     const staff = typeof HotelState.getStaffRoster === 'function'
       ? HotelState.getStaffRoster()
       : [...(state.staff?.roster ?? [])];
@@ -181,6 +360,45 @@ const HotelUI = (() => {
     const thinCoverage = coverage.filter(item => item.status === 'thin');
     const upgrade = bestAffordableUpgrade(state, cash);
     const guestSummary = window.HotelGuests?.uiSummary?.(state);
+
+    if (onboarding) {
+      if (shortCoverage.length) {
+        const focus = shortCoverage.find(item => item.id === 'restaurant') ?? shortCoverage[0];
+        items.push({
+          tone: 'warn',
+          icon: 'fa-user-tie',
+          label: focus.id === 'restaurant' ? 'Assign restaurant staff' : 'Staff setup needed',
+          detail: `${focus.label} needs one available worker assigned.`,
+          action: 'staff',
+          actionLabel: 'Start with staff',
+          onboarding: true,
+        });
+      }
+      if (upgrade) {
+        items.push({
+          tone: 'good',
+          icon: 'fa-arrow-up-right-dots',
+          label: 'Upgrade available',
+          detail: `$${fmtShort(upgrade.next.cost)} improves ${upgrade.meta.label}`,
+          action: 'dept',
+          dept: upgrade.id,
+          actionLabel: 'View upgrade',
+          onboarding: true,
+        });
+      }
+      if (!items.length) {
+        items.push({
+          tone: 'neutral',
+          icon: 'fa-calendar-day',
+          label: 'Ready to advance time',
+          detail: 'Run the next hotel phase to see income and service results.',
+          action: 'operations',
+          actionLabel: 'Open operations',
+          onboarding: true,
+        });
+      }
+      return items;
+    }
 
     if (shortCoverage.length) {
       items.push({
@@ -256,6 +474,27 @@ const HotelUI = (() => {
   }
 
   function activityEvents(state, priorities) {
+    if (isPhaseOneOnboarding()) {
+      const primary = priorities[0];
+      return [{
+        tone: primary?.tone ?? 'neutral',
+        icon: primary?.icon ?? 'fa-circle-info',
+        text: primary?.detail ?? 'Start with one hotel action, then advance time.',
+        action: primary?.action ?? 'departments',
+        dept: primary?.dept,
+      }];
+    }
+    if (isGuidedOnboarding()) {
+      const primary = priorities[0] ?? guidedPriority(state);
+      return [{
+        tone: primary?.tone ?? 'neutral',
+        icon: primary?.icon ?? 'fa-circle-info',
+        text: primary?.detail ?? 'Follow the highlighted setup step.',
+        action: primary?.action ?? 'departments',
+        dept: primary?.dept,
+      }];
+    }
+
     const events = priorities.map(item => ({
       tone: item.tone,
       icon: item.icon,
@@ -293,6 +532,32 @@ const HotelUI = (() => {
       })
       .filter(Boolean)
       .sort((a, b) => (b.next.ipm ?? 0) - (a.next.ipm ?? 0))[0] ?? null;
+  }
+
+  function guidedUpgradeTarget(state, cash) {
+    const preferred = ['rooms', 'casino', 'lobby'];
+    const upgrades = preferred
+      .map(id => {
+        const dept = state.departments[id];
+        const catalog = HotelConfig.UPGRADE_CATALOG[id] ?? [];
+        const next = catalog[dept?.level ?? 0];
+        if (!dept?.unlocked || !next || cash < next.cost) return null;
+        return { id, dept, next, meta: HotelConfig.DEPT_META[id] };
+      })
+      .filter(Boolean);
+    return upgrades[0] ?? bestAffordableUpgrade(state, cash);
+  }
+
+  function guidedStaffTarget(state = HotelState.get()) {
+    const staff = typeof HotelState.getStaffRoster === 'function'
+      ? HotelState.getStaffRoster()
+      : [...(state.staff?.roster ?? [])];
+    const coverage = staffCoverage(staff, state);
+    return coverage.find(item => item.id === 'restaurant' && item.status !== 'covered')
+      ?? coverage.find(item => item.status === 'short')
+      ?? coverage.find(item => item.status === 'thin')
+      ?? coverage[0]
+      ?? null;
   }
 
   function renderGuestRoster(state = HotelState.get()) {
@@ -413,6 +678,8 @@ const HotelUI = (() => {
       const enabled = op.always || (dept?.unlocked && (dept.level ?? 0) > 0);
       const meta = HotelConfig.DEPT_META[op.dept];
       const level = dept?.level ?? 0;
+      const guideTarget = currentGuidedStep(state) === 'run_checkin' && op.dept === 'lobby';
+      const guideMuted = currentGuidedStep(state) === 'run_checkin' && op.dept !== 'lobby';
       const tag = enabled ? (op.dept === 'lobby' ? 'Open' : `Lv ${level}`) : dept?.unlocked ? 'Build' : `Rep ${HotelConfig.DEPT_UNLOCK_REP[op.dept] ?? 1}`;
       const body = `
         <span class="operation-icon"><i class="fa-solid ${op.icon}"></i></span>
@@ -423,14 +690,15 @@ const HotelUI = (() => {
         <span class="operation-status">${tag}</span>
       `;
       return enabled
-        ? `<a class="operation-card" href="${op.href}" style="--operation-color:${meta?.color ?? '#0d2218'}">${body}</a>`
-        : `<button class="operation-card locked" type="button" disabled style="--operation-color:${meta?.color ?? '#0d2218'}">${body}</button>`;
+        ? `<a class="operation-card ${guideTarget ? 'guide-target-control' : ''} ${guideMuted ? 'guide-muted-control' : ''}" href="${op.href}" style="--operation-color:${meta?.color ?? '#0d2218'}">${body}</a>`
+        : `<button class="operation-card locked ${guideMuted ? 'guide-muted-control' : ''}" type="button" disabled style="--operation-color:${meta?.color ?? '#0d2218'}">${body}</button>`;
     }).join('');
   }
 
   function renderStaffPanel(state = HotelState.get()) {
     const wrap = document.getElementById('staff-panel');
     if (!wrap) return;
+    if (currentGuidedStep(state) === 'assign_staff') activeStaffView = 'roster';
 
     const staff = typeof HotelState.getStaffRoster === 'function'
       ? HotelState.getStaffRoster()
@@ -632,17 +900,19 @@ const HotelUI = (() => {
 
   function renderStaffWarnings(warnings) {
     if (!warnings.length) return '';
+    const onboarding = isPhaseOneOnboarding();
+    const visibleWarnings = onboarding ? warnings.slice(0, 1) : warnings.slice(0, 3);
     return `
-      <div class="staff-warning-panel">
-        ${warnings.slice(0, 3).map(warning => `
+      <div class="staff-warning-panel ${onboarding ? 'onboarding-warning-panel' : ''}">
+        ${visibleWarnings.map(warning => `
           <div class="staff-warning-card ${warning.tone ?? 'warn'}">
             <i class="fa-solid ${warning.tone === 'bad' ? 'fa-triangle-exclamation' : 'fa-circle-exclamation'}"></i>
             <div>
-              <strong>${escapeHtml(warning.title)}</strong>
-              <span>${escapeHtml(warning.detail)}</span>
+              <strong>${escapeHtml(onboarding ? `${warning.label ?? 'Service'} needs coverage` : warning.title)}</strong>
+              <span>${escapeHtml(onboarding ? 'Guests will be happier once someone is assigned here.' : warning.detail)}</span>
               <div class="staff-warning-actions">
                 <button type="button" data-staff-view="roster">Assign staff</button>
-                <button type="button" data-staff-view="hiring">Review applicants</button>
+                ${onboarding ? '' : '<button type="button" data-staff-view="hiring">Review applicants</button>'}
               </div>
             </div>
           </div>
@@ -712,21 +982,13 @@ const HotelUI = (() => {
       .join('')
       .slice(0, 2)
       .toUpperCase();
-    const buttons = targets.map(target => `
-      <button class="staff-assign-btn ${current === target.id ? 'active' : ''}" type="button"
-              data-staff-action="assign" data-staff-id="${escapeHtml(member.id)}" data-assignment="${target.id}"
-              ${current !== target.id && target.slots?.full ? 'disabled' : ''}
-              title="${current !== target.id && target.slots?.full ? `${target.short} slots full` : `Assign to ${target.short}`}">
-        <i class="fa-solid ${target.icon}"></i>
-        ${target.short}<span>${target.slots?.used ?? 0}/${target.slots?.limit ?? 1}</span>
-      </button>
-    `).join('');
     const trainCost = HotelState.getTrainingCost?.(member) ?? 0;
     const xpNeed = HotelState.staffXpRequired?.(member.level ?? 1) ?? 50;
     const promotion = HotelState.getPromotionInfo?.(member) ?? {};
     const statCap = HotelState.getStaffStatCap?.(member) ?? 10;
     const fireImpact = HotelState.getFireStaffImpact?.(member) ?? { moraleDelta:-3, label:'Morale hit' };
     const traitEffect = HotelState.getStaffTraitEffect?.(member, current) ?? { trait:member.trait, applies:false, copy:'Reliable personality fit' };
+    const guideTarget = currentGuidedStep() === 'assign_staff' ? guidedStaffTarget() : null;
 
     return `
       <article class="staff-card">
@@ -757,13 +1019,13 @@ const HotelUI = (() => {
             <div class="staff-xp-bar"><div style="width:${Math.min(100, Math.round(((member.xp ?? 0) / Math.max(1, xpNeed)) * 100))}%"></div></div>
             <strong>${member.xp ?? 0}/${xpNeed}</strong>
           </div>
-          <div class="staff-training-row">
+          <div class="staff-training-row guide-hide-during-staff">
             <span>Train · $${fmtShort(trainCost)}</span>
             <button type="button" data-staff-action="train" data-stat="speed" data-staff-id="${escapeHtml(member.id)}" ${member.speed >= statCap ? 'disabled' : ''}>Speed</button>
             <button type="button" data-staff-action="train" data-stat="service" data-staff-id="${escapeHtml(member.id)}" ${member.service >= statCap ? 'disabled' : ''}>Service</button>
             <button type="button" data-staff-action="train" data-stat="discipline" data-staff-id="${escapeHtml(member.id)}" ${member.discipline >= statCap ? 'disabled' : ''}>Discipline</button>
           </div>
-          <div class="staff-promotion-row ${promotion.eligible ? 'ready' : ''}">
+          <div class="staff-promotion-row guide-hide-during-staff ${promotion.eligible ? 'ready' : ''}">
             <div>
               <span>${promotion.maxed ? 'Promotion Complete' : `Promote to ${escapeHtml(promotion.nextTitle ?? 'Next Role')}`}</span>
               <strong>${promotion.maxed ? 'Top role reached' : `${escapeHtml(promotion.reason ?? '')} · $${fmtShort(promotion.cost ?? 0)}`}</strong>
@@ -772,7 +1034,7 @@ const HotelUI = (() => {
               Promote
             </button>
           </div>
-          <div class="staff-fire-row">
+          <div class="staff-fire-row guide-hide-during-staff">
             <div>
               <span>Termination</span>
               <strong>${escapeHtml(fireImpact.label)} · Morale ${fireImpact.moraleDelta}</strong>
@@ -782,7 +1044,15 @@ const HotelUI = (() => {
             </button>
           </div>
           <div class="staff-assign-grid">
-            ${buttons}
+            ${targets.map(target => `
+              <button class="staff-assign-btn ${current === target.id ? 'active' : ''} ${guideTarget?.id === target.id ? 'guide-target-control' : ''}" type="button"
+                      data-staff-action="assign" data-staff-id="${escapeHtml(member.id)}" data-assignment="${target.id}"
+                      ${current !== target.id && target.slots?.full ? 'disabled' : ''}
+                      title="${current !== target.id && target.slots?.full ? `${target.short} slots full` : `Assign to ${target.short}`}">
+                <i class="fa-solid ${target.icon}"></i>
+                ${target.short}<span>${target.slots?.used ?? 0}/${target.slots?.limit ?? 1}</span>
+              </button>
+            `).join('')}
             <button class="staff-assign-btn rest ${current === 'rest' ? 'active' : ''}" type="button"
                     data-staff-action="rest" data-staff-id="${escapeHtml(member.id)}">
               <i class="fa-solid fa-mug-hot"></i>
@@ -846,6 +1116,13 @@ const HotelUI = (() => {
     if (short) return `${short} Short`;
     const thin = coverage.filter(item => item.status === 'thin').length;
     return thin ? `${thin} Thin` : 'Covered';
+  }
+
+  function countShortCoverage(state = HotelState.get()) {
+    const staff = typeof HotelState.getStaffRoster === 'function'
+      ? HotelState.getStaffRoster()
+      : [...(state.staff?.roster ?? [])];
+    return staffCoverage(staff, state).filter(item => item.status === 'short').length;
   }
 
   function marketClass(market) {
@@ -935,6 +1212,11 @@ const HotelUI = (() => {
       activeShow.textContent = shows.length
         ? `${shows.length} active show${shows.length === 1 ? '' : 's'}`
         : 'No active show';
+    }
+
+    const advanceBtn = document.getElementById('advance-time-btn');
+    if (advanceBtn) {
+      advanceBtn.classList.toggle('guide-target-control', currentGuidedStep(state) === 'advance_time');
     }
   }
 
@@ -1074,6 +1356,9 @@ const HotelUI = (() => {
     const { FLOOR_ORDER, DEPT_META, UPGRADE_CATALOG, DEPT_UNLOCK_REP } = HotelConfig;
     const cash  = HotelState.getCash();
     const rep   = HotelState.getReputation();
+    const guideUpgrade = currentGuidedStep(state) === 'upgrade_department'
+      ? guidedUpgradeTarget(state, cash)
+      : null;
 
     if (selectedDeptId) {
       renderFocusedDeptPanel(selectedDeptId, state);
@@ -1114,9 +1399,10 @@ const HotelUI = (() => {
       const isMax    = !next;
       const canAfford = !isMax && cash >= (next?.cost ?? Infinity);
       const isReady = dept.level <= 0;
+      const isGuideTarget = guideUpgrade?.id === id;
 
       return `
-        <div class="dept-card ${isMax ? 'maxed' : ''} ${isReady ? 'ready' : ''}" data-dept="${id}" role="button" tabindex="0">
+        <div class="dept-card ${isMax ? 'maxed' : ''} ${isReady ? 'ready' : ''} ${isGuideTarget ? 'guide-target-control' : ''}" data-dept="${id}" role="button" tabindex="0">
           <div class="dept-card-icon">${meta.icon}</div>
           <div class="dept-card-body">
             <div class="dept-card-header">
@@ -1130,7 +1416,7 @@ const HotelUI = (() => {
                    <span class="next-label">→ ${next.label}</span>
                    <span class="next-ipm">$${next.ipm ?? 0}/min</span>
                  </div>
-                 <button class="upgrade-btn ${canAfford ? 'can-afford' : 'cant-afford'}"
+                 <button class="upgrade-btn ${canAfford ? 'can-afford' : 'cant-afford'} ${isGuideTarget ? 'guide-target-control' : ''}"
                          data-dept="${id}" data-cost="${next.cost}"
                          ${canAfford ? '' : 'disabled'}>
                    ${isReady ? 'Build' : 'Upgrade'} · $${fmtShort(next.cost)}
@@ -1159,6 +1445,8 @@ const HotelUI = (() => {
     const isMax = status === 'active' && !next;
     const canAfford = !!next && cash >= next.cost && status !== 'locked';
     const actionLabel = status === 'ready' ? 'Build Department' : 'Upgrade Department';
+    const isGuideTarget = currentGuidedStep(state) === 'upgrade_department'
+      && guidedUpgradeTarget(state, cash)?.id === deptId;
 
     setMgmtTitle(`
       <button class="panel-icon-btn" type="button" data-panel-action="back" title="Back to departments">
@@ -1195,7 +1483,7 @@ const HotelUI = (() => {
             <div class="focus-next-name">${next?.label ?? 'Fully upgraded'}</div>
             <div class="focus-next-desc">${next?.desc ?? 'This department is operating at peak luxury.'}</div>
           </div>
-          ${renderFocusAction(deptId, status, next, canAfford, actionLabel, isMax)}
+          ${renderFocusAction(deptId, status, next, canAfford, actionLabel, isMax, isGuideTarget)}
         </div>
 
         <div class="dept-focus-actions">
@@ -1241,7 +1529,7 @@ const HotelUI = (() => {
     `;
   }
 
-  function renderFocusAction(deptId, status, next, canAfford, actionLabel, isMax) {
+  function renderFocusAction(deptId, status, next, canAfford, actionLabel, isMax, isGuideTarget = false) {
     if (status === 'locked') {
       return `<button class="upgrade-btn cant-afford" type="button" disabled>Locked</button>`;
     }
@@ -1249,7 +1537,7 @@ const HotelUI = (() => {
       return `<button class="upgrade-btn cant-afford" type="button" disabled>Maxed</button>`;
     }
     return `
-      <button class="upgrade-btn ${canAfford ? 'can-afford' : 'cant-afford'}"
+      <button class="upgrade-btn ${canAfford ? 'can-afford' : 'cant-afford'} ${isGuideTarget ? 'guide-target-control' : ''}"
               type="button" data-dept="${deptId}" data-cost="${next.cost}"
               ${canAfford ? '' : 'disabled'}>
         ${actionLabel} · $${fmtShort(next.cost)}
@@ -1306,6 +1594,8 @@ const HotelUI = (() => {
       const deptId = btn.dataset.dept;
       const ok     = HotelState.upgradeDept(deptId);
       if (!ok) { CasinoShell.toast('Not enough hotel cash.'); return; }
+      if (isPhaseOneOnboarding()) completePhaseOne('upgrade');
+      else completeGuidedStep('upgrade_department');
 
       // Post-upgrade
       HotelEngine.recalculateReputation(HotelState.get());
@@ -1336,30 +1626,37 @@ const HotelUI = (() => {
           const deptId = panelAction.dataset.dept;
           const meta = HotelConfig.DEPT_META[deptId];
           if (deptId === 'lobby') {
+            markGuidedOperationStart('lobby');
             window.location.href = 'checkin/index.html';
             return;
           }
           if (deptId === 'casino') {
+            markGuidedOperationStart('casino');
             window.location.href = '../casino.html';
             return;
           }
           if (deptId === 'rooms') {
+            markGuidedOperationStart('rooms');
             window.location.href = 'rooms/index.html';
             return;
           }
           if (deptId === 'bar') {
+            markGuidedOperationStart('bar');
             window.location.href = 'bar/index.html';
             return;
           }
           if (deptId === 'restaurant') {
+            markGuidedOperationStart('restaurant');
             window.location.href = 'restaurant/index.html';
             return;
           }
           if (deptId === 'spa') {
+            markGuidedOperationStart('spa');
             window.location.href = 'spa/index.html';
             return;
           }
           if (deptId === 'entertainment') {
+            markGuidedOperationStart('entertainment');
             window.location.href = 'entertainment/index.html';
             return;
           }
@@ -1411,7 +1708,22 @@ const HotelUI = (() => {
 
   function _wireCalendarControls() {
     document.getElementById('advance-time-btn')?.addEventListener('click', () => {
+      const stateBefore = HotelState.get();
+      const satBefore = stateBefore.satisfaction?.current ?? 0;
+      const shortBefore = countShortCoverage(stateBefore);
       const report = HotelEngine.advanceCalendarPhase();
+      if (currentGuidedStep(HotelState.get()) === 'advance_time') {
+        const stateAfter = HotelState.get();
+        completeGuidedStep('advance_time', {
+          income: report.income ?? 0,
+          payroll: report.staffReport?.payroll ?? 0,
+          satBefore,
+          satAfter: stateAfter.satisfaction?.current ?? satBefore,
+          shortBefore,
+          shortAfter: countShortCoverage(stateAfter),
+          summary: calendarReportText(report),
+        });
+      }
       renderAll();
       CasinoShell.toast(calendarReportText(report));
     });
@@ -1425,11 +1737,39 @@ const HotelUI = (() => {
 
   function _wireCommandCenter() {
     document.addEventListener('click', e => {
+      const onboardingEl = e.target.closest('[data-onboarding-action]');
+      if (onboardingEl) {
+        if (onboardingEl.dataset.onboardingAction === 'dismiss') {
+          HotelState.dismissOnboarding?.();
+          renderAll();
+          CasinoShell.toast('Guidance hidden. Full dashboard restored.');
+        }
+        return;
+      }
+
+      const operationLink = e.target.closest('.operation-card[href]');
+      if (operationLink) {
+        const isCheckIn = operationLink.getAttribute('href')?.includes('checkin/');
+        if (isCheckIn) markGuidedOperationStart('lobby');
+        else if (isPhaseOneOnboarding()) completePhaseOne('operation');
+      }
+
       const actionEl = e.target.closest('[data-command-action]');
       if (!actionEl) return;
       const action = actionEl.dataset.commandAction;
       if (action === 'dept') {
         selectDepartment(actionEl.dataset.commandDept);
+        return;
+      }
+      if (action === 'advance_time') {
+        const btn = document.getElementById('advance-time-btn');
+        btn?.focus?.();
+        btn?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      if (action === 'review_report') {
+        completeGuidedStep('review_report');
+        CasinoShell.toast('Guided setup complete. Keep building your resort.');
         return;
       }
       if (action === 'hiring') {
@@ -1439,7 +1779,7 @@ const HotelUI = (() => {
         return;
       }
       if (action === 'staff') {
-        activeStaffView = 'coverage';
+        activeStaffView = isPhaseOneOnboarding() ? 'roster' : 'coverage';
         setManagementTab('staff');
         renderStaffPanel();
         return;
@@ -1570,7 +1910,12 @@ const HotelUI = (() => {
         return;
       }
 
+      if (action !== 'rest') {
+        if (isPhaseOneOnboarding()) completePhaseOne('staff_assignment');
+        else completeGuidedStep('assign_staff');
+      }
       renderStaffPanel();
+      renderCommandCenter(HotelState.get());
       CasinoShell.toast(action === 'rest'
         ? 'Staff member is resting.'
         : `Staff assigned to ${assignmentLabel(btn.dataset.assignment)}.`);

@@ -8,7 +8,7 @@
 
 const HotelState = (() => {
   const STORAGE_KEY = 'hotelGameState';
-  const SCHEMA_VERSION = 6;
+  const SCHEMA_VERSION = 7;
 
   let _state = null;
 
@@ -155,6 +155,15 @@ const HotelState = (() => {
           casinoLevel:1, chipBalance:100, playerLevel:1, lastSnapshot:null,
         },
       },
+      onboarding: {
+        phase: 1,
+        guidedStep: 'assign_staff',
+        guidedCompleted: false,
+        firstActionCompleted: false,
+        dismissedIntro: false,
+        completedAt: null,
+        lastGuideReport: null,
+      },
     };
   }
 
@@ -170,6 +179,27 @@ const HotelState = (() => {
       state.achievements  = state.achievements  ?? createNewSave().achievements;
     }
     const fresh = createNewSave();
+    const hadOnboarding = !!state.onboarding;
+    const hadGuidedStep = typeof state.onboarding?.guidedStep === 'string';
+    state.onboarding = state.onboarding ?? fresh.onboarding;
+    if (typeof state.onboarding.phase !== 'number') state.onboarding.phase = fresh.onboarding.phase;
+    if (typeof state.onboarding.guidedStep !== 'string') state.onboarding.guidedStep = fresh.onboarding.guidedStep;
+    if (typeof state.onboarding.guidedCompleted !== 'boolean') state.onboarding.guidedCompleted = !!state.onboarding.guidedCompleted;
+    if (typeof state.onboarding.firstActionCompleted !== 'boolean') state.onboarding.firstActionCompleted = !!state.onboarding.firstActionCompleted;
+    if (typeof state.onboarding.dismissedIntro !== 'boolean') state.onboarding.dismissedIntro = !!state.onboarding.dismissedIntro;
+    if (!('completedAt' in state.onboarding)) state.onboarding.completedAt = null;
+    if (!('lastGuideReport' in state.onboarding)) state.onboarding.lastGuideReport = null;
+    if (hadOnboarding && !hadGuidedStep && state.onboarding.firstActionCompleted && state.onboarding.phase === 2) {
+      state.onboarding.guidedStep = guidedStepAfterFirstAction(state.onboarding.completionReason);
+    }
+    if (!hadOnboarding && hasEstablishedProgress(state, fresh)) {
+      state.onboarding.firstActionCompleted = true;
+      state.onboarding.phase = 2;
+      state.onboarding.guidedCompleted = true;
+      state.onboarding.guidedStep = 'complete';
+      state.onboarding.completedAt = state.meta?.lastSaved ?? Date.now();
+      state.onboarding.completionReason = 'existing_save';
+    }
     state.guests = state.guests ?? fresh.guests;
     state.guests.mix = state.guests.mix ?? fresh.guests.mix;
     state.guests.stats = state.guests.stats ?? fresh.guests.stats;
@@ -236,6 +266,16 @@ const HotelState = (() => {
     return state;
   }
 
+  function hasEstablishedProgress(state, fresh) {
+    return (state.currencies?.hotelCash ?? fresh.currencies.hotelCash) !== fresh.currencies.hotelCash
+      || (state.currencies?.reputation ?? 1) > 1
+      || (state.stats?.upgradeCount ?? 0) > 0
+      || (state.ticker?.totalMinutesActive ?? 0) > 0
+      || (state.calendar?.day ?? 1) > 1
+      || (state.staff?.reports?.length ?? 0) > 0
+      || (state.guests?.roster?.length ?? 0) > 0;
+  }
+
   /* ── Persistence ─────────────────────────────────────────── */
   function load() {
     try {
@@ -276,6 +316,90 @@ const HotelState = (() => {
   function getCash()           { return _state.currencies.hotelCash; }
   function getReputation()     { return _state.currencies.reputation; }
   function getSatisfaction()   { return _state.satisfaction.current; }
+  function getOnboarding()     { return _state.onboarding ?? {}; }
+
+  function isOnboardingActive() {
+    const guide = _state?.onboarding;
+    return !!guide && guide.phase === 1 && !guide.firstActionCompleted && !guide.dismissedIntro;
+  }
+
+  function isGuidedOnboardingActive() {
+    const guide = _state?.onboarding;
+    return !!guide
+      && guide.phase === 2
+      && !guide.guidedCompleted
+      && guide.guidedStep !== 'complete'
+      && !guide.dismissedIntro;
+  }
+
+  function nextGuidedStep(current) {
+    return {
+      assign_staff: 'upgrade_department',
+      upgrade_department: 'run_checkin',
+      run_checkin: 'advance_time',
+      advance_time: 'review_report',
+      review_report: 'complete',
+    }[current] ?? 'complete';
+  }
+
+  function guidedStepAfterFirstAction(reason) {
+    if (reason === 'staff_assignment') return 'upgrade_department';
+    if (reason === 'upgrade') return 'run_checkin';
+    return 'run_checkin';
+  }
+
+  function completeOnboarding(reason = 'first_action') {
+    if (!_state) return false;
+    _state.onboarding = _state.onboarding ?? createNewSave().onboarding;
+    if (_state.onboarding.firstActionCompleted && _state.onboarding.phase > 1) return false;
+    _state.onboarding.firstActionCompleted = true;
+    _state.onboarding.phase = Math.max(2, _state.onboarding.phase ?? 1);
+    _state.onboarding.guidedStep = guidedStepAfterFirstAction(reason);
+    _state.onboarding.guidedCompleted = false;
+    _state.onboarding.completedAt = Date.now();
+    _state.onboarding.completionReason = reason;
+    save();
+    return true;
+  }
+
+  function advanceGuidedOnboarding(expectedStep = null, report = null) {
+    if (!_state) return false;
+    _state.onboarding = _state.onboarding ?? createNewSave().onboarding;
+    if (!isGuidedOnboardingActive()) return false;
+    const current = _state.onboarding.guidedStep ?? 'assign_staff';
+    if (expectedStep && current !== expectedStep) return false;
+    if (report) _state.onboarding.lastGuideReport = report;
+    const next = nextGuidedStep(current);
+    _state.onboarding.guidedStep = next;
+    if (next === 'complete') {
+      _state.onboarding.guidedCompleted = true;
+      _state.onboarding.completedAt = Date.now();
+      _state.onboarding.completionReason = 'guided_complete';
+    }
+    save();
+    return true;
+  }
+
+  function setGuidedReport(report) {
+    if (!_state) return false;
+    _state.onboarding = _state.onboarding ?? createNewSave().onboarding;
+    _state.onboarding.lastGuideReport = report;
+    save();
+    return true;
+  }
+
+  function dismissOnboarding() {
+    if (!_state) return false;
+    _state.onboarding = _state.onboarding ?? createNewSave().onboarding;
+    _state.onboarding.dismissedIntro = true;
+    _state.onboarding.phase = Math.max(2, _state.onboarding.phase ?? 1);
+    _state.onboarding.guidedCompleted = true;
+    _state.onboarding.guidedStep = 'complete';
+    _state.onboarding.completedAt = Date.now();
+    _state.onboarding.completionReason = 'dismissed';
+    save();
+    return true;
+  }
 
   /* ── Mutators (all auto-save) ────────────────────────────── */
   function addHotelCash(amount) {
@@ -1539,6 +1663,8 @@ const HotelState = (() => {
   return {
     init, get, save, resetSave, createNewSave,
     getDept, getCash, getReputation, getSatisfaction,
+    getOnboarding, isOnboardingActive, isGuidedOnboardingActive,
+    completeOnboarding, advanceGuidedOnboarding, setGuidedReport, dismissOnboarding,
     addHotelCash, spendHotelCash,
     setReputation, setSatisfaction, setSatisfactionComponents, setTrend,
     upgradeDept, unlockDept, updateTicker,

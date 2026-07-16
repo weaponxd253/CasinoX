@@ -375,6 +375,9 @@ const CheckInGame = (() => {
     if (checkedIn.length > 0 && typeof HotelState.applyCheckInBoost === 'function') {
       HotelState.applyCheckInBoost(checkedIn.length);
     }
+    if (checkedIn.length > 0 && HotelState.isGuidedOnboardingActive?.()) {
+      HotelState.advanceGuidedOnboarding?.('run_checkin');
+    }
     HotelState.applyStaffFatigue?.('lobby', checkedIn.length ? 3 : 1);
 
     // Score label
