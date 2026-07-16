@@ -132,6 +132,7 @@ const HotelUI = (() => {
     if (!canOpenManagementTab(activeMgmtTab, unlocks)) {
       setManagementTab(currentGuidedStep(state) === 'run_checkin' ? 'operations' : 'departments');
     }
+    renderManagementTabBadges(state, unlocks);
 
     if (previousUnlocks) {
       if (!previousUnlocks.guests && unlocks.guests) CasinoShell.toast('Guest tracking unlocked.');
@@ -146,6 +147,33 @@ const HotelUI = (() => {
     if (tabId === 'staff') return unlocks.staffBasic;
     if (tabId === 'guests') return unlocks.guests;
     return true;
+  }
+
+  function renderManagementTabBadges(state = HotelState.get(), unlocks = systemUnlocks(state)) {
+    const staff = typeof HotelState.getStaffRoster === 'function'
+      ? HotelState.getStaffRoster()
+      : [...(state.staff?.roster ?? [])];
+    const shortAreas = staffCoverage(staff, state).filter(item => item.status === 'short').length;
+    const guestCount = HotelState.getRosterCount?.() ?? state.guests?.roster?.length ?? 0;
+    const tabMeta = {
+      departments: { icon:'fa-arrow-up-right-dots', label:'Departments', badge:'' },
+      guests: { icon:'fa-person-walking', label:'Guests', badge:unlocks.guests && guestCount ? String(guestCount) : '' },
+      staff: { icon:'fa-user-tie', label:'Staff', badge:unlocks.staffBasic && shortAreas ? String(shortAreas) : '' },
+      operations: { icon:'fa-gamepad', label:'Operations', badge:'' },
+    };
+    document.querySelectorAll('[data-tab]').forEach(btn => {
+      const meta = tabMeta[btn.dataset.tab];
+      if (!meta) return;
+      btn.innerHTML = `
+        <i class="fa-solid ${meta.icon}"></i>
+        <span>${meta.label}</span>
+        ${meta.badge ? `<em>${escapeHtml(meta.badge)}</em>` : ''}
+      `;
+    });
+  }
+
+  function severityClass(item = {}) {
+    return `severity-${item.severity ?? item.tone ?? 'info'}`;
   }
 
   /* ── Hotel cash ──────────────────────────────────────────── */
@@ -206,7 +234,7 @@ const HotelUI = (() => {
       strip.innerHTML = `
         ${isPhaseOneOnboarding() ? renderOnboardingIntro() : ''}
         ${guided ? renderGuidedIntro(state) : ''}
-        <div class="command-primary ${primary.tone} ${onboarding ? 'onboarding-primary' : ''}">
+        <div class="command-primary ${primary.tone} ${severityClass(primary)} ${onboarding ? 'onboarding-primary' : ''}">
           <span class="command-icon"><i class="fa-solid ${primary.icon}"></i></span>
           <div>
             <span>Recommended</span>
@@ -219,7 +247,7 @@ const HotelUI = (() => {
         </div>
         <div class="command-chips ${guided ? 'guide-progress-panel' : ''}">
           ${guided ? renderGuideProgress(state) : summary.map(item => `
-            <button type="button" class="command-chip ${item.tone}" data-command-action="${item.action}" ${item.dept ? `data-command-dept="${item.dept}"` : ''}>
+            <button type="button" class="command-chip ${item.tone} ${severityClass(item)}" data-command-action="${item.action}" ${item.dept ? `data-command-dept="${item.dept}"` : ''}>
               <i class="fa-solid ${item.icon}"></i>
               <span>${escapeHtml(item.label)}</span>
             </button>
@@ -232,12 +260,12 @@ const HotelUI = (() => {
       const events = activityEvents(state, priorities).slice(0, compactFeed ? 1 : 4);
       feed.innerHTML = `
         <div class="activity-feed-title ${compactFeed ? 'onboarding-notes-title' : ''}">
-          <span><i class="fa-solid fa-wave-square"></i> ${compactFeed ? 'Hotel Notes' : 'Live Notes'}</span>
+          <span><i class="fa-solid fa-wave-square"></i> ${compactFeed ? 'Hotel Notes' : 'Recent Activity'}</span>
           <strong>${events.length}</strong>
         </div>
         <div class="activity-feed-list">
           ${events.map(event => `
-            <button type="button" class="activity-feed-item ${event.tone}" data-command-action="${event.action}" ${event.dept ? `data-command-dept="${event.dept}"` : ''}>
+            <button type="button" class="activity-feed-item ${event.tone} ${severityClass(event)}" data-command-action="${event.action}" ${event.dept ? `data-command-dept="${event.dept}"` : ''}>
               <i class="fa-solid ${event.icon}"></i>
               <span>${escapeHtml(event.text)}</span>
             </button>
@@ -436,6 +464,7 @@ const HotelUI = (() => {
         const focus = shortCoverage.find(item => item.id === 'restaurant') ?? shortCoverage[0];
         items.push({
           tone: 'warn',
+          severity: 'warning',
           icon: 'fa-user-tie',
           label: focus.id === 'restaurant' ? 'Assign restaurant staff' : 'Staff setup needed',
           detail: `${focus.label} needs one available worker assigned.`,
@@ -447,6 +476,7 @@ const HotelUI = (() => {
       if (upgrade) {
         items.push({
           tone: 'good',
+          severity: 'opportunity',
           icon: 'fa-arrow-up-right-dots',
           label: 'Upgrade available',
           detail: `$${fmtShort(upgrade.next.cost)} improves ${upgrade.meta.label}`,
@@ -459,6 +489,7 @@ const HotelUI = (() => {
       if (!items.length) {
         items.push({
           tone: 'neutral',
+          severity: 'info',
           icon: 'fa-calendar-day',
           label: 'Ready to advance time',
           detail: 'Run the next hotel phase to see income and service results.',
@@ -472,7 +503,8 @@ const HotelUI = (() => {
 
     if (shortCoverage.length) {
       items.push({
-        tone: 'bad',
+        tone: shortCoverage.some(item => item.score <= 0) ? 'bad' : 'warn',
+        severity: shortCoverage.some(item => item.score <= 0) ? 'critical' : 'warning',
         icon: 'fa-triangle-exclamation',
         label: `${shortCoverage.length} staff gaps`,
         detail: `${shortCoverage[0].label} needs coverage first`,
@@ -483,6 +515,7 @@ const HotelUI = (() => {
     if (upgrade) {
       items.push({
         tone: 'good',
+        severity: 'opportunity',
         icon: 'fa-arrow-up-right-dots',
         label: `${upgrade.meta.label} upgrade`,
         detail: `$${fmtShort(upgrade.next.cost)} buys ${upgrade.next.label}`,
@@ -493,7 +526,8 @@ const HotelUI = (() => {
     }
     if (applications.length && unlocks.staffAdvanced) {
       items.push({
-        tone: 'warn',
+        tone: 'neutral',
+        severity: 'info',
         icon: 'fa-file-signature',
         label: `${applications.length} applicants`,
         detail: 'Review hires before the next rush',
@@ -504,6 +538,7 @@ const HotelUI = (() => {
     if (unlocks.guests && guestSummary && guestSummary.population >= guestSummary.capacity) {
       items.push({
         tone: 'warn',
+        severity: 'warning',
         icon: 'fa-bed',
         label: 'Rooms capped',
         detail: `${guestSummary.population}/${guestSummary.capacity} guests in house`,
@@ -515,6 +550,7 @@ const HotelUI = (() => {
     if (thinCoverage.length && !shortCoverage.length) {
       items.push({
         tone: 'warn',
+        severity: 'warning',
         icon: 'fa-gauge-high',
         label: `${thinCoverage.length} thin areas`,
         detail: `${thinCoverage[0].label} has little slack`,
@@ -524,7 +560,8 @@ const HotelUI = (() => {
     }
     if (unlocks.reports && (state.satisfaction?.current ?? 100) < 80) {
       items.push({
-        tone: 'bad',
+        tone: (state.satisfaction?.current ?? 100) < 40 ? 'bad' : 'warn',
+        severity: (state.satisfaction?.current ?? 100) < 40 ? 'critical' : 'warning',
         icon: 'fa-face-frown',
         label: 'Satisfaction dip',
         detail: `${state.satisfaction.current}% satisfaction needs attention`,
@@ -534,6 +571,7 @@ const HotelUI = (() => {
     }
     items.push({
       tone: 'neutral',
+      severity: 'info',
       icon: 'fa-gamepad',
       label: 'Operations ready',
       detail: 'Run a department shift for active progress',
@@ -565,8 +603,9 @@ const HotelUI = (() => {
       }];
     }
 
-    const events = priorities.map(item => ({
+    const events = priorities.slice(1).map(item => ({
       tone: item.tone,
+      severity: item.severity,
       icon: item.icon,
       text: `${item.label}: ${item.detail}`,
       action: item.action,
@@ -575,12 +614,14 @@ const HotelUI = (() => {
     const ipm = HotelEngine.currentIpm(state);
     events.push({
       tone: 'good',
+      severity: 'info',
       icon: 'fa-sack-dollar',
       text: `Hotel income is $${fmt(ipm)}/min`,
       action: 'departments',
     });
     events.push({
       tone: 'neutral',
+      severity: 'info',
       icon: 'fa-calendar-day',
       text: `${phaseLabel(state.calendar?.phase ?? 'morning')} phase is active`,
       action: 'operations',
@@ -1131,30 +1172,6 @@ const HotelUI = (() => {
             <div class="staff-xp-bar"><div style="width:${Math.min(100, Math.round(((member.xp ?? 0) / Math.max(1, xpNeed)) * 100))}%"></div></div>
             <strong>${member.xp ?? 0}/${xpNeed}</strong>
           </div>
-          ${staffAdvanced ? `<div class="staff-training-row guide-hide-during-staff">
-            <span>Train · $${fmtShort(trainCost)}</span>
-            <button type="button" data-staff-action="train" data-stat="speed" data-staff-id="${escapeHtml(member.id)}" ${member.speed >= statCap ? 'disabled' : ''}>Speed</button>
-            <button type="button" data-staff-action="train" data-stat="service" data-staff-id="${escapeHtml(member.id)}" ${member.service >= statCap ? 'disabled' : ''}>Service</button>
-            <button type="button" data-staff-action="train" data-stat="discipline" data-staff-id="${escapeHtml(member.id)}" ${member.discipline >= statCap ? 'disabled' : ''}>Discipline</button>
-          </div>` : ''}
-          ${staffAdvanced ? `<div class="staff-promotion-row guide-hide-during-staff ${promotion.eligible ? 'ready' : ''}">
-            <div>
-              <span>${promotion.maxed ? 'Promotion Complete' : `Promote to ${escapeHtml(promotion.nextTitle ?? 'Next Role')}`}</span>
-              <strong>${promotion.maxed ? 'Top role reached' : `${escapeHtml(promotion.reason ?? '')} · $${fmtShort(promotion.cost ?? 0)}`}</strong>
-            </div>
-            <button type="button" data-staff-action="promote" data-staff-id="${escapeHtml(member.id)}" ${promotion.eligible ? '' : 'disabled'}>
-              Promote
-            </button>
-          </div>` : ''}
-          ${staffAdvanced ? `<div class="staff-fire-row guide-hide-during-staff">
-            <div>
-              <span>Termination</span>
-              <strong>${escapeHtml(fireImpact.label)} · Morale ${fireImpact.moraleDelta}</strong>
-            </div>
-            <button type="button" data-staff-action="fire" data-staff-id="${escapeHtml(member.id)}">
-              <i class="fa-solid fa-user-slash"></i> Fire
-            </button>
-          </div>` : ''}
           <div class="staff-assign-grid">
             ${targets.map(target => `
               <button class="staff-assign-btn ${current === target.id ? 'active' : ''} ${guideTarget?.id === target.id ? 'guide-target-control' : ''}" type="button"
@@ -1171,6 +1188,36 @@ const HotelUI = (() => {
               Rest
             </button>
           </div>
+          ${staffAdvanced ? `<details class="staff-development-panel guide-hide-during-staff">
+            <summary>
+              <span>Development</span>
+              <strong>Train, promote, or manage employment</strong>
+            </summary>
+            <div class="staff-training-row">
+              <span>Train · $${fmtShort(trainCost)}</span>
+              <button type="button" data-staff-action="train" data-stat="speed" data-staff-id="${escapeHtml(member.id)}" ${member.speed >= statCap ? 'disabled' : ''}>Speed</button>
+              <button type="button" data-staff-action="train" data-stat="service" data-staff-id="${escapeHtml(member.id)}" ${member.service >= statCap ? 'disabled' : ''}>Service</button>
+              <button type="button" data-staff-action="train" data-stat="discipline" data-staff-id="${escapeHtml(member.id)}" ${member.discipline >= statCap ? 'disabled' : ''}>Discipline</button>
+            </div>
+            <div class="staff-promotion-row ${promotion.eligible ? 'ready' : ''}">
+              <div>
+                <span>${promotion.maxed ? 'Promotion Complete' : `Promote to ${escapeHtml(promotion.nextTitle ?? 'Next Role')}`}</span>
+                <strong>${promotion.maxed ? 'Top role reached' : `${escapeHtml(promotion.reason ?? '')} · $${fmtShort(promotion.cost ?? 0)}`}</strong>
+              </div>
+              <button type="button" data-staff-action="promote" data-staff-id="${escapeHtml(member.id)}" ${promotion.eligible ? '' : 'disabled'}>
+                Promote
+              </button>
+            </div>
+            <div class="staff-fire-row">
+              <div>
+                <span>Termination</span>
+                <strong>${escapeHtml(fireImpact.label)} · Morale ${fireImpact.moraleDelta}</strong>
+              </div>
+              <button type="button" data-staff-action="fire" data-staff-id="${escapeHtml(member.id)}">
+                <i class="fa-solid fa-user-slash"></i> Fire
+              </button>
+            </div>
+          </details>` : ''}
         </div>
       </article>
     `;
