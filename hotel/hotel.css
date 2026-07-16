@@ -921,6 +921,10 @@ body[data-guided-step="run_checkin"] .operation-card:not(.guide-target-control) 
   color: var(--gold-light);
 }
 
+.mgmt-tab[hidden] {
+  display: none;
+}
+
 .mgmt-tab-panel {
   flex: 1 1 auto;
   display: flex;
@@ -1019,6 +1023,13 @@ body[data-guided-step="run_checkin"] .operation-card:not(.guide-target-control) 
   font-family: var(--font-display);
   color: var(--gold-light);
   font-size: 16px;
+}
+
+.progression-locked-panel {
+  border-style: dashed;
+  background:
+    linear-gradient(135deg, rgba(201,168,76,0.06), rgba(0,0,0,0.16)),
+    var(--surface);
 }
 
 .roster-empty span,
