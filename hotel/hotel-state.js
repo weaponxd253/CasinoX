@@ -387,6 +387,70 @@ const HotelState = (() => {
     return true;
   }
 
+  function resetOnboarding(mode = 'guided') {
+    if (!_state) return false;
+    const fresh = createNewSave(_state.meta?.hotelName).onboarding;
+    _state.onboarding = {
+      ...fresh,
+      guidanceMode: mode === 'expert' ? 'expert' : 'guided',
+    };
+    save();
+    return true;
+  }
+
+  function applyOnboardingScenario(scenario = 'fresh_user') {
+    if (!_state) return false;
+    const hotelName = _state.meta?.hotelName ?? 'Grand Casino Resort';
+    const now = Date.now();
+    if (scenario === 'fresh_user') {
+      _state = createNewSave(hotelName);
+      save();
+      return true;
+    }
+
+    resetOnboarding('guided');
+    if (scenario === 'skip_guidance') {
+      return dismissOnboarding();
+    }
+    if (scenario === 'expert_toggle') {
+      _state.onboarding.guidanceMode = 'expert';
+      _state.onboarding.expertModeEnabledAt = now;
+      save();
+      return true;
+    }
+    if (scenario === 'existing_save') {
+      _state.onboarding = {
+        ..._state.onboarding,
+        guidanceMode: 'expert',
+        phase: 2,
+        guidedStep: 'complete',
+        guidedCompleted: true,
+        firstActionCompleted: true,
+        dismissedIntro: false,
+        completedAt: now,
+        expertModeEnabledAt: now,
+        completionReason: 'existing_save',
+      };
+      save();
+      return true;
+    }
+    if (scenario === 'guided_complete') {
+      _state.onboarding = {
+        ..._state.onboarding,
+        phase: 2,
+        guidedStep: 'complete',
+        guidedCompleted: true,
+        firstActionCompleted: true,
+        completedAt: now,
+        completionReason: 'guided_complete',
+      };
+      save();
+      return true;
+    }
+    save();
+    return true;
+  }
+
   function advanceGuidedOnboarding(expectedStep = null, report = null) {
     if (!_state) return false;
     _state.onboarding = _state.onboarding ?? createNewSave().onboarding;
@@ -1692,6 +1756,7 @@ const HotelState = (() => {
     getDept, getCash, getReputation, getSatisfaction,
     getOnboarding, isOnboardingActive, isGuidedOnboardingActive,
     getGuidanceMode, setGuidanceMode, isExpertMode,
+    resetOnboarding, applyOnboardingScenario,
     completeOnboarding, advanceGuidedOnboarding, setGuidedReport, dismissOnboarding,
     addHotelCash, spendHotelCash,
     setReputation, setSatisfaction, setSatisfactionComponents, setTrend,

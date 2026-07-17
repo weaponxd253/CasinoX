@@ -11,6 +11,10 @@ const HotelUI = (() => {
   let activeMgmtTab = 'departments';
   let activeStaffView = 'coverage';
   let previousUnlocks = null;
+  let onboardingDebugVisible = typeof location !== 'undefined'
+    && new URLSearchParams(location.search).get('onboardingDebug') === '1';
+  let guideConfirmation = null;
+  let guideConfirmationTimer = null;
 
   /* ── Bootstrap ───────────────────────────────────────────── */
   function init() {
@@ -32,6 +36,7 @@ const HotelUI = (() => {
     _wireManagementTabs();
     _wireCommandCenter();
     _wireStaffControls();
+    _wireOnboardingDebug();
     HotelBridge.syncCasinoSnapshot();
 
     // Subscribe to bridge events for visual feedback
@@ -247,6 +252,8 @@ const HotelUI = (() => {
       strip.innerHTML = `
         ${isPhaseOneOnboarding() ? renderOnboardingIntro() : ''}
         ${guided ? renderGuidedIntro(state) : ''}
+        ${renderGuideConfirmation()}
+        ${onboardingDebugVisible ? renderOnboardingDebugPanel(state, unlocks) : ''}
         ${renderGuidanceModeControl()}
         <div class="command-primary ${primary.tone} ${severityClass(primary)} ${onboarding ? 'onboarding-primary' : ''}">
           <span class="command-icon"><i class="fa-solid ${primary.icon}"></i></span>
@@ -319,7 +326,8 @@ const HotelUI = (() => {
       <div class="onboarding-intro">
         <div>
           <span>New Manager Start</span>
-          <strong>Fix one service issue, then advance time to see the hotel respond.</strong>
+          <strong>Start with one service fix: assign staff where coverage is short.</strong>
+          <small>Click the recommendation below. Good coverage protects satisfaction while the hotel grows.</small>
         </div>
         <button type="button" data-onboarding-action="dismiss">Skip guidance</button>
       </div>
@@ -328,13 +336,13 @@ const HotelUI = (() => {
 
   function completePhaseOne(reason) {
     const changed = HotelState.completeOnboarding?.(reason);
-    if (changed) renderCommandCenter(HotelState.get());
+    if (changed) showGuideConfirmation(reason);
     return changed;
   }
 
   function completeGuidedStep(expectedStep, report = null) {
     const changed = HotelState.advanceGuidedOnboarding?.(expectedStep, report);
-    if (changed) renderAll();
+    if (changed) showGuideConfirmation(expectedStep);
     return changed;
   }
 
@@ -353,6 +361,7 @@ const HotelUI = (() => {
         <div>
           <span>Guided Setup · Step ${meta.number} of 5</span>
           <strong>${escapeHtml(meta.title)}</strong>
+          <small>${escapeHtml(meta.why)}</small>
         </div>
         <button type="button" data-onboarding-action="dismiss">End guidance</button>
       </div>
@@ -383,7 +392,8 @@ const HotelUI = (() => {
         icon: 'fa-user-tie',
         title: 'Cover service',
         label: 'Assign one staff member',
-        detail: 'Put an available worker on Restaurant coverage so service stabilizes.',
+        detail: 'Click Staff, then assign an available worker to a short department.',
+        why: 'Coverage is the fastest way to stop satisfaction from sliding.',
         action: 'staff',
         actionLabel: 'Open staff',
       },
@@ -393,7 +403,8 @@ const HotelUI = (() => {
         icon: 'fa-arrow-up-right-dots',
         title: 'Improve the hotel',
         label: upgrade ? `Upgrade ${upgrade.meta.label}` : 'Choose an upgrade',
-        detail: upgrade ? `$${fmtShort(upgrade.next.cost)} buys ${upgrade.next.label}.` : 'Pick an affordable department upgrade.',
+        detail: upgrade ? `Click Upgrade. $${fmtShort(upgrade.next.cost)} buys ${upgrade.next.label}.` : 'Pick an affordable department upgrade.',
+        why: 'Upgrades raise income and give the next shift more room to succeed.',
         action: upgrade ? 'dept' : 'departments',
         dept: upgrade?.id,
         actionLabel: 'Open upgrade',
@@ -404,7 +415,8 @@ const HotelUI = (() => {
         icon: 'fa-id-card',
         title: 'Bring in guests',
         label: 'Run Check-In Rush',
-        detail: 'Open the lobby operation and check in guests to build your roster.',
+        detail: 'Click Operations, then open Check-In Rush and check in guests.',
+        why: 'Guests make the hotel feel alive and unlock the guest view.',
         action: 'operations',
         actionLabel: 'Open operations',
       },
@@ -414,7 +426,8 @@ const HotelUI = (() => {
         icon: 'fa-forward-step',
         title: 'See the results',
         label: 'Advance time',
-        detail: 'Advance the hotel phase to collect income, pay payroll, and update service.',
+        detail: 'Click Advance Time at the top of the screen.',
+        why: 'The next phase collects income, pays payroll, and creates your first report.',
         action: 'advance_time',
         actionLabel: 'Highlight button',
       },
@@ -424,11 +437,92 @@ const HotelUI = (() => {
         icon: 'fa-clipboard-check',
         title: 'Review your hotel',
         label: 'Review the shift report',
-        detail: report.summary ?? 'Check what changed, then continue building.',
+        detail: report.summary ?? 'Click Complete guide after reviewing what changed.',
+        why: 'The report shows what your first decisions improved and what needs attention next.',
         action: 'review_report',
         actionLabel: 'Complete guide',
       },
     }[step];
+  }
+
+  function showGuideConfirmation(stepId) {
+    const text = guideCompletionText(stepId);
+    if (!text) {
+      renderAll();
+      return;
+    }
+    guideConfirmation = { stepId, text, createdAt: Date.now() };
+    renderAll();
+    if (guideConfirmationTimer) clearTimeout(guideConfirmationTimer);
+    guideConfirmationTimer = setTimeout(() => {
+      if (!guideConfirmation || guideConfirmation.stepId !== stepId) return;
+      guideConfirmation = null;
+      renderCommandCenter(HotelState.get());
+    }, 3600);
+  }
+
+  function guideCompletionText(stepId) {
+    return {
+      staff_assignment: 'Step complete: service coverage started.',
+      upgrade: 'Step complete: your first improvement is underway.',
+      operation: 'Step complete: operations are open.',
+      assign_staff: 'Step complete: coverage is better.',
+      upgrade_department: 'Step complete: the hotel is stronger.',
+      run_checkin: 'Step complete: guests are arriving.',
+      advance_time: 'Step complete: the first shift report is ready.',
+      review_report: 'Guide complete: the full dashboard is yours.',
+    }[stepId] ?? '';
+  }
+
+  function renderGuideConfirmation() {
+    if (!guideConfirmation) return '';
+    return `
+      <div class="guide-confirmation" role="status">
+        <i class="fa-solid fa-circle-check"></i>
+        <span>${escapeHtml(guideConfirmation.text)}</span>
+      </div>
+    `;
+  }
+
+  function renderOnboardingDebugPanel(state = HotelState.get(), unlocks = systemUnlocks(state)) {
+    const guide = state.onboarding ?? {};
+    const rows = [
+      ['Mode', HotelState.getGuidanceMode?.() ?? 'guided'],
+      ['Phase', String(guide.phase ?? 1)],
+      ['Step', guide.guidedStep ?? 'assign_staff'],
+      ['First action', guide.firstActionCompleted ? 'yes' : 'no'],
+      ['Guided complete', guide.guidedCompleted ? 'yes' : 'no'],
+      ['Dismissed', guide.dismissedIntro ? 'yes' : 'no'],
+      ['Reason', guide.completionReason ?? 'none'],
+      ['Active tab', activeMgmtTab],
+      ['Unlocks', Object.entries(unlocks).filter(([, value]) => value).map(([key]) => key).join(', ')],
+    ];
+    return `
+      <section class="onboarding-debug-panel" aria-label="Onboarding debug panel">
+        <div class="onboarding-debug-head">
+          <div>
+            <span>Onboarding Test Panel</span>
+            <strong>Use Ctrl+Shift+G to hide or show this panel.</strong>
+          </div>
+          <button type="button" data-onboarding-debug-action="hide">Hide</button>
+        </div>
+        <div class="onboarding-debug-grid">
+          ${rows.map(([label, value]) => `
+            <span>${escapeHtml(label)}</span>
+            <strong>${escapeHtml(value)}</strong>
+          `).join('')}
+        </div>
+        <div class="onboarding-debug-actions">
+          <button type="button" data-onboarding-debug-scenario="fresh_user">Fresh user</button>
+          <button type="button" data-onboarding-debug-scenario="skip_guidance">Skipped</button>
+          <button type="button" data-onboarding-debug-scenario="expert_toggle">Expert</button>
+          <button type="button" data-onboarding-debug-action="guided-mode">Guided</button>
+          <button type="button" data-onboarding-debug-scenario="existing_save">Existing save</button>
+          <button type="button" data-onboarding-debug-scenario="guided_complete">Guide complete</button>
+          <button type="button" data-onboarding-debug-action="reset-onboarding">Reset onboarding only</button>
+        </div>
+      </section>
+    `;
   }
 
   function renderGuideProgress(state = HotelState.get()) {
@@ -1917,6 +2011,76 @@ const HotelUI = (() => {
     document.querySelectorAll('[data-tab]').forEach(btn => {
       btn.addEventListener('click', () => setManagementTab(btn.dataset.tab));
     });
+  }
+
+  function _wireOnboardingDebug() {
+    document.addEventListener('keydown', e => {
+      if (!e.ctrlKey || !e.shiftKey || e.key.toLowerCase() !== 'g') return;
+      e.preventDefault();
+      toggleOnboardingDebug();
+    });
+
+    document.addEventListener('click', e => {
+      const scenarioBtn = e.target.closest('[data-onboarding-debug-scenario]');
+      if (scenarioBtn) {
+        applyOnboardingDebugScenario(scenarioBtn.dataset.onboardingDebugScenario);
+        return;
+      }
+
+      const actionBtn = e.target.closest('[data-onboarding-debug-action]');
+      if (!actionBtn) return;
+      const action = actionBtn.dataset.onboardingDebugAction;
+      if (action === 'hide') {
+        toggleOnboardingDebug(false);
+        return;
+      }
+      if (action === 'guided-mode') {
+        HotelState.setGuidanceMode?.('guided');
+        renderAll();
+        CasinoShell.toast('Debug: guided mode selected.');
+        return;
+      }
+      if (action === 'reset-onboarding') {
+        HotelState.resetOnboarding?.('guided');
+        guideConfirmation = null;
+        previousUnlocks = null;
+        activeMgmtTab = 'departments';
+        renderAll();
+        CasinoShell.toast('Debug: onboarding reset.');
+      }
+    });
+
+    if (typeof window !== 'undefined') {
+      window.HotelOnboardingDebug = {
+        toggle: toggleOnboardingDebug,
+        scenario: applyOnboardingDebugScenario,
+        resetOnboarding: () => {
+          HotelState.resetOnboarding?.('guided');
+          renderAll();
+        },
+      };
+    }
+  }
+
+  function toggleOnboardingDebug(force = null) {
+    onboardingDebugVisible = force === null ? !onboardingDebugVisible : !!force;
+    renderCommandCenter(HotelState.get());
+    CasinoShell.toast(onboardingDebugVisible ? 'Onboarding debug shown.' : 'Onboarding debug hidden.');
+  }
+
+  function applyOnboardingDebugScenario(scenario) {
+    const changed = HotelState.applyOnboardingScenario?.(scenario);
+    if (!changed) {
+      CasinoShell.toast('Debug scenario failed.');
+      return;
+    }
+    guideConfirmation = null;
+    previousUnlocks = null;
+    selectedDeptId = null;
+    activeMgmtTab = 'departments';
+    activeStaffView = 'coverage';
+    renderAll();
+    CasinoShell.toast(`Debug scenario: ${scenario.replaceAll('_', ' ')}.`);
   }
 
   function _wireCommandCenter() {
