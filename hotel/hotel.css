@@ -266,6 +266,47 @@
     rgba(0,0,0,0.18);
 }
 
+.guidance-mode-control {
+  grid-column: 1 / -1;
+  justify-self: end;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid rgba(201,168,76,0.22);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.18);
+}
+
+.guidance-mode-control span {
+  padding: 0 8px;
+  color: var(--text-dim);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.guidance-mode-control button {
+  min-height: 26px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px 10px;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.guidance-mode-control button:hover,
+.guidance-mode-control button.active {
+  border-color: rgba(201,168,76,0.42);
+  background: rgba(201,168,76,0.12);
+  color: var(--gold-light);
+}
+
 .command-primary,
 .command-chips,
 .hotel-activity-feed {
@@ -2753,6 +2794,15 @@ body.light .operation-status {
   }
   .onboarding-intro button {
     width: 100%;
+  }
+  .guidance-mode-control {
+    justify-self: stretch;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .guidance-mode-control span {
+    grid-column: 1 / -1;
+    text-align: center;
   }
   .command-primary button {
     grid-column: 1 / -1;

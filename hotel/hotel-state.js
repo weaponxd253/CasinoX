@@ -8,7 +8,7 @@
 
 const HotelState = (() => {
   const STORAGE_KEY = 'hotelGameState';
-  const SCHEMA_VERSION = 7;
+  const SCHEMA_VERSION = 8;
 
   let _state = null;
 
@@ -156,12 +156,14 @@ const HotelState = (() => {
         },
       },
       onboarding: {
+        guidanceMode: 'guided',
         phase: 1,
         guidedStep: 'assign_staff',
         guidedCompleted: false,
         firstActionCompleted: false,
         dismissedIntro: false,
         completedAt: null,
+        expertModeEnabledAt: null,
         lastGuideReport: null,
       },
     };
@@ -188,7 +190,13 @@ const HotelState = (() => {
     if (typeof state.onboarding.firstActionCompleted !== 'boolean') state.onboarding.firstActionCompleted = !!state.onboarding.firstActionCompleted;
     if (typeof state.onboarding.dismissedIntro !== 'boolean') state.onboarding.dismissedIntro = !!state.onboarding.dismissedIntro;
     if (!('completedAt' in state.onboarding)) state.onboarding.completedAt = null;
+    if (!('expertModeEnabledAt' in state.onboarding)) state.onboarding.expertModeEnabledAt = null;
     if (!('lastGuideReport' in state.onboarding)) state.onboarding.lastGuideReport = null;
+    if (!['guided', 'expert'].includes(state.onboarding.guidanceMode)) {
+      state.onboarding.guidanceMode = state.onboarding.dismissedIntro || state.onboarding.completionReason === 'existing_save'
+        ? 'expert'
+        : 'guided';
+    }
     if (hadOnboarding && !hadGuidedStep && state.onboarding.firstActionCompleted && state.onboarding.phase === 2) {
       state.onboarding.guidedStep = guidedStepAfterFirstAction(state.onboarding.completionReason);
     }
@@ -199,6 +207,7 @@ const HotelState = (() => {
       state.onboarding.guidedStep = 'complete';
       state.onboarding.completedAt = state.meta?.lastSaved ?? Date.now();
       state.onboarding.completionReason = 'existing_save';
+      state.onboarding.guidanceMode = 'expert';
     }
     state.guests = state.guests ?? fresh.guests;
     state.guests.mix = state.guests.mix ?? fresh.guests.mix;
@@ -317,15 +326,18 @@ const HotelState = (() => {
   function getReputation()     { return _state.currencies.reputation; }
   function getSatisfaction()   { return _state.satisfaction.current; }
   function getOnboarding()     { return _state.onboarding ?? {}; }
+  function getGuidanceMode()   { return _state?.onboarding?.guidanceMode === 'expert' ? 'expert' : 'guided'; }
+  function isExpertMode()      { return getGuidanceMode() === 'expert'; }
 
   function isOnboardingActive() {
     const guide = _state?.onboarding;
-    return !!guide && guide.phase === 1 && !guide.firstActionCompleted && !guide.dismissedIntro;
+    return !!guide && !isExpertMode() && guide.phase === 1 && !guide.firstActionCompleted && !guide.dismissedIntro;
   }
 
   function isGuidedOnboardingActive() {
     const guide = _state?.onboarding;
     return !!guide
+      && !isExpertMode()
       && guide.phase === 2
       && !guide.guidedCompleted
       && guide.guidedStep !== 'complete'
@@ -351,6 +363,7 @@ const HotelState = (() => {
   function completeOnboarding(reason = 'first_action') {
     if (!_state) return false;
     _state.onboarding = _state.onboarding ?? createNewSave().onboarding;
+    if (isExpertMode()) return false;
     if (_state.onboarding.firstActionCompleted && _state.onboarding.phase > 1) return false;
     _state.onboarding.firstActionCompleted = true;
     _state.onboarding.phase = Math.max(2, _state.onboarding.phase ?? 1);
@@ -358,6 +371,18 @@ const HotelState = (() => {
     _state.onboarding.guidedCompleted = false;
     _state.onboarding.completedAt = Date.now();
     _state.onboarding.completionReason = reason;
+    save();
+    return true;
+  }
+
+  function setGuidanceMode(mode = 'guided') {
+    if (!_state) return false;
+    const nextMode = mode === 'expert' ? 'expert' : 'guided';
+    _state.onboarding = _state.onboarding ?? createNewSave().onboarding;
+    if (_state.onboarding.guidanceMode === nextMode) return false;
+    _state.onboarding.guidanceMode = nextMode;
+    if (nextMode === 'expert') _state.onboarding.expertModeEnabledAt = Date.now();
+
     save();
     return true;
   }
@@ -397,6 +422,8 @@ const HotelState = (() => {
     _state.onboarding.guidedStep = 'complete';
     _state.onboarding.completedAt = Date.now();
     _state.onboarding.completionReason = 'dismissed';
+    _state.onboarding.guidanceMode = 'expert';
+    _state.onboarding.expertModeEnabledAt = Date.now();
     save();
     return true;
   }
@@ -1664,6 +1691,7 @@ const HotelState = (() => {
     init, get, save, resetSave, createNewSave,
     getDept, getCash, getReputation, getSatisfaction,
     getOnboarding, isOnboardingActive, isGuidedOnboardingActive,
+    getGuidanceMode, setGuidanceMode, isExpertMode,
     completeOnboarding, advanceGuidedOnboarding, setGuidedReport, dismissOnboarding,
     addHotelCash, spendHotelCash,
     setReputation, setSatisfaction, setSatisfactionComponents, setTrend,

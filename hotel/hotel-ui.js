@@ -84,6 +84,18 @@ const HotelUI = (() => {
   }
 
   function systemUnlocks(state = HotelState.get()) {
+    if (HotelState.isExpertMode?.()) {
+      return {
+        departments: true,
+        operations: true,
+        staff: true,
+        guests: true,
+        staffBasic: true,
+        reports: true,
+        staffAdvanced: true,
+        fullDashboard: true,
+      };
+    }
     const guide = state.onboarding ?? {};
     const guideStep = currentGuidedStep(state);
     const guidedComplete = !!guide.dismissedIntro
@@ -117,6 +129,7 @@ const HotelUI = (() => {
 
   function renderSystemUnlocks(state = HotelState.get()) {
     const unlocks = systemUnlocks(state);
+    document.body.dataset.guidanceMode = HotelState.getGuidanceMode?.() ?? 'guided';
     document.body.dataset.staffAdvanced = unlocks.staffAdvanced ? 'true' : 'false';
     document.body.dataset.reportsUnlocked = unlocks.reports ? 'true' : 'false';
     document.body.dataset.guestsUnlocked = unlocks.guests ? 'true' : 'false';
@@ -234,6 +247,7 @@ const HotelUI = (() => {
       strip.innerHTML = `
         ${isPhaseOneOnboarding() ? renderOnboardingIntro() : ''}
         ${guided ? renderGuidedIntro(state) : ''}
+        ${renderGuidanceModeControl()}
         <div class="command-primary ${primary.tone} ${severityClass(primary)} ${onboarding ? 'onboarding-primary' : ''}">
           <span class="command-icon"><i class="fa-solid ${primary.icon}"></i></span>
           <div>
@@ -287,6 +301,17 @@ const HotelUI = (() => {
     return HotelState.isGuidedOnboardingActive?.()
       ? state.onboarding?.guidedStep ?? 'assign_staff'
       : null;
+  }
+
+  function renderGuidanceModeControl() {
+    const mode = HotelState.getGuidanceMode?.() ?? 'guided';
+    return `
+      <div class="guidance-mode-control" aria-label="Dashboard guidance mode">
+        <span>Mode</span>
+        <button type="button" data-guidance-mode="guided" class="${mode === 'guided' ? 'active' : ''}" aria-pressed="${mode === 'guided'}">Guided</button>
+        <button type="button" data-guidance-mode="expert" class="${mode === 'expert' ? 'active' : ''}" aria-pressed="${mode === 'expert'}">Expert</button>
+      </div>
+    `;
   }
 
   function renderOnboardingIntro() {
@@ -1896,6 +1921,19 @@ const HotelUI = (() => {
 
   function _wireCommandCenter() {
     document.addEventListener('click', e => {
+      const modeEl = e.target.closest('[data-guidance-mode]');
+      if (modeEl) {
+        const nextMode = modeEl.dataset.guidanceMode === 'expert' ? 'expert' : 'guided';
+        const changed = HotelState.setGuidanceMode?.(nextMode);
+        if (changed) {
+          renderAll();
+          CasinoShell.toast(nextMode === 'expert'
+            ? 'Expert dashboard enabled.'
+            : 'Guided pacing enabled.');
+        }
+        return;
+      }
+
       const onboardingEl = e.target.closest('[data-onboarding-action]');
       if (onboardingEl) {
         if (onboardingEl.dataset.onboardingAction === 'dismiss') {
