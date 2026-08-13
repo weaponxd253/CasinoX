@@ -55,7 +55,7 @@ const HotelUI = (() => {
     HotelBridge.on('income', () => {
       renderIncomeDisplay();
       renderHotelCash();
-      renderBuildingView();
+      renderHotelSnapshot(HotelState.get());
     });
 
     HotelBridge.on('guest_income', ({ amount }) => {
@@ -71,9 +71,9 @@ const HotelUI = (() => {
     renderHotelCash();
     renderIncomeDisplay();
     renderStats(state);
+    renderHotelSnapshot(state);
     renderCalendar(state);
     renderCommandCenter(state);
-    renderBuildingView();
     renderGuestRoster(state);
     renderGuestPanel(state);
     renderStaffPanel(state);
@@ -177,7 +177,7 @@ const HotelUI = (() => {
       departments: { icon:'fa-arrow-up-right-dots', label:'Departments', badge:'' },
       guests: { icon:'fa-person-walking', label:'Guests', badge:unlocks.guests && guestCount ? String(guestCount) : '' },
       staff: { icon:'fa-user-tie', label:'Staff', badge:unlocks.staffBasic && shortAreas ? String(shortAreas) : '' },
-      operations: { icon:'fa-gamepad', label:'Operations', badge:'' },
+      operations: { icon:'fa-list-check', label:'All Shifts', badge:'' },
     };
     document.querySelectorAll('[data-tab]').forEach(btn => {
       const meta = tabMeta[btn.dataset.tab];
@@ -228,6 +228,41 @@ const HotelUI = (() => {
     setEl('hotel-tier',         `Tier ${state.meta.hotelTier}`);
     setEl('hotel-name-display', state.meta.hotelName);
     setEl('hotel-guests',       state.guests.population);
+  }
+
+  function renderHotelSnapshot(state = HotelState.get()) {
+    const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    const guestSummary = window.HotelGuests?.uiSummary?.(state);
+    const staff = typeof HotelState.getStaffRoster === 'function'
+      ? HotelState.getStaffRoster()
+      : [...(state.staff?.roster ?? [])];
+    const gaps = staffCoverage(staff, state).filter(item => item.status === 'short').length;
+
+    setEl('snapshot-income-rate', fmt(HotelEngine.currentIpm(state)));
+    setEl('snapshot-guest-cap', `/${guestSummary?.capacity ?? 0}`);
+    setEl('snapshot-staff-gaps', gaps);
+    setEl('snapshot-next-unlock', nextUnlockLabel(state));
+  }
+
+  function nextUnlockLabel(state = HotelState.get()) {
+    const rep = HotelState.getReputation();
+    const candidates = HotelConfig.FLOOR_ORDER
+      .filter(id => id !== 'lobby')
+      .map(id => ({
+        id,
+        dept: state.departments[id],
+        meta: HotelConfig.DEPT_META[id],
+        req: HotelConfig.DEPT_UNLOCK_REP[id] ?? 1,
+      }));
+    const buildable = candidates.find(item => item.dept?.unlocked && (item.dept.level ?? 0) <= 0);
+    if (buildable) return `Build ${buildable.meta?.label ?? buildable.id}`;
+    const locked = candidates
+      .filter(item => !item.dept?.unlocked)
+      .sort((a, b) => a.req - b.req)[0];
+    if (locked) return rep >= locked.req
+      ? locked.meta?.label ?? locked.id
+      : `${locked.meta?.label ?? locked.id} at rep ${locked.req}`;
+    return 'All departments open';
   }
 
   function renderCommandCenter(state = HotelState.get()) {
@@ -630,10 +665,10 @@ const HotelUI = (() => {
         icon: 'fa-id-card',
         title: 'Bring in guests',
         label: 'Run Check-In Rush',
-        detail: 'Click Operations, then open Check-In Rush and check in guests.',
+        detail: 'Click All Shifts, then open Check-In Rush and check in guests.',
         why: 'Guests make the hotel feel alive and unlock the guest view.',
         action: 'operations',
-        actionLabel: 'Open operations',
+        actionLabel: 'Open All Shifts',
       },
       advance_time: {
         number: 4,
@@ -680,7 +715,7 @@ const HotelUI = (() => {
     return {
       staff_assignment: 'Step complete: service coverage started.',
       upgrade: 'Step complete: your first improvement is underway.',
-      operation: 'Step complete: operations are open.',
+      operation: 'Step complete: shifts are open.',
       assign_staff: 'Step complete: coverage is better.',
       upgrade_department: 'Step complete: the hotel is stronger.',
       run_checkin: 'Step complete: guests are arriving.',
@@ -828,7 +863,7 @@ const HotelUI = (() => {
           label: 'Ready to advance time',
           detail: 'Run the next hotel phase to see income and service results.',
           action: 'operations',
-          actionLabel: 'Open operations',
+          actionLabel: 'Open All Shifts',
           onboarding: true,
         });
       }
@@ -907,10 +942,10 @@ const HotelUI = (() => {
       tone: 'neutral',
       severity: 'info',
       icon: 'fa-gamepad',
-      label: 'Operations ready',
+      label: 'All Shifts ready',
       detail: 'Run a department shift for active progress',
       action: 'operations',
-      actionLabel: 'Open operations',
+      actionLabel: 'Open All Shifts',
     });
     return items;
   }
@@ -1093,7 +1128,7 @@ const HotelUI = (() => {
         <div class="roster-empty progression-locked-panel">
           <i class="fa-solid fa-person-walking"></i>
           <strong>Guests appear after your first Check-In Rush</strong>
-          <span>Start with operations, then this view will track occupancy, demand, and guest mix.</span>
+          <span>Start with All Shifts, then this view will track occupancy, demand, and guest mix.</span>
         </div>
       `;
       return;
@@ -1128,22 +1163,61 @@ const HotelUI = (() => {
     const wrap = document.getElementById('operations-list');
     if (!wrap) return;
 
-    wrap.innerHTML = operationCatalog().map(rawOp => {
-      const op = operationUiState(rawOp, state);
-      const guideTarget = currentGuidedStep(state) === 'run_checkin' && op.dept === 'lobby';
-      const guideMuted = currentGuidedStep(state) === 'run_checkin' && op.dept !== 'lobby';
-      const body = `
-        <span class="operation-icon"><i class="fa-solid ${op.icon}"></i></span>
-        <span class="operation-copy">
-          <strong>${op.title}</strong>
-          <span>${op.subtitle}</span>
-        </span>
-        <span class="operation-status">${op.tag}</span>
-      `;
-      return op.enabled
-        ? `<a class="operation-card ${guideTarget ? 'guide-target-control' : ''} ${guideMuted ? 'guide-muted-control' : ''}" href="${op.href}" style="--operation-color:${op.meta?.color ?? '#0d2218'}">${body}</a>`
-        : `<button class="operation-card locked ${guideMuted ? 'guide-muted-control' : ''}" type="button" disabled style="--operation-color:${op.meta?.color ?? '#0d2218'}">${body}</button>`;
-    }).join('');
+    const context = todayShiftContext(state);
+    const ops = operationCatalog()
+      .map((op, index) => decorateShiftOp(op, state, context, index))
+      .sort((a, b) => Number(b.enabled) - Number(a.enabled) || b.score - a.score || a.repRequired - b.repRequired);
+
+    wrap.innerHTML = `
+      <div class="all-shifts-intro">
+        <span>Full Shift Catalog</span>
+        <strong>Featured shifts live above. This list shows every playable and future shift.</strong>
+      </div>
+      ${ops.map(op => renderAllShiftCard(op, state)).join('')}
+    `;
+  }
+
+  function renderAllShiftCard(op, state = HotelState.get()) {
+    const guideTarget = currentGuidedStep(state) === 'run_checkin' && op.dept === 'lobby';
+    const guideMuted = currentGuidedStep(state) === 'run_checkin' && op.dept !== 'lobby';
+    const status = allShiftStatus(op);
+    const body = `
+      <span class="operation-icon"><i class="fa-solid ${op.icon}"></i></span>
+      <span class="operation-copy">
+        <strong>${escapeHtml(op.title)}</strong>
+        <span>${escapeHtml(op.enabled ? op.reason : lockedShiftDetail(op))}</span>
+        <em>${escapeHtml(op.enabled ? op.reward : lockedShiftReward(op, state))}</em>
+      </span>
+      <span class="operation-status">${escapeHtml(status)}</span>
+    `;
+    const style = `--operation-color:${op.meta?.color ?? '#0d2218'}`;
+    if (op.enabled) {
+      return `<a class="operation-card all-shift-card ${guideTarget ? 'guide-target-control' : ''} ${guideMuted ? 'guide-muted-control' : ''}" href="${op.href}" style="${style}">${body}</a>`;
+    }
+    return `
+      <button class="operation-card all-shift-card locked ${guideMuted ? 'guide-muted-control' : ''}" type="button"
+              data-command-action="dept" data-command-dept="${op.dept}" style="${style}">
+        ${body}
+      </button>
+    `;
+  }
+
+  function allShiftStatus(op) {
+    if (op.enabled) return shiftCta(op);
+    if (op.deptState?.unlocked) return 'View Build';
+    return `Rep ${op.repRequired}`;
+  }
+
+  function lockedShiftDetail(op) {
+    if (op.deptState?.unlocked) return `Build ${op.meta?.label ?? op.title} to unlock this shift`;
+    return `Requires reputation ${op.repRequired}`;
+  }
+
+  function lockedShiftReward(op, state = HotelState.get()) {
+    const first = HotelConfig.UPGRADE_CATALOG[op.dept]?.[0];
+    if (first?.ipm) return `Future reward: +$${fmtShort(first.ipm)}/min`;
+    if (op.dept === 'casino') return 'Future reward: casino progress';
+    return 'Future reward: cash + satisfaction';
   }
 
   function renderStaffPanel(state = HotelState.get()) {
@@ -2098,7 +2172,7 @@ const HotelUI = (() => {
         if (action === 'back') {
           selectedDeptId = null;
           renderDeptPanel();
-          renderBuildingView();
+          renderHotelSnapshot(HotelState.get());
           return;
         }
         if (action === 'minigame') {
@@ -2483,6 +2557,7 @@ const HotelUI = (() => {
         else completeGuidedStep('assign_staff');
       }
       renderStaffPanel();
+      renderHotelSnapshot(HotelState.get());
       renderCommandCenter(HotelState.get());
       CasinoShell.toast(action === 'rest'
         ? 'Staff member is resting.'
@@ -2520,7 +2595,7 @@ const HotelUI = (() => {
     setManagementTab('departments');
     selectedDeptId = deptId;
     renderDeptPanel();
-    renderBuildingView();
+    renderHotelSnapshot(HotelState.get());
     const panel = document.getElementById('mgmt-tab-departments');
     if (panel) panel.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -2542,6 +2617,7 @@ const HotelUI = (() => {
       renderGuestRoster();
       renderStaffPanel();
       renderOperationsPanel();
+      renderHotelSnapshot();
     }, 5_000);
   }
 

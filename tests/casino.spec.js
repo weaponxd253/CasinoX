@@ -51,6 +51,20 @@ test.describe('launch navigation', () => {
     await expect(page.locator('#hotel-name-display')).toContainText('Grand Casino Resort');
   });
 
+  test('hotel dashboard keeps shifts prominent and exposes the full shift catalog', async ({ page }) => {
+    await page.goto('/hotel/index.html');
+
+    await expect(page.locator('.hotel-snapshot-card')).toBeVisible();
+    await expect(page.locator('.hotel-view-wrap')).toHaveCount(0);
+    await expect(page.locator('.shift-card')).toHaveCount(3);
+    await expect(page.locator('.shift-card.featured')).toContainText('Recommended');
+
+    await page.locator('.mgmt-tab[data-tab="operations"]').click();
+    await expect(page.locator('.mgmt-tab[data-tab="operations"]')).toContainText('All Shifts');
+    await expect(page.locator('#operations-list .all-shifts-intro')).toContainText('Full Shift Catalog');
+    await expect(page.locator('#operations-list .all-shift-card')).toHaveCount(7);
+  });
+
   test('casino lobby exposes only working live game links', async ({ page }) => {
     await page.goto('/casino.html');
 
