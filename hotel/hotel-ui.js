@@ -247,7 +247,7 @@ const HotelUI = (() => {
       actionLabel: 'Review departments',
     };
     const summary = guided ? [] : priorities.slice(onboarding ? 1 : 0, unlocks.fullDashboard ? 4 : 2);
-    const featuredShifts = todayShiftOps(state);
+    const shiftSet = todayShiftOps(state);
 
     if (strip) {
       strip.innerHTML = `
@@ -259,11 +259,14 @@ const HotelUI = (() => {
           <div>
             <span>Playable Now</span>
             <strong>Today's Shifts</strong>
-            <em>${featuredShifts.length} playable shift${featuredShifts.length === 1 ? '' : 's'} · Daily hotel actions</em>
+            <div class="shift-headline-meta">
+              <em>${shiftSet.playableCount} playable shift${shiftSet.playableCount === 1 ? '' : 's'} · Daily hotel actions</em>
+              ${renderNextShiftChip(shiftSet.preview)}
+            </div>
           </div>
           ${renderGuidanceModeControl()}
         </div>
-        ${renderTodayShifts(state, featuredShifts)}
+        ${renderTodayShifts(state, shiftSet.playable)}
         <div class="command-primary ${primary.tone} ${severityClass(primary)} ${onboarding ? 'onboarding-primary' : ''}">
           <span class="command-icon"><i class="fa-solid ${primary.icon}"></i></span>
           <div>
@@ -321,31 +324,119 @@ const HotelUI = (() => {
     const dept = state.departments[op.dept];
     const meta = HotelConfig.DEPT_META[op.dept];
     const level = dept?.level ?? 0;
+    const repRequired = HotelConfig.DEPT_UNLOCK_REP[op.dept] ?? 1;
     const enabled = op.always || (dept?.unlocked && level > 0);
     const tag = enabled
       ? (op.dept === 'lobby' ? 'Open' : `Lv ${level}`)
       : dept?.unlocked
         ? 'Build'
-        : `Rep ${HotelConfig.DEPT_UNLOCK_REP[op.dept] ?? 1}`;
-    return { ...op, deptState: dept, meta, level, enabled, tag };
+        : `Rep ${repRequired}`;
+    return { ...op, deptState: dept, meta, level, repRequired, enabled, tag };
   }
 
   function todayShiftOps(state = HotelState.get()) {
-    const guidedStep = currentGuidedStep(state);
-    const preferred = guidedStep === 'run_checkin'
-      ? ['lobby', 'rooms', 'casino', 'restaurant', 'bar', 'entertainment', 'spa']
-      : ['rooms', 'casino', 'lobby', 'restaurant', 'bar', 'entertainment', 'spa'];
-    const enabled = operationCatalog()
-      .map(op => operationUiState(op, state))
-      .filter(op => op.enabled);
-    const ordered = [
-      ...preferred.map(id => enabled.find(op => op.dept === id)).filter(Boolean),
-      ...enabled.filter(op => !preferred.includes(op.dept)),
-    ].slice(0, 3);
-    return ordered;
+    const context = todayShiftContext(state);
+    const ops = operationCatalog()
+      .map((op, index) => decorateShiftOp(op, state, context, index));
+    const playable = ops
+      .filter(op => op.enabled)
+      .sort((a, b) => b.score - a.score || a.sortIndex - b.sortIndex)
+      .slice(0, 3)
+      .map((op, index) => ({
+        ...op,
+        featured: index === 0,
+        priorityLabel: index === 0 ? 'Recommended' : op.priorityLabel,
+      }));
+
+    return {
+      playable,
+      playableCount: ops.filter(op => op.enabled).length,
+      preview: nextShiftPreview(ops),
+    };
   }
 
-  function renderTodayShifts(state = HotelState.get(), ordered = todayShiftOps(state)) {
+  function todayShiftContext(state = HotelState.get()) {
+    const guestSummary = window.HotelGuests?.uiSummary?.(state);
+    const staff = typeof HotelState.getStaffRoster === 'function'
+      ? HotelState.getStaffRoster()
+      : [...(state.staff?.roster ?? [])];
+    const coverage = new Map(staffCoverage(staff, state).map(item => [item.id, item]));
+    return {
+      guestSummary,
+      coverage,
+      population: guestSummary?.population ?? state.guests?.population ?? 0,
+      capacity: guestSummary?.capacity ?? 0,
+      satisfaction: state.satisfaction?.current ?? 100,
+      activeShows: HotelEngine.activeEntertainmentBookings?.(state)?.length ?? 0,
+      guidedStep: currentGuidedStep(state),
+      rep: HotelState.getReputation(),
+    };
+  }
+
+  function decorateShiftOp(op, state, context, sortIndex) {
+    const ui = operationUiState(op, state);
+    return {
+      ...ui,
+      sortIndex,
+      rep: context.rep,
+      score: shiftScore(ui, context),
+      priorityLabel: shiftPriorityLabel(ui, context),
+      reason: shiftDetail(ui, state, context),
+      reward: shiftReward(ui, state),
+    };
+  }
+
+  function shiftScore(op, context) {
+    if (!op.enabled) return -Infinity;
+    const openRooms = Math.max(0, context.capacity - context.population);
+    const occupancy = context.capacity ? context.population / context.capacity : 0;
+    const coverage = context.coverage.get(op.dept);
+    let score = 12 + (op.level * 4);
+
+    if (op.dept === 'rooms') {
+      score += context.population > 0 ? 70 : 16;
+      score += Math.min(24, context.population * 3);
+      if (occupancy >= 0.75) score += 14;
+      if (context.satisfaction < 80) score += 12;
+    } else if (op.dept === 'lobby') {
+      score += openRooms > 0 ? 58 : 8;
+      score += Math.min(18, openRooms * 2);
+      if (context.population === 0) score += 18;
+    } else if (op.dept === 'casino') {
+      score += 42 + (op.level * 5);
+      if (context.population === 0) score += 10;
+    } else if (op.dept === 'restaurant' || op.dept === 'spa') {
+      score += 34;
+      if (context.satisfaction < 80) score += 16;
+    } else if (op.dept === 'bar') {
+      score += 32 + (occupancy >= 0.5 ? 8 : 0);
+    } else if (op.dept === 'entertainment') {
+      score += 30 + (context.activeShows ? 18 : 0);
+    }
+
+    if (coverage?.status === 'short') score += 8;
+    if (coverage?.status === 'thin') score += 4;
+    if (context.guidedStep === 'run_checkin' && op.dept === 'lobby') score += 200;
+    return score;
+  }
+
+  function shiftPriorityLabel(op, context) {
+    if (op.dept === 'rooms' && context.population > 0) return 'High Impact';
+    if (op.dept === 'lobby') return 'Open Shift';
+    if (op.dept === 'casino') return 'Daily';
+    if (context.coverage.get(op.dept)?.status === 'short') return 'Needs Coverage';
+    return 'Open Shift';
+  }
+
+  function nextShiftPreview(ops) {
+    const candidates = ops.filter(op => !op.enabled && op.dept !== 'lobby');
+    return candidates.find(op => op.deptState?.unlocked)
+      ?? candidates.find(op => op.repRequired - op.rep <= 2)
+      ?? candidates[0]
+      ?? null;
+  }
+
+  function renderTodayShifts(state = HotelState.get(), ordered = todayShiftOps(state).playable) {
     return `
       <section class="today-shifts" aria-label="Playable hotel shifts">
         ${ordered.map(op => renderTodayShiftCard(op, state)).join('')}
@@ -358,24 +449,39 @@ const HotelUI = (() => {
     const guideMuted = currentGuidedStep(state) === 'run_checkin' && op.dept !== 'lobby';
     const style = `--operation-color:${op.meta?.color ?? '#0d2218'};--operation-accent:${op.meta?.accent ?? '#1a3d2a'}`;
     return `
-      <a class="shift-card ${guideTarget ? 'guide-target-control' : ''} ${guideMuted ? 'guide-muted-control' : ''}" href="${op.href}" style="${style}">
+      <a class="shift-card ${op.featured ? 'featured' : ''} ${guideTarget ? 'guide-target-control' : ''} ${guideMuted ? 'guide-muted-control' : ''}" href="${op.href}" style="${style}">
         <span class="shift-card-icon"><i class="fa-solid ${op.icon}"></i></span>
         <span class="shift-card-copy">
-          <span>${op.tag} Shift</span>
+          <span>${escapeHtml(op.priorityLabel)}</span>
           <strong>${escapeHtml(op.title)}</strong>
-          <em>${escapeHtml(shiftDetail(op, state))}</em>
+          <em>${escapeHtml(op.reason ?? shiftDetail(op, state))}</em>
         </span>
         <span class="shift-card-reward">
           <span>Reward</span>
-          <strong>${escapeHtml(shiftReward(op, state))}</strong>
+          <strong>${escapeHtml(op.reward ?? shiftReward(op, state))}</strong>
         </span>
         <span class="shift-card-cta">${escapeHtml(shiftCta(op))}</span>
       </a>
     `;
   }
 
-  function shiftDetail(op, state = HotelState.get()) {
-    const guestSummary = window.HotelGuests?.uiSummary?.(state);
+  function renderNextShiftChip(op) {
+    if (!op) return '';
+    return `
+      <button class="shift-next-chip" type="button" data-command-action="dept" data-command-dept="${op.dept}">
+        <i class="fa-solid ${op.icon}"></i>
+        <span>${escapeHtml(nextShiftText(op))}</span>
+      </button>
+    `;
+  }
+
+  function nextShiftText(op) {
+    if (op.deptState?.unlocked) return `Next: build ${op.title}`;
+    return `Next: ${op.title} · Rep ${op.repRequired}`;
+  }
+
+  function shiftDetail(op, state = HotelState.get(), context = todayShiftContext(state)) {
+    const guestSummary = context.guestSummary;
     if (op.dept === 'lobby') {
       if (guestSummary) return `${Math.max(0, guestSummary.capacity - guestSummary.population)} rooms ready for arrivals`;
       return 'Check guests into open rooms';
