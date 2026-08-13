@@ -247,6 +247,7 @@ const HotelUI = (() => {
       actionLabel: 'Review departments',
     };
     const summary = guided ? [] : priorities.slice(onboarding ? 1 : 0, unlocks.fullDashboard ? 4 : 2);
+    const featuredShifts = todayShiftOps(state);
 
     if (strip) {
       strip.innerHTML = `
@@ -254,11 +255,19 @@ const HotelUI = (() => {
         ${guided ? renderGuidedIntro(state) : ''}
         ${renderGuideConfirmation()}
         ${onboardingDebugVisible ? renderOnboardingDebugPanel(state, unlocks) : ''}
-        ${renderGuidanceModeControl()}
+        <div class="command-strip-head">
+          <div>
+            <span>Playable Now</span>
+            <strong>Today's Shifts</strong>
+            <em>${featuredShifts.length} playable shift${featuredShifts.length === 1 ? '' : 's'} · Daily hotel actions</em>
+          </div>
+          ${renderGuidanceModeControl()}
+        </div>
+        ${renderTodayShifts(state, featuredShifts)}
         <div class="command-primary ${primary.tone} ${severityClass(primary)} ${onboarding ? 'onboarding-primary' : ''}">
           <span class="command-icon"><i class="fa-solid ${primary.icon}"></i></span>
           <div>
-            <span>Recommended</span>
+            <span>Best Next Move</span>
             <strong>${escapeHtml(primary.label)}</strong>
             <em>${escapeHtml(primary.detail)}</em>
           </div>
@@ -296,6 +305,106 @@ const HotelUI = (() => {
     }
   }
 
+  function operationCatalog() {
+    return [
+      { dept:'lobby', title:'Check-In Rush', subtitle:'Lobby operation', href:'checkin/index.html', icon:'fa-id-card', always:true },
+      { dept:'casino', title:'Casino Floor', subtitle:'Slots, blackjack, and table games', href:'../casino.html', icon:'fa-dice' },
+      { dept:'rooms', title:'Floor Ops', subtitle:'Guest rooms operation', href:'rooms/index.html', icon:'fa-bell-concierge' },
+      { dept:'restaurant', title:'Tasting Room', subtitle:'Restaurant operation', href:'restaurant/index.html', icon:'fa-utensils' },
+      { dept:'bar', title:'Bar Shift', subtitle:'Bar & lounge operation', href:'bar/index.html', icon:'fa-martini-glass-citrus' },
+      { dept:'entertainment', title:'Show Lineup', subtitle:'Entertainment operation', href:'entertainment/index.html', icon:'fa-masks-theater' },
+      { dept:'spa', title:'Spa Rush', subtitle:'Spa & wellness operation', href:'spa/index.html', icon:'fa-spa' },
+    ];
+  }
+
+  function operationUiState(op, state = HotelState.get()) {
+    const dept = state.departments[op.dept];
+    const meta = HotelConfig.DEPT_META[op.dept];
+    const level = dept?.level ?? 0;
+    const enabled = op.always || (dept?.unlocked && level > 0);
+    const tag = enabled
+      ? (op.dept === 'lobby' ? 'Open' : `Lv ${level}`)
+      : dept?.unlocked
+        ? 'Build'
+        : `Rep ${HotelConfig.DEPT_UNLOCK_REP[op.dept] ?? 1}`;
+    return { ...op, deptState: dept, meta, level, enabled, tag };
+  }
+
+  function todayShiftOps(state = HotelState.get()) {
+    const guidedStep = currentGuidedStep(state);
+    const preferred = guidedStep === 'run_checkin'
+      ? ['lobby', 'rooms', 'casino', 'restaurant', 'bar', 'entertainment', 'spa']
+      : ['rooms', 'casino', 'lobby', 'restaurant', 'bar', 'entertainment', 'spa'];
+    const enabled = operationCatalog()
+      .map(op => operationUiState(op, state))
+      .filter(op => op.enabled);
+    const ordered = [
+      ...preferred.map(id => enabled.find(op => op.dept === id)).filter(Boolean),
+      ...enabled.filter(op => !preferred.includes(op.dept)),
+    ].slice(0, 3);
+    return ordered;
+  }
+
+  function renderTodayShifts(state = HotelState.get(), ordered = todayShiftOps(state)) {
+    return `
+      <section class="today-shifts" aria-label="Playable hotel shifts">
+        ${ordered.map(op => renderTodayShiftCard(op, state)).join('')}
+      </section>
+    `;
+  }
+
+  function renderTodayShiftCard(op, state = HotelState.get()) {
+    const guideTarget = currentGuidedStep(state) === 'run_checkin' && op.dept === 'lobby';
+    const guideMuted = currentGuidedStep(state) === 'run_checkin' && op.dept !== 'lobby';
+    const style = `--operation-color:${op.meta?.color ?? '#0d2218'};--operation-accent:${op.meta?.accent ?? '#1a3d2a'}`;
+    return `
+      <a class="shift-card ${guideTarget ? 'guide-target-control' : ''} ${guideMuted ? 'guide-muted-control' : ''}" href="${op.href}" style="${style}">
+        <span class="shift-card-icon"><i class="fa-solid ${op.icon}"></i></span>
+        <span class="shift-card-copy">
+          <span>${op.tag} Shift</span>
+          <strong>${escapeHtml(op.title)}</strong>
+          <em>${escapeHtml(shiftDetail(op, state))}</em>
+        </span>
+        <span class="shift-card-reward">
+          <span>Reward</span>
+          <strong>${escapeHtml(shiftReward(op, state))}</strong>
+        </span>
+        <span class="shift-card-cta">${escapeHtml(shiftCta(op))}</span>
+      </a>
+    `;
+  }
+
+  function shiftDetail(op, state = HotelState.get()) {
+    const guestSummary = window.HotelGuests?.uiSummary?.(state);
+    if (op.dept === 'lobby') {
+      if (guestSummary) return `${Math.max(0, guestSummary.capacity - guestSummary.population)} rooms ready for arrivals`;
+      return 'Check guests into open rooms';
+    }
+    if (op.dept === 'rooms' && guestSummary) {
+      return `${guestSummary.population}/${guestSummary.capacity} guests in house`;
+    }
+    if (op.dept === 'casino') return 'Table games and reels are open';
+    if (op.dept === 'restaurant') return 'Dining room service shift';
+    if (op.dept === 'bar') return 'Bar and lounge service shift';
+    if (op.dept === 'entertainment') return 'Book and run the show lineup';
+    if (op.dept === 'spa') return 'Wellness guests are waiting';
+    return op.subtitle;
+  }
+
+  function shiftReward(op, state = HotelState.get()) {
+    const current = HotelConfig.UPGRADE_CATALOG[op.dept]?.[(state.departments[op.dept]?.level ?? 1) - 1];
+    if (op.dept === 'lobby') return 'Guests + room revenue';
+    if (op.dept === 'casino') return 'Chips + casino progress';
+    if (current?.ipm) return `+$${fmtShort(current.ipm)}/min + satisfaction`;
+    return 'Cash + satisfaction';
+  }
+
+  function shiftCta(op) {
+    if (op.dept === 'casino') return 'Open Casino';
+    if (op.dept === 'lobby') return 'Start Check-In';
+    return 'Start Shift';
+  }
+
   function isPhaseOneOnboarding() {
     return HotelState.isOnboardingActive?.() ?? false;
   }
@@ -327,7 +436,7 @@ const HotelUI = (() => {
         <div>
           <span>New Manager Start</span>
           <strong>Start with one service fix: assign staff where coverage is short.</strong>
-          <small>Click the recommendation below. Good coverage protects satisfaction while the hotel grows.</small>
+          <small>Use the best next move below. Good coverage protects satisfaction while the hotel grows.</small>
         </div>
         <button type="button" data-onboarding-action="dismiss">Skip guidance</button>
       </div>
@@ -913,35 +1022,21 @@ const HotelUI = (() => {
     const wrap = document.getElementById('operations-list');
     if (!wrap) return;
 
-    const operations = [
-      { dept:'lobby', title:'Check-In Rush', subtitle:'Lobby operation', href:'checkin/index.html', icon:'fa-id-card', always:true },
-      { dept:'casino', title:'Casino Floor', subtitle:'Slots, blackjack, and table games', href:'../casino.html', icon:'fa-dice' },
-      { dept:'rooms', title:'Floor Ops', subtitle:'Guest rooms operation', href:'rooms/index.html', icon:'fa-bell-concierge' },
-      { dept:'restaurant', title:'Tasting Room', subtitle:'Restaurant operation', href:'restaurant/index.html', icon:'fa-utensils' },
-      { dept:'bar', title:'Bar Shift', subtitle:'Bar & lounge operation', href:'bar/index.html', icon:'fa-martini-glass-citrus' },
-      { dept:'entertainment', title:'Show Lineup', subtitle:'Entertainment operation', href:'entertainment/index.html', icon:'fa-masks-theater' },
-      { dept:'spa', title:'Spa Rush', subtitle:'Spa & wellness operation', href:'spa/index.html', icon:'fa-spa' },
-    ];
-
-    wrap.innerHTML = operations.map(op => {
-      const dept = state.departments[op.dept];
-      const enabled = op.always || (dept?.unlocked && (dept.level ?? 0) > 0);
-      const meta = HotelConfig.DEPT_META[op.dept];
-      const level = dept?.level ?? 0;
+    wrap.innerHTML = operationCatalog().map(rawOp => {
+      const op = operationUiState(rawOp, state);
       const guideTarget = currentGuidedStep(state) === 'run_checkin' && op.dept === 'lobby';
       const guideMuted = currentGuidedStep(state) === 'run_checkin' && op.dept !== 'lobby';
-      const tag = enabled ? (op.dept === 'lobby' ? 'Open' : `Lv ${level}`) : dept?.unlocked ? 'Build' : `Rep ${HotelConfig.DEPT_UNLOCK_REP[op.dept] ?? 1}`;
       const body = `
         <span class="operation-icon"><i class="fa-solid ${op.icon}"></i></span>
         <span class="operation-copy">
           <strong>${op.title}</strong>
           <span>${op.subtitle}</span>
         </span>
-        <span class="operation-status">${tag}</span>
+        <span class="operation-status">${op.tag}</span>
       `;
-      return enabled
-        ? `<a class="operation-card ${guideTarget ? 'guide-target-control' : ''} ${guideMuted ? 'guide-muted-control' : ''}" href="${op.href}" style="--operation-color:${meta?.color ?? '#0d2218'}">${body}</a>`
-        : `<button class="operation-card locked ${guideMuted ? 'guide-muted-control' : ''}" type="button" disabled style="--operation-color:${meta?.color ?? '#0d2218'}">${body}</button>`;
+      return op.enabled
+        ? `<a class="operation-card ${guideTarget ? 'guide-target-control' : ''} ${guideMuted ? 'guide-muted-control' : ''}" href="${op.href}" style="--operation-color:${op.meta?.color ?? '#0d2218'}">${body}</a>`
+        : `<button class="operation-card locked ${guideMuted ? 'guide-muted-control' : ''}" type="button" disabled style="--operation-color:${op.meta?.color ?? '#0d2218'}">${body}</button>`;
     }).join('');
   }
 
@@ -2108,7 +2203,7 @@ const HotelUI = (() => {
         return;
       }
 
-      const operationLink = e.target.closest('.operation-card[href]');
+      const operationLink = e.target.closest('.operation-card[href], .shift-card[href]');
       if (operationLink) {
         const isCheckIn = operationLink.getAttribute('href')?.includes('checkin/');
         if (isCheckIn) markGuidedOperationStart('lobby');

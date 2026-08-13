@@ -13,7 +13,7 @@
   <!-- Shell + mobile + hotel styles -->
   <link rel="stylesheet" href="../casino-shell.css?v=theme-controls">
   <link rel="stylesheet" href="../casino-mobile.css">
-  <link rel="stylesheet" href="hotel.css?v=ops-light-contrast-v1">
+  <link rel="stylesheet" href="hotel.css?v=main-hierarchy-v1">
 
   <!-- Game data + state + engine — MUST load before hotel-ui.js -->
   <script src="../wallet.js"></script>
@@ -24,7 +24,7 @@
   <script src="hotel-guests.js"></script>
   <script src="hotel-guest-pool.js"></script>
   <script src="hotel-bridge.js"></script>
-  <script src="hotel-ui.js?v=ux-pass-v2"></script>
+  <script src="hotel-ui.js?v=main-hierarchy-v1"></script>
 </head>
 
 <body>
@@ -132,10 +132,6 @@
         </button>
       </nav>
 
-      <section class="hotel-activity-feed" id="hotel-activity-feed" aria-label="Hotel activity">
-        <!-- Rendered by HotelUI.renderCommandCenter() -->
-      </section>
-
       <div class="mgmt-tab-panel active" id="mgmt-tab-departments" data-tab-panel="departments">
         <div class="mgmt-section-title" id="dept-mgmt-title">
           <i class="fa-solid fa-arrow-up-right-dots"></i> Departments
@@ -180,6 +176,10 @@
           <!-- Rendered by HotelUI.renderOperationsPanel() -->
         </div>
       </div>
+
+      <section class="hotel-activity-feed" id="hotel-activity-feed" aria-label="Hotel activity">
+        <!-- Rendered by HotelUI.renderCommandCenter() -->
+      </section>
     </aside>
 
   </div>
