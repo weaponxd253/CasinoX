@@ -145,6 +145,19 @@ const BarGame = (() => {
     HotelState.setSatisfaction(currentSat + satisfactionBonus);
     HotelEngine.recalculateReputation(HotelState.get());
     HotelBridge.applyHotelToCasino(HotelState.get());
+    HotelState.recordShiftResult?.('bar', {
+      title: 'Bar Shift complete',
+      cash: tips,
+      satisfaction: satisfactionBonus,
+      primaryLabel: 'Served',
+      primaryValue: served,
+      summary: `${served} guests served, ${misses} misses, $${tips} in tips.`,
+      impact: 'Added nightlife value and guest mood.',
+      metrics: [
+        { label:'Misses', value:misses },
+        { label:'Streak', value:shift.streak },
+      ],
+    });
     CasinoShell.awardXp(Math.max(10, Math.round(tips / 4)));
 
     shift.active = false;

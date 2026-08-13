@@ -151,6 +151,19 @@ const RestaurantGame = (() => {
     HotelState.applyStaffFatigue?.('restaurant', served ? 4 : 1);
     HotelEngine.recalculateReputation(HotelState.get());
     HotelBridge.applyHotelToCasino(HotelState.get());
+    HotelState.recordShiftResult?.('restaurant', {
+      title: 'Tasting Room complete',
+      cash,
+      satisfaction: satBonus,
+      primaryLabel: 'Tables',
+      primaryValue: served,
+      summary: `${served} tables served with ${signatures} signature flights.`,
+      impact: 'Raised dining satisfaction and restaurant momentum.',
+      metrics: [
+        { label:'Signatures', value:signatures },
+        { label:'Harmony', value:`${service.lastHarmony}%` },
+      ],
+    });
     CasinoShell.awardXp(Math.max(14, Math.round(cash / 5)));
 
     service.active = false;

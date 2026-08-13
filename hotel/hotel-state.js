@@ -8,7 +8,7 @@
 
 const HotelState = (() => {
   const STORAGE_KEY = 'hotelGameState';
-  const SCHEMA_VERSION = 8;
+  const SCHEMA_VERSION = 9;
 
   let _state = null;
 
@@ -54,6 +54,13 @@ const HotelState = (() => {
         phase:          'morning',
         lastAdvancedAt: now,
         reports:        [],
+      },
+      shifts: {
+        active: null,
+        lastResult: null,
+        dismissedResultId: null,
+        history: [],
+        completions: {},
       },
       satisfaction: {
         current:        75,
@@ -223,6 +230,15 @@ const HotelState = (() => {
     state.entertainment.stats = state.entertainment.stats ?? fresh.entertainment.stats;
     state.calendar = state.calendar ?? fresh.calendar;
     state.calendar.reports = state.calendar.reports ?? [];
+    state.shifts = state.shifts ?? fresh.shifts;
+    state.shifts.active = state.shifts.active ?? null;
+    state.shifts.lastResult = state.shifts.lastResult ?? null;
+    state.shifts.dismissedResultId = state.shifts.dismissedResultId ?? null;
+    if (!Array.isArray(state.shifts.history)) state.shifts.history = [];
+    state.shifts.history = state.shifts.history.slice(0, 20);
+    state.shifts.completions = state.shifts.completions && typeof state.shifts.completions === 'object'
+      ? state.shifts.completions
+      : {};
     state.staff = state.staff ?? fresh.staff;
     if (!Array.isArray(state.staff.roster) || state.staff.roster.length === 0) {
       state.staff.roster = fresh.staff.roster;
@@ -645,6 +661,92 @@ const HotelState = (() => {
     _state.calendar.reports.unshift(report);
     _state.calendar.reports = _state.calendar.reports.slice(0, 8);
     save();
+  }
+
+  function shiftCycleKey(state = _state) {
+    const calendar = state?.calendar ?? {};
+    return `day:${calendar.day ?? 1}|phase:${calendar.phase ?? 'morning'}`;
+  }
+
+  function ensureShiftState(state = _state) {
+    state.shifts = state.shifts ?? createNewSave().shifts;
+    state.shifts.history = Array.isArray(state.shifts.history) ? state.shifts.history : [];
+    state.shifts.completions = state.shifts.completions && typeof state.shifts.completions === 'object'
+      ? state.shifts.completions
+      : {};
+    return state.shifts;
+  }
+
+  function recordShiftStart(deptId, info = {}) {
+    if (!_state || !deptId) return null;
+    const shifts = ensureShiftState();
+    shifts.active = {
+      id: `shift_start_${Date.now()}`,
+      deptId,
+      title: info.title ?? null,
+      startedAt: Date.now(),
+      cycleKey: shiftCycleKey(),
+    };
+    save();
+    return shifts.active;
+  }
+
+  function recordShiftResult(deptId, result = {}) {
+    if (!_state || !deptId) return null;
+    const shifts = ensureShiftState();
+    const now = Date.now();
+    const cycleKey = shiftCycleKey();
+    const entry = {
+      id: `shift_result_${now}_${deptId}`,
+      deptId,
+      cycleKey,
+      completedAt: now,
+      title: result.title ?? `${deptLabel(deptId)} shift complete`,
+      cash: Math.max(0, Math.round(Number(result.cash ?? 0))),
+      satisfaction: Math.max(0, Math.round(Number(result.satisfaction ?? 0))),
+      rewardText: result.rewardText ?? null,
+      impact: result.impact ?? null,
+      summary: result.summary ?? '',
+      primaryLabel: result.primaryLabel ?? null,
+      primaryValue: result.primaryValue ?? null,
+      metrics: Array.isArray(result.metrics) ? result.metrics.slice(0, 4) : [],
+    };
+
+    shifts.lastResult = entry;
+    shifts.history.unshift(entry);
+    shifts.history = shifts.history.slice(0, 20);
+    shifts.completions[cycleKey] = shifts.completions[cycleKey] ?? {};
+    shifts.completions[cycleKey][deptId] = entry;
+    if (shifts.active?.deptId === deptId) shifts.active = null;
+    save();
+    return entry;
+  }
+
+  function dismissShiftResult(resultId = _state?.shifts?.lastResult?.id) {
+    if (!_state || !resultId) return false;
+    const shifts = ensureShiftState();
+    shifts.dismissedResultId = resultId;
+    save();
+    return true;
+  }
+
+  function getShiftResult(deptId, state = _state) {
+    const shifts = ensureShiftState(state);
+    return shifts.completions?.[shiftCycleKey(state)]?.[deptId] ?? null;
+  }
+
+  function getShiftStatus(deptId, state = _state) {
+    const result = getShiftResult(deptId, state);
+    if (result) return { state:'completed', result };
+    const active = state?.shifts?.active;
+    if (active?.deptId === deptId && active.cycleKey === shiftCycleKey(state) && Date.now() - active.startedAt < 2 * 60 * 60 * 1000) {
+      return { state:'in_progress', result:null };
+    }
+    return { state:'ready', result:null };
+  }
+
+  function getLatestShiftResult(state = _state) {
+    return state?.shifts?.lastResult ?? null;
   }
 
   function addGuestToRoster(guest) {
@@ -1765,6 +1867,8 @@ const HotelState = (() => {
     setGuestData, setVipPresent,
     bookEntertainmentShow, cancelEntertainmentShow,
     setCalendar, addCalendarReport,
+    recordShiftStart, recordShiftResult, dismissShiftResult,
+    getShiftStatus, getShiftResult, getLatestShiftResult, shiftCycleKey,
     addGuestToRoster, removeGuestFromRoster, pruneExpiredFromRoster,
     getRoster, getRosterCount,
     applyCheckInBoost, consumeCheckInBoost, getCheckInBoost,

@@ -363,6 +363,9 @@ const CheckInGame = (() => {
     const cashBonus   = Math.round(baseCashBonus * (staffEffect?.incomeMult ?? 1));
     const matchRate   = checkedIn.length > 0 ? perfect.length / checkedIn.length : 0;
     const satBoost    = Math.round(matchRate * 18) + (checkedIn.length ? (staffEffect?.satisfactionBonus ?? 0) : 0);
+    const total        = results.length;
+    const pct          = total > 0 ? Math.round((checkedIn.length / total) * 100) : 0;
+    const grade        = pct >= 90 ? '★★★ Exceptional!' : pct >= 70 ? '★★ Good Work' : pct >= 50 ? '★ Decent' : 'Keep Practising';
 
     // Apply rewards to hotel state
     if (cashBonus > 0) HotelState.addHotelCash(cashBonus);
@@ -379,11 +382,20 @@ const CheckInGame = (() => {
       HotelState.advanceGuidedOnboarding?.('run_checkin');
     }
     HotelState.applyStaffFatigue?.('lobby', checkedIn.length ? 3 : 1);
-
-    // Score label
-    const total   = results.length;
-    const pct     = total > 0 ? Math.round((checkedIn.length / total) * 100) : 0;
-    const grade   = pct >= 90 ? '★★★ Exceptional!' : pct >= 70 ? '★★ Good Work' : pct >= 50 ? '★ Decent' : 'Keep Practising';
+    HotelState.recordShiftResult?.('lobby', {
+      title: 'Check-In Rush complete',
+      cash: cashBonus,
+      satisfaction: satBoost,
+      primaryLabel: 'Checked In',
+      primaryValue: checkedIn.length,
+      summary: `${checkedIn.length} guests checked in, ${perfect.length} perfect matches, ${missed.length} walked out.`,
+      impact: 'Filled rooms and boosted arrival momentum.',
+      metrics: [
+        { label:'Perfect', value:perfect.length },
+        { label:'Walkouts', value:missed.length },
+        { label:'Success', value:`${pct}%` },
+      ],
+    });
 
     $('results-headline').textContent = grade;
 

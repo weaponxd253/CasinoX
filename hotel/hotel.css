@@ -285,6 +285,106 @@
   background: rgba(201,168,76,0.12);
 }
 
+.shift-return-banner {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) minmax(210px, auto) 32px;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border: 1px solid rgba(112,224,157,0.48);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--operation-color, #0d2218) 58%, transparent), rgba(26,93,53,0.42)),
+    rgba(0,0,0,0.22);
+  box-shadow: 0 14px 30px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.07);
+}
+
+.shift-return-icon {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(112,224,157,0.42);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.24);
+  color: #9effc3;
+  font-size: 18px;
+}
+
+.shift-return-copy {
+  min-width: 0;
+}
+
+.shift-return-copy span,
+.shift-return-metrics small {
+  display: block;
+  color: #9effc3;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.shift-return-copy strong {
+  display: block;
+  margin-top: 2px;
+  color: var(--gold-light);
+  font-family: var(--font-display);
+  font-size: 18px;
+  line-height: 1.05;
+}
+
+.shift-return-copy em {
+  display: block;
+  margin-top: 4px;
+  color: rgba(237,229,190,0.78);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.25;
+}
+
+.shift-return-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(92px, 1fr));
+  gap: 8px;
+}
+
+.shift-return-metrics > span {
+  min-height: 42px;
+  padding: 7px 9px;
+  border: 1px solid rgba(201,168,76,0.24);
+  border-radius: 7px;
+  background: rgba(0,0,0,0.2);
+}
+
+.shift-return-metrics strong {
+  display: block;
+  margin-top: 2px;
+  color: var(--gold-light);
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+.shift-result-dismiss {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(201,168,76,0.26);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.16);
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.shift-result-dismiss:hover {
+  border-color: var(--gold);
+  color: var(--gold-light);
+}
+
 .today-shifts {
   grid-column: 1 / -1;
   display: grid;
@@ -340,6 +440,16 @@
   background: linear-gradient(135deg, var(--gold), var(--gold-light));
 }
 
+.shift-card.shift-state-completed {
+  opacity: 0.72;
+  border-color: rgba(112,224,157,0.42);
+}
+
+.shift-card.shift-state-progress {
+  border-color: rgba(158,231,255,0.58);
+  box-shadow: 0 16px 34px rgba(0,0,0,0.18), 0 0 0 1px rgba(158,231,255,0.16);
+}
+
 .shift-card-icon {
   width: 38px;
   height: 38px;
@@ -364,6 +474,32 @@
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+}
+
+.shift-card-copy .shift-card-state {
+  display: inline-flex;
+  width: fit-content;
+  margin-bottom: 3px;
+  padding: 2px 7px;
+  border: 1px solid rgba(201,168,76,0.32);
+  border-radius: 999px;
+  background: rgba(0,0,0,0.18);
+  color: #9ee7ff;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+}
+
+.shift-state-completed .shift-card-copy .shift-card-state {
+  border-color: rgba(112,224,157,0.44);
+  color: #9effc3;
+}
+
+.shift-card-copy small {
+  display: block;
+  margin-top: 5px;
+  color: rgba(167,230,215,0.84);
+  font-size: 11px;
+  line-height: 1.2;
 }
 
 .shift-card-copy strong {
@@ -415,6 +551,64 @@
   font-family: var(--font-display);
   font-size: 12px;
   font-weight: 700;
+}
+
+.next-reward-rail {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.1fr) auto;
+  gap: 9px;
+  align-items: stretch;
+  padding: 9px;
+  border: 1px solid rgba(201,168,76,0.26);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.14);
+}
+
+.next-reward-rail > span {
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(201,168,76,0.16);
+  border-radius: 7px;
+  background: rgba(0,0,0,0.15);
+}
+
+.next-reward-rail small {
+  display: block;
+  color: var(--gold);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.next-reward-rail strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--gold-light);
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.next-reward-rail i {
+  color: #9ee7ff;
+}
+
+.next-reward-rail button {
+  min-width: 94px;
+  border: 1px solid rgba(201,168,76,0.44);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--operation-color, #0d2218) 70%, transparent), rgba(201,168,76,0.18));
+  color: var(--gold-light);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.next-reward-rail button:hover {
+  border-color: var(--gold);
+  color: #fff0b8;
 }
 
 @media (min-width: 901px) {
@@ -2788,6 +2982,51 @@ body[data-guided-step="run_checkin"] .operation-card:not(.guide-target-control) 
   line-height: 1.35;
 }
 
+.all-shift-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.all-shift-group-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(201,168,76,0.26);
+}
+
+.all-shift-group-head span {
+  color: var(--gold);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.all-shift-group-head strong {
+  grid-column: 1 / 2;
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.all-shift-group-head em {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  min-width: 26px;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(201,168,76,0.32);
+  border-radius: 999px;
+  color: var(--gold-light);
+  font-size: 11px;
+  font-style: normal;
+}
+
 .operation-card {
   min-height: 68px;
   display: grid;
@@ -3210,7 +3449,11 @@ body.light .hotel-snapshot-card,
 body.light-theme .hotel-activity-feed,
 body.light .hotel-activity-feed,
 body.light-theme .all-shifts-intro,
-body.light .all-shifts-intro {
+body.light .all-shifts-intro,
+body.light-theme .shift-return-banner,
+body.light .shift-return-banner,
+body.light-theme .next-reward-rail,
+body.light .next-reward-rail {
   background:
     linear-gradient(135deg, rgba(255,255,255,0.74), rgba(237,243,226,0.62));
   border-color: rgba(138,110,40,0.32);
@@ -3230,7 +3473,11 @@ body.light .snapshot-stat span,
 body.light-theme .snapshot-stat small,
 body.light .snapshot-stat small,
 body.light-theme .all-shifts-intro strong,
-body.light .all-shifts-intro strong {
+body.light .all-shifts-intro strong,
+body.light-theme .all-shift-group-head strong,
+body.light .all-shift-group-head strong,
+body.light-theme .shift-return-copy em,
+body.light .shift-return-copy em {
   color: #5f6e48;
 }
 body.light-theme .snapshot-stat strong,
@@ -3247,6 +3494,14 @@ body.light-theme .snapshot-actions button:hover,
 body.light .snapshot-actions button:hover {
   background: rgba(138,110,40,0.12);
   border-color: var(--gold-dark);
+}
+body.light-theme .next-reward-rail button,
+body.light .next-reward-rail button {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.62), rgba(236,242,225,0.48)),
+    color-mix(in srgb, var(--operation-color, #2d6e47) 16%, transparent);
+  border-color: rgba(138,110,40,0.38);
+  color: #6f5410;
 }
 body.light-theme .hotel-theme-toggle,
 body.light .hotel-theme-toggle {
@@ -3358,6 +3613,11 @@ body.light .shift-card.featured {
   border-color: rgba(138,110,40,0.68);
   box-shadow: 0 12px 24px rgba(28,52,25,0.14), 0 0 0 1px rgba(138,110,40,0.14);
 }
+body.light-theme .shift-card.shift-state-completed,
+body.light .shift-card.shift-state-completed {
+  border-color: rgba(45,118,68,0.34);
+  opacity: 0.76;
+}
 body.light-theme .shift-card-icon,
 body.light .shift-card-icon,
 body.light-theme .shift-card-reward,
@@ -3374,11 +3634,38 @@ body.light .shift-card.featured .shift-card-icon {
 body.light-theme .shift-card-copy strong,
 body.light .shift-card-copy strong,
 body.light-theme .shift-card-copy em,
-body.light .shift-card-copy em {
+body.light .shift-card-copy em,
+body.light-theme .shift-return-copy strong,
+body.light .shift-return-copy strong,
+body.light-theme .next-reward-rail strong,
+body.light .next-reward-rail strong {
   color: #172512;
 }
+body.light-theme .shift-card-copy small,
+body.light .shift-card-copy small,
+body.light-theme .shift-card-copy .shift-card-state,
+body.light .shift-card-copy .shift-card-state,
+body.light-theme .shift-return-copy span,
+body.light .shift-return-copy span,
+body.light-theme .shift-return-metrics small,
+body.light .shift-return-metrics small {
+  color: #1c5b38;
+}
+body.light-theme .shift-return-icon,
+body.light .shift-return-icon,
+body.light-theme .shift-return-metrics > span,
+body.light .shift-return-metrics > span,
+body.light-theme .shift-result-dismiss,
+body.light .shift-result-dismiss,
+body.light-theme .next-reward-rail > span,
+body.light .next-reward-rail > span {
+  background: rgba(255,255,255,0.5);
+  border-color: rgba(45,118,68,0.24);
+}
 body.light-theme .shift-card-reward strong,
-body.light .shift-card-reward strong {
+body.light .shift-card-reward strong,
+body.light-theme .shift-return-metrics strong,
+body.light .shift-return-metrics strong {
   color: #1c5b38;
 }
 body.light-theme .operation-card,
@@ -3437,6 +3724,25 @@ body.light .operation-status {
   }
   .hotel-command-strip {
     grid-template-columns: 1fr;
+  }
+  .shift-return-banner,
+  .next-reward-rail {
+    grid-template-columns: 1fr;
+  }
+  .shift-return-icon {
+    display: none;
+  }
+  .shift-return-metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+  .shift-result-dismiss {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+  }
+  .shift-return-banner {
+    position: relative;
+    padding-right: 52px;
   }
   .command-strip-head {
     grid-template-columns: 1fr;
@@ -3515,6 +3821,7 @@ body.light .operation-status {
   .floor-name       { font-size: 13px; }
   .command-chips,
   .today-shifts,
+  .shift-return-metrics,
   .staff-overview-grid,
   .staff-coverage-grid,
   .staff-stat-row,

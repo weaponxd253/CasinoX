@@ -242,6 +242,19 @@ const SpaRush = (() => {
     HotelState.setSatisfaction(HotelState.getSatisfaction() + satBonus);
     HotelEngine.recalculateReputation(HotelState.get());
     HotelBridge.applyHotelToCasino(HotelState.get());
+    HotelState.recordShiftResult?.('spa', {
+      title: 'Spa Rush complete',
+      cash: session.earned,
+      satisfaction: satBonus,
+      primaryLabel: 'Treated',
+      primaryValue: session.treated,
+      summary: `${session.treated} guests treated, ${session.walkouts} walkouts.`,
+      impact: 'Recovered satisfaction for premium guests.',
+      metrics: [
+        { label:'Walkouts', value:session.walkouts },
+        { label:'Stations', value:session.stations.length },
+      ],
+    });
     CasinoShell.awardXp(Math.max(10, Math.round(session.earned / 5)));
 
     session.guests = [];

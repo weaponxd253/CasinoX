@@ -58,10 +58,29 @@ test.describe('launch navigation', () => {
     await expect(page.locator('.hotel-view-wrap')).toHaveCount(0);
     await expect(page.locator('.shift-card')).toHaveCount(3);
     await expect(page.locator('.shift-card.featured')).toContainText('Recommended');
+    await expect(page.locator('.shift-card-state')).toHaveCount(3);
+    await expect(page.locator('.next-reward-rail')).toContainText('Next Reward');
+
+    await page.evaluate(() => {
+      HotelState.recordShiftResult('rooms', {
+        title: 'Floor Ops complete',
+        cash: 120,
+        satisfaction: 4,
+        primaryLabel: 'Resolved',
+        primaryValue: 3,
+        summary: '3 requests resolved, 0 complaints.',
+      });
+      HotelUI.renderAll();
+    });
+    await expect(page.locator('.shift-return-banner')).toContainText('Floor Ops complete');
+    await expect(page.locator('.shift-card', { hasText: 'Floor Ops' })).toContainText('Completed');
+    await page.locator('.shift-result-dismiss').click();
+    await expect(page.locator('.shift-return-banner')).toHaveCount(0);
 
     await page.locator('.mgmt-tab[data-tab="operations"]').click();
-    await expect(page.locator('.mgmt-tab[data-tab="operations"]')).toContainText('All Shifts');
     await expect(page.locator('#operations-list .all-shifts-intro')).toContainText('Full Shift Catalog');
+    await expect(page.locator('#operations-list .all-shift-group')).toHaveCount(3);
+    await expect(page.locator('#operations-list .all-shift-group')).toContainText(['Playable Now', 'Build To Unlock', 'Reputation Locked']);
     await expect(page.locator('#operations-list .all-shift-card')).toHaveCount(7);
   });
 

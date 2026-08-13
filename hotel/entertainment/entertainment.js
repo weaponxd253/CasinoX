@@ -112,6 +112,20 @@ const EntertainmentBooker = (() => {
       cost: act.cost,
       effects: act.effects,
     });
+    HotelState.recordShiftResult?.('entertainment', {
+      title: 'Show Lineup booked',
+      rewardText: `+${Math.round((act.effects?.trafficBoost ?? 0) * 100)}% traffic window`,
+      satisfaction: act.effects?.satisfactionBoost ?? 0,
+      primaryLabel: 'Booked',
+      primaryValue: act.label,
+      summary: `${act.label} booked for Day ${selectedSlot.day} ${slotLabel(selectedSlot.slotId)}.`,
+      impact: 'Scheduled entertainment to lift traffic, income, and guest mood.',
+      metrics: [
+        { label:'Cost', value:`$${fmt(act.cost)}` },
+        { label:'Income', value:`+${Math.round((act.effects?.incomeBoost ?? 0) * 100)}%` },
+        { label:'Mood', value:`+${act.effects?.satisfactionBoost ?? 0}` },
+      ],
+    });
 
     CasinoShell.sound.win();
     CasinoShell.toast(`${act.label} booked.`);
@@ -269,6 +283,10 @@ const EntertainmentBooker = (() => {
 
   function selectedAct() {
     return ACTS.find(act => act.id === selectedActId) ?? null;
+  }
+
+  function slotLabel(slotId) {
+    return SLOTS.find(slot => slot.id === slotId)?.label ?? slotId;
   }
 
   function firstUnlockedAct() {

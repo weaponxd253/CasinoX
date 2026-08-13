@@ -247,6 +247,20 @@ const RoomsGame = (() => {
     HotelState.applyStaffFatigue?.('rooms', shift.resolved ? 4 : 1);
     HotelEngine.recalculateReputation(HotelState.get());
     HotelBridge.applyHotelToCasino(HotelState.get());
+    HotelState.recordShiftResult?.('rooms', {
+      title: 'Floor Ops complete',
+      cash: shift.earned,
+      satisfaction: satBonus,
+      primaryLabel: 'Resolved',
+      primaryValue: shift.resolved,
+      summary: `${shift.resolved} requests resolved, ${shift.complaints} complaints, ${shift.perfect} perfect dispatches.`,
+      impact: 'Protected guest satisfaction and room quality.',
+      metrics: [
+        { label:'Complaints', value:shift.complaints },
+        { label:'Perfect', value:shift.perfect },
+        { label:'Coverage', value:`${shift.staffEffect?.score ?? 0}%` },
+      ],
+    });
     CasinoShell.awardXp(Math.max(10, Math.round(shift.earned / 5)));
 
     $('start-ops-btn').disabled = false;
