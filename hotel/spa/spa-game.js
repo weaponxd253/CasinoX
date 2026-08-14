@@ -89,6 +89,7 @@ const SpaRush = (() => {
 
     $('start-spa-btn').disabled = true;
     $('start-spa-btn').innerHTML = '<i class="fa-solid fa-spinner"></i> In Session';
+    setReturnLink('Back to Hotel', 'fa-arrow-left');
     hideResults();
     clearLog();
     log('Spa session opened.', 'gold');
@@ -267,7 +268,8 @@ const SpaRush = (() => {
       station.doneAt = 0;
     });
     $('start-spa-btn').disabled = false;
-    $('start-spa-btn').innerHTML = '<i class="fa-solid fa-rotate-right"></i> New Session';
+    $('start-spa-btn').innerHTML = '<i class="fa-solid fa-rotate-right"></i> Start Spa Rush Again';
+    setReturnLink('Return to Hotel', 'fa-building');
     syncHotelCash();
     renderTreatments();
     updateAll();
@@ -285,6 +287,7 @@ const SpaRush = (() => {
     $('spa-time').textContent = '1:00';
     $('spa-session-fill').style.width = '0%';
     log(spaLevel > 0 ? 'Spa is ready for guests.' : 'Spa & Wellness is not built yet.', spaLevel > 0 ? 'gold' : 'bad', true);
+    setReturnLink('Back to Hotel', 'fa-arrow-left');
     updateStats();
   }
 
@@ -411,6 +414,12 @@ const SpaRush = (() => {
   function syncHotelCash() {
     const el = $('spa-hotel-cash');
     if (el) el.textContent = fmt(HotelState.getCash());
+  }
+
+  function setReturnLink(label, icon) {
+    const link = $('spa-return-link');
+    if (!link) return;
+    link.innerHTML = `<i class="fa-solid ${icon}"></i> ${label}`;
   }
 
   function clearLog() {

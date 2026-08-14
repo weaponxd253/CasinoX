@@ -340,7 +340,8 @@
   font-size: 13px;
 }
 
-.book-btn {
+.book-btn,
+.booker-return-link {
   min-height: 46px;
   display: inline-flex;
   align-items: center;
@@ -353,12 +354,25 @@
   font-family: var(--font-display);
   font-size: 15px;
   font-weight: 700;
+  text-decoration: none;
+}
+
+.book-btn {
+  border: 1px solid var(--gold);
+  background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+  color: #151f12;
   cursor: pointer;
 }
 
 .book-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.booker-return-link {
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.22);
+  color: var(--gold-light);
 }
 
 .empty-lineup {

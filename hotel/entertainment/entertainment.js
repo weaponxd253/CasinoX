@@ -134,6 +134,7 @@ const EntertainmentBooker = (() => {
     syncHotelCash();
     selectedSlot = firstOpenSlot() ?? selectedSlot;
     renderAll();
+    setReturnLink('Return to Hotel', 'fa-building');
   }
 
   function renderAll() {
@@ -351,6 +352,12 @@ const EntertainmentBooker = (() => {
   function syncHotelCash() {
     const el = $('ent-hotel-cash');
     if (el) el.textContent = fmt(HotelState.getCash());
+  }
+
+  function setReturnLink(label, icon) {
+    const link = $('booker-return-link');
+    if (!link) return;
+    link.innerHTML = `<i class="fa-solid ${icon}"></i> ${label}`;
   }
 
   return { init };

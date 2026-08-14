@@ -22,7 +22,7 @@
 
 const CasinoShell = (function () {
   const THEME_KEY = 'theme';
-  const MUTE_KEY  = 'casinoMuted';
+  const MUTE_KEY = 'casinoMuted';
   const PROFILE_KEY = 'casinoProfile';
   let cfg = {};
 
@@ -75,7 +75,7 @@ const CasinoShell = (function () {
   }
   function bonusState() {
     const today = dayStr(new Date());
-    const yest  = dayStr(new Date(Date.now() - 86400000));
+    const yest = dayStr(new Date(Date.now() - 86400000));
     const claimedToday = profile.data.lastClaim === today;
     const pendingStreak = claimedToday
       ? profile.data.streak
@@ -105,7 +105,7 @@ const CasinoShell = (function () {
 
   function renderBonusModal() {
     const strip = document.getElementById('shell-streak');
-    const sub   = document.querySelector('.shell-bonus-sub');
+    const sub = document.querySelector('.shell-bonus-sub');
     const claim = document.getElementById('shell-claim');
     if (!strip) return;
     const s = bonusState();
@@ -187,11 +187,11 @@ const CasinoShell = (function () {
         o.stop(actx.currentTime + delay + dur);
       } catch (e) { /* no audio */ }
     },
-    play(id) { if (this.muted) return; const el = document.getElementById(id); if (el) el.play().catch(() => {}); },
-    click()   { this.tone(180, 'square', 0.08, 0.15); },
-    win()     { this.tone(523, 'sine', 0.2, 0.3, 0); this.tone(784, 'sine', 0.25, 0.3, 0.15); },
+    play(id) { if (this.muted) return; const el = document.getElementById(id); if (el) el.play().catch(() => { }); },
+    click() { this.tone(180, 'square', 0.08, 0.15); },
+    win() { this.tone(523, 'sine', 0.2, 0.3, 0); this.tone(784, 'sine', 0.25, 0.3, 0.15); },
     jackpot() { [523, 659, 784, 1047].forEach((f, i) => this.tone(f, 'sine', 0.3, 0.35, i * 0.12)); },
-    lose()    { this.tone(180, 'sawtooth', 0.18, 0.15, 0); this.tone(140, 'sawtooth', 0.2, 0.1, 0.15); }
+    lose() { this.tone(180, 'sawtooth', 0.18, 0.15, 0); this.tone(140, 'sawtooth', 0.2, 0.1, 0.15); }
   };
 
   /* ───────── TOAST ───────── */
@@ -245,7 +245,7 @@ const CasinoShell = (function () {
     const modal = document.getElementById('shell-modal');
     if (!modal) return;
     modal.querySelector('.shell-modal-box h3').textContent = opts.title || '💸 Out of Chips';
-    modal.querySelector('.shell-modal-box p').textContent  = opts.message || "You've run out of funds. Visit the Cashier to keep playing.";
+    modal.querySelector('.shell-modal-box p').textContent = opts.message || "You've run out of funds. Visit the Cashier to keep playing.";
     modal.classList.add('open');
   }
 

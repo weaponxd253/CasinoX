@@ -56,6 +56,8 @@ const BarGame = (() => {
 
     document.getElementById('served-target').textContent = shift.target;
     document.getElementById('start-shift-btn').disabled = true;
+    document.getElementById('start-shift-btn').innerHTML = '<i class="fa-solid fa-spinner"></i> On Shift';
+    setReturnLink('Back to Hotel', 'fa-arrow-left');
     hideResults();
     setOrderState('active');
     setDrinkButtons(true);
@@ -165,7 +167,8 @@ const BarGame = (() => {
     shift.active = false;
     setDrinkButtons(false);
     document.getElementById('start-shift-btn').disabled = false;
-    document.getElementById('start-shift-btn').innerHTML = '<i class="fa-solid fa-rotate-right"></i> New Shift';
+    document.getElementById('start-shift-btn').innerHTML = '<i class="fa-solid fa-rotate-right"></i> Start Bar Shift Again';
+    setReturnLink('Return to Hotel', 'fa-building');
     document.getElementById('ticket-drink').textContent = 'Closed';
     document.getElementById('patience-fill').style.width = '0%';
     setOrderState('complete');
@@ -223,6 +226,7 @@ const BarGame = (() => {
     setOrderState('idle');
     document.getElementById('served-target').textContent = Math.min(8, 4 + Math.max(1, barLevel));
     log(barLevel > 0 ? 'Bar is ready.' : 'Bar & Lounge is not built yet.', barLevel > 0 ? 'gold' : 'bad', true);
+    setReturnLink('Back to Hotel', 'fa-arrow-left');
     resetServeDrink();
   }
 
@@ -270,6 +274,12 @@ const BarGame = (() => {
   function syncHotelCash() {
     const el = document.getElementById('bar-hotel-cash');
     if (el) el.textContent = fmt(HotelState.getCash());
+  }
+
+  function setReturnLink(label, icon) {
+    const link = document.getElementById('bar-return-link');
+    if (!link) return;
+    link.innerHTML = `<i class="fa-solid ${icon}"></i> ${label}`;
   }
 
   function clearLog() {

@@ -70,29 +70,45 @@ const HotelShiftBriefing = (() => {
   function renderBriefing(briefing, options = {}) {
     const meta = OP_META[briefing.deptId] ?? {};
     const icon = options.icon ?? meta.icon ?? 'fa-clipboard-check';
+    const levelLabel = briefing.level
+      ? `${briefing.department ?? meta.department ?? 'Hotel'} Lv ${briefing.level}`
+      : briefing.department ?? meta.department ?? 'Hotel';
     const coverage = Number.isFinite(briefing.coverageScore)
       ? `${briefing.coverageScore}% ${briefing.coverageLabel ?? 'coverage'}`
       : briefing.coverageLabel ?? 'Coverage pending';
     const staff = `${briefing.assignedCount ?? 0}/${Math.max(1, briefing.demand ?? 1)}`;
     const bonus = briefing.staffBonus > 0 ? `+${briefing.staffBonus}%` : 'Base';
+    const prepLabel = briefing.prepared ? 'Prepared' : 'Needs Staff';
+    const staffImpact = staffImpactText(briefing, { coverage, staff, bonus });
     return `
       <div class="mini-shift-title">
         <span class="mini-shift-icon"><i class="fa-solid ${escapeHtml(icon)}"></i></span>
         <span>
-          <small>Shift Briefing</small>
+          <small>Operation Briefing</small>
           <strong>${escapeHtml(briefing.title)}</strong>
-          <em>${escapeHtml(briefing.goal)}</em>
+          <em>${escapeHtml(levelLabel)}</em>
+        </span>
+      </div>
+      <div class="mini-shift-mission">
+        <span class="mini-shift-mission-block">
+          <small>Today's Goal</small>
+          <strong>${escapeHtml(briefing.goal)}</strong>
+        </span>
+        <span class="mini-shift-mission-block">
+          <small>Reward</small>
+          <strong>${escapeHtml(briefing.rewardHint)}</strong>
         </span>
       </div>
       <div class="mini-shift-facts">
         ${renderFact('Coverage', coverage)}
-        ${renderFact('Staff', staff)}
         ${renderFact('Risk', briefing.riskLabel ?? riskLabel(briefing.risk))}
+        ${renderFact('Staff', staff)}
         ${renderFact('Bonus', bonus)}
       </div>
       <div class="mini-shift-note">
-        <span>${escapeHtml(briefing.rewardHint)}</span>
-        <small>${escapeHtml(briefing.prepNote)}</small>
+        <small>Staff Impact</small>
+        <span><i class="fa-solid ${briefing.prepared ? 'fa-circle-check' : 'fa-triangle-exclamation'}"></i> ${escapeHtml(prepLabel)}</span>
+        <em>${escapeHtml(staffImpact)}</em>
       </div>
     `;
   }
@@ -108,6 +124,15 @@ const HotelShiftBriefing = (() => {
 
   function riskLabel(risk = 'medium') {
     return { high:'High risk', medium:'Medium risk', low:'Low risk' }[risk] ?? 'Medium risk';
+  }
+
+  function staffImpactText(briefing, { coverage, staff, bonus }) {
+    if (briefing.prepared) {
+      const speed = briefing.speedBonus > 0 ? `, ${briefing.speedBonus}% faster handling` : '';
+      const quality = briefing.qualityBonus > 0 ? `, +${briefing.qualityBonus} quality` : '';
+      return `${coverage} coverage with ${staff} staff. ${bonus} reward pace${speed}${quality}.`;
+    }
+    return briefing.prepNote ?? `Assign staff before starting to improve ${coverage} coverage.`;
   }
 
   function escapeHtml(value) {

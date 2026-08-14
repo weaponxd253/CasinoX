@@ -77,6 +77,7 @@ const RestaurantGame = (() => {
 
     $('start-tasting-btn').disabled = true;
     $('start-tasting-btn').innerHTML = '<i class="fa-solid fa-spinner"></i> In Service';
+    setReturnLink('Back to Hotel', 'fa-arrow-left');
     hideResults();
     clearLog();
     nextTable();
@@ -170,7 +171,8 @@ const RestaurantGame = (() => {
 
     service.active = false;
     $('start-tasting-btn').disabled = false;
-    $('start-tasting-btn').innerHTML = '<i class="fa-solid fa-rotate-right"></i> New Service';
+    $('start-tasting-btn').innerHTML = '<i class="fa-solid fa-rotate-right"></i> Open Service Again';
+    setReturnLink('Return to Hotel', 'fa-building');
     $('fire-course-btn').disabled = true;
     $('clear-flight-btn').disabled = true;
     syncHotelCash();
@@ -463,6 +465,7 @@ const RestaurantGame = (() => {
     radarWants   = null;
     drawRadar(radarCurrent, null);
     log(level > 0 ? 'Dining room is ready.' : 'Restaurant is not built yet.', level > 0 ? 'gold' : 'bad', true);
+    setReturnLink('Back to Hotel', 'fa-arrow-left');
   }
 
   function updateStats() {
@@ -498,6 +501,12 @@ const RestaurantGame = (() => {
 
   function syncHotelCash() {
     $('restaurant-hotel-cash').textContent = fmt(HotelState.getCash());
+  }
+
+  function setReturnLink(label, icon) {
+    const link = $('restaurant-return-link');
+    if (!link) return;
+    link.innerHTML = `<i class="fa-solid ${icon}"></i> ${label}`;
   }
 
   function clearLog() {

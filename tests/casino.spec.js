@@ -36,6 +36,15 @@ const LIVE_GAMES = [
   }
 ];
 
+const HOTEL_OPERATION_PAGES = [
+  { name: 'Floor Ops', dept: 'rooms', path: '/hotel/rooms/index.html', start: '#start-ops-btn', startText: 'Start Floor Ops', back: '#ops-return-link' },
+  { name: 'Check-In Rush', dept: 'lobby', path: '/hotel/checkin/index.html', start: '#ci-start-btn', startText: 'Start Check-In', back: '#overlay-idle .ci-back-link' },
+  { name: 'Tasting Room', dept: 'restaurant', path: '/hotel/restaurant/index.html', start: '#start-tasting-btn', startText: 'Open Service', back: '#restaurant-return-link' },
+  { name: 'Bar Shift', dept: 'bar', path: '/hotel/bar/index.html', start: '#start-shift-btn', startText: 'Start Bar Shift', back: '#bar-return-link' },
+  { name: 'Show Lineup', dept: 'entertainment', path: '/hotel/entertainment/index.html', start: '#book-btn', startText: 'Book Show', back: '#booker-return-link' },
+  { name: 'Spa Rush', dept: 'spa', path: '/hotel/spa/index.html', start: '#start-spa-btn', startText: 'Start Spa Rush', back: '#spa-return-link' },
+];
+
 test.beforeEach(async ({ page }) => {
   await stubExternalDependencies(page);
   await page.addInitScript(() => {
@@ -123,20 +132,50 @@ test.describe('launch navigation', () => {
     await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('hotelGameState'))?.shifts?.active?.deptId)).toBe(dept);
   });
 
-  test('hotel mini-game pages carry the shift briefing into direct play', async ({ page }) => {
+  test('hotel mini-game pages open with a clear operation briefing', async ({ page }) => {
+    for (const operation of HOTEL_OPERATION_PAGES) {
+      await page.goto(operation.path);
+      await page.evaluate((dept) => {
+        HotelState.resetSave();
+        HotelShiftBriefing.mount(dept);
+      }, operation.dept);
+
+      const briefing = page.locator('.mini-shift-briefing');
+      await expect(briefing, `${operation.name} should mount briefing`).toContainText('Operation Briefing');
+      await expect(briefing).toContainText(operation.name);
+      await expect(briefing).toContainText("Today's Goal");
+      await expect(briefing).toContainText('Reward');
+      await expect(briefing).toContainText('Risk');
+      await expect(briefing).toContainText('Coverage');
+      await expect(briefing).toContainText('Staff Impact');
+      await expect(page.locator(operation.start)).toContainText(operation.startText);
+      await expect(page.locator(operation.back)).toContainText('Back to Hotel');
+    }
+  });
+
+  test('hotel mini-game direct play records active and completed shift state', async ({ page }) => {
     await page.goto('/hotel/rooms/index.html');
     await page.evaluate(() => {
       HotelState.resetSave();
       HotelShiftBriefing.mount('rooms');
     });
 
-    await expect(page.locator('.mini-shift-briefing')).toContainText('Shift Briefing');
-    await expect(page.locator('.mini-shift-briefing')).toContainText('Floor Ops');
-    await expect(page.locator('.mini-shift-briefing')).toContainText('Coverage');
-
     await page.locator('#start-ops-btn').click();
     await expect.poll(() => page.evaluate(() => HotelState.get().shifts.active?.deptId)).toBe('rooms');
     await expect.poll(() => page.evaluate(() => HotelState.get().shifts.active?.briefing?.title)).toBe('Floor Ops');
+
+    await page.evaluate(() => {
+      HotelState.recordShiftResult('rooms', {
+        title: 'Floor Ops complete',
+        cash: 42,
+        satisfaction: 1,
+        primaryLabel: 'Resolved',
+        primaryValue: 1,
+        summary: '1 request resolved.',
+      });
+    });
+    await expect.poll(() => page.evaluate(() => HotelState.get().shifts.lastResult?.deptId)).toBe('rooms');
+    await expect.poll(() => page.evaluate(() => HotelState.get().shifts.lastResult?.staffImpact)).toContain('coverage');
   });
 
   test('casino lobby exposes only working live game links', async ({ page }) => {

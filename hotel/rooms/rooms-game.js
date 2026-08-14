@@ -84,6 +84,7 @@ const RoomsGame = (() => {
 
     $('start-ops-btn').disabled = true;
     $('start-ops-btn').innerHTML = '<i class="fa-solid fa-spinner"></i> On Shift';
+    setReturnLink('Back to Hotel', 'fa-arrow-left');
     hideResults();
     clearLog();
     log(`Floor Ops opened. Room staff coverage: ${shift.staffEffect?.score ?? 0}% ${shift.staffEffect?.label ?? 'Short'}.`, 'gold');
@@ -266,7 +267,8 @@ const RoomsGame = (() => {
     CasinoShell.awardXp(Math.max(10, Math.round(shift.earned / 5)));
 
     $('start-ops-btn').disabled = false;
-    $('start-ops-btn').innerHTML = '<i class="fa-solid fa-rotate-right"></i> New Shift';
+    $('start-ops-btn').innerHTML = '<i class="fa-solid fa-rotate-right"></i> Run Floor Ops Again';
+    setReturnLink('Return to Hotel', 'fa-building');
     syncHotelCash();
     updateAll();
     showResults(satBonus);
@@ -295,6 +297,7 @@ const RoomsGame = (() => {
     $('ops-time').textContent = '1:10';
     $('ops-session-fill').style.width = '0%';
     log('Guest Rooms are ready for Floor Ops.', 'gold', true);
+    setReturnLink('Back to Hotel', 'fa-arrow-left');
     updateStats();
     renderSelectedBrief();
   }
@@ -440,6 +443,12 @@ const RoomsGame = (() => {
   function syncHotelCash() {
     const el = $('ops-hotel-cash');
     if (el) el.textContent = fmt(HotelState.getCash());
+  }
+
+  function setReturnLink(label, icon) {
+    const link = $('ops-return-link');
+    if (!link) return;
+    link.innerHTML = `<i class="fa-solid ${icon}"></i> ${label}`;
   }
 
   function clearLog() {

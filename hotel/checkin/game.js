@@ -399,7 +399,7 @@ const CheckInGame = (() => {
       ],
     });
 
-    $('results-headline').textContent = grade;
+    $('results-headline').textContent = `Check-In Complete - ${grade}`;
 
     $('results-grid').innerHTML = `
       <div class="res-stat">
