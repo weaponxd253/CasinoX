@@ -198,8 +198,8 @@ test.describe('launch navigation', () => {
       state.departments.restaurant.level = 2;
       state.departments.restaurant.lastCollected = Date.now();
       HotelState.save();
-      location.reload();
     });
+    await page.reload();
     await page.waitForLoadState('domcontentloaded');
     await page.locator('#start-tasting-btn').click();
     await expect(page.locator('#tasting-next-step')).toContainText('Choose 3 dishes');
@@ -224,6 +224,39 @@ test.describe('launch navigation', () => {
     await page.locator('#start-spa-btn').click();
     await expect(page.locator('#spa-next-step')).toContainText('Choose');
     await expect(page.locator('.treatment-btn.best-match')).toContainText('Best Match');
+  });
+
+  test('tasting room rewards course order and explains the flight read', async ({ page }) => {
+    await page.goto('/hotel/restaurant/index.html');
+    await page.evaluate(() => {
+      HotelState.resetSave();
+      const state = HotelState.get();
+      state.departments.restaurant.unlocked = true;
+      state.departments.restaurant.level = 2;
+      state.departments.restaurant.lastCollected = Date.now();
+      HotelState.save();
+    });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+
+    const scores = await page.evaluate(() => ({
+      idealCritics: RestaurantGame.debugScoreFlight(['citrusCrudo', 'velvetRisotto', 'gardenStatic'], 'critics'),
+      reorderedCritics: RestaurantGame.debugScoreFlight(['gardenStatic', 'velvetRisotto', 'citrusCrudo'], 'critics'),
+      artistFlight: RestaurantGame.debugScoreFlight(['citrusCrudo', 'pepperBloom', 'gardenStatic'], 'artists'),
+      jetlagFlight: RestaurantGame.debugScoreFlight(['citrusCrudo', 'pepperBloom', 'gardenStatic'], 'jetlag'),
+    }));
+
+    expect(scores.idealCritics.harmony).toBeGreaterThan(scores.reorderedCritics.harmony);
+    expect(scores.artistFlight.harmony).toBeGreaterThan(scores.jetlagFlight.harmony);
+    expect(scores.idealCritics.feedback.map(item => item.label)).toContain('Course Arc');
+
+    await page.locator('#start-tasting-btn').click();
+    await page.locator('.dish-card[data-dish="citrusCrudo"]').click();
+    await expect(page.locator('#flight-feedback')).toContainText('Flight Read');
+    await page.locator('.dish-card[data-dish="velvetRisotto"]').click();
+    await page.locator('.dish-card[data-dish="gardenStatic"]').click();
+    await expect(page.locator('#flight-feedback')).toContainText('Projected Harmony');
+    await expect(page.locator('#flight-feedback')).toContainText('Course Arc');
+    await expect(page.locator('#course-rail')).toContainText('Bright opener');
   });
 
   test('casino lobby exposes only working live game links', async ({ page }) => {

@@ -35,7 +35,8 @@
 .tasting-stats span,
 .results-grid span,
 .pantry-head span,
-.course-slot span {
+.course-slot span,
+.flight-feedback > span {
   font-size: 10px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -270,6 +271,13 @@
   font-size: 20px;
 }
 
+.course-slot em {
+  color: var(--text-dim);
+  font-size: 11px;
+  font-style: normal;
+  line-height: 1.2;
+}
+
 .pantry {
   position: relative;
   z-index: 1;
@@ -300,7 +308,7 @@
 }
 
 .dish-card {
-  min-height: 112px;
+  min-height: 126px;
   border: 1px solid rgba(201,168,76,0.42);
   border-radius: 8px;
   background: rgba(0,0,0,0.28);
@@ -332,6 +340,16 @@
   font-size: 11px;
   color: var(--text-dim);
   line-height: 1.15;
+}
+
+.dish-role {
+  min-height: 16px;
+  color: #a7e6d7;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.15;
+  text-transform: uppercase;
 }
 
 /* ── Flavor bars on dish cards ── */
@@ -412,6 +430,7 @@
 .table-brief,
 .next-step-panel,
 .balance-card,
+.flight-feedback,
 .tasting-results,
 .tasting-log,
 .tasting-stats > div {
@@ -557,6 +576,86 @@
   background: rgba(108,185,163,0.9);
 }
 
+/* -- Flight readout -- */
+.flight-feedback[hidden] {
+  display: none;
+}
+
+.flight-feedback {
+  display: grid;
+  gap: 8px;
+  border-color: rgba(108,185,163,0.34);
+  background:
+    linear-gradient(135deg, rgba(108,185,163,0.09), rgba(201,168,76,0.05)),
+    rgba(0,0,0,0.22);
+}
+
+.flight-feedback.reaction {
+  border-color: rgba(201,168,76,0.5);
+}
+
+.flight-feedback.bad {
+  border-color: rgba(232,145,106,0.5);
+}
+
+.flight-feedback > strong {
+  color: var(--gold-light);
+  font-family: var(--font-display);
+  font-size: 16px;
+  line-height: 1.16;
+}
+
+.feedback-chips {
+  display: grid;
+  gap: 6px;
+}
+
+.feedback-chip {
+  min-height: 34px;
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(201,168,76,0.22);
+  border-radius: 7px;
+  background: rgba(0,0,0,0.2);
+  padding: 7px 8px;
+}
+
+.feedback-chip span {
+  color: var(--text-dim);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.feedback-chip strong {
+  color: var(--gold-light);
+  font-size: 12px;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.feedback-chip.good {
+  border-color: rgba(111,207,151,0.38);
+}
+
+.feedback-chip.good strong {
+  color: #a7e6d7;
+}
+
+.feedback-chip.mid {
+  border-color: rgba(201,168,76,0.34);
+}
+
+.feedback-chip.bad {
+  border-color: rgba(232,145,106,0.38);
+}
+
+.feedback-chip.bad strong {
+  color: #f0a389;
+}
+
 /* ── Stats grid ── */
 .tasting-stats,
 .results-grid {
@@ -592,6 +691,13 @@
 
 .tasting-results.pop {
   animation: results-pop 0.38s ease;
+}
+
+.result-note {
+  margin-top: 10px;
+  color: var(--text-dim);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 @keyframes results-pop {
