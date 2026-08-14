@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="../../casino-shell.css?v=theme-controls">
   <link rel="stylesheet" href="game.css">
   <link rel="stylesheet" href="../../casino-mobile.css">
-  <link rel="stylesheet" href="../shift-briefing.css?v=phase8-shifts-v1">
+  <link rel="stylesheet" href="../shift-briefing.css?v=phase9-shifts-v1">
 </head>
 <body>
   <!-- Shell header injected by CasinoShell.mount() -->
@@ -44,6 +44,11 @@
         <div class="ci-empty-desk">Waiting for next guest…</div>
       </div>
 
+      <div class="ci-next-step next-step-panel" id="ci-next-step">
+        <span>Next Step</span>
+        <strong>Select the best matching room.</strong>
+      </div>
+
       <!-- Patience bar -->
       <div class="ci-patience-wrap" id="ci-patience-wrap">
         <div class="ci-patience-track">
@@ -53,6 +58,7 @@
       </div>
 
       <!-- Confirm button -->
+      <div class="ci-selected-room-summary" id="ci-selected-room-summary" hidden></div>
       <button class="ci-confirm-btn" id="ci-confirm-btn" disabled>
         <i class="fa-solid fa-key"></i>
         Assign Room & Check In
@@ -115,7 +121,7 @@
   <script src="../hotel-state.js?v=phase4-shifts-v1"></script>
   <script src="../hotel-guests.js"></script>
   <script src="../hotel-guest-pool.js"></script>
-  <script src="../shift-briefing.js?v=phase8-shifts-v1"></script>
-  <script src="game.js?v=phase8-shifts-v1"></script>
+  <script src="../shift-briefing.js?v=phase9-shifts-v1"></script>
+  <script src="game.js?v=phase9-shifts-v1"></script>
 </body>
 </html>

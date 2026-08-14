@@ -90,6 +90,7 @@ const SpaRush = (() => {
     $('start-spa-btn').disabled = true;
     $('start-spa-btn').innerHTML = '<i class="fa-solid fa-spinner"></i> In Session';
     setReturnLink('Back to Hotel', 'fa-arrow-left');
+    setNextStep('Select a waiting guest, then choose their best treatment.');
     hideResults();
     clearLog();
     log('Spa session opened.', 'gold');
@@ -106,6 +107,8 @@ const SpaRush = (() => {
     if (!guest || guest.status !== 'waiting') return;
     session.selectedGuestId = guestId;
     renderGuests();
+    renderTreatments();
+    updateNextStep();
   }
 
   function assignTreatment(treatmentId) {
@@ -120,6 +123,7 @@ const SpaRush = (() => {
     const station = session.stations.find(s => !s.guest);
     if (!guest || !station) {
       log('All treatment rooms are busy.', 'bad');
+      setNextStep('All treatment rooms are busy. Wait for one to open.');
       return;
     }
 
@@ -136,6 +140,8 @@ const SpaRush = (() => {
     CasinoShell.sound.tone(560, 'sine', 0.08, 0.18);
     renderGuests();
     renderStations();
+    renderTreatments();
+    updateNextStep();
   }
 
   function startTick() {
@@ -270,6 +276,7 @@ const SpaRush = (() => {
     $('start-spa-btn').disabled = false;
     $('start-spa-btn').innerHTML = '<i class="fa-solid fa-rotate-right"></i> Start Spa Rush Again';
     setReturnLink('Return to Hotel', 'fa-building');
+    setNextStep('Return to Hotel with the result, or start Spa Rush again.');
     syncHotelCash();
     renderTreatments();
     updateAll();
@@ -288,6 +295,7 @@ const SpaRush = (() => {
     $('spa-session-fill').style.width = '0%';
     log(spaLevel > 0 ? 'Spa is ready for guests.' : 'Spa & Wellness is not built yet.', spaLevel > 0 ? 'gold' : 'bad', true);
     setReturnLink('Back to Hotel', 'fa-arrow-left');
+    setNextStep(spaLevel > 0 ? 'Start Spa Rush to seat waiting guests.' : 'Build Spa & Wellness to unlock this shift.');
     updateStats();
   }
 
@@ -350,14 +358,18 @@ const SpaRush = (() => {
     const wrap = $('treatment-bar');
     if (!wrap) return;
     const spaLevel = session?.spaLevel ?? HotelState.get().departments.spa?.level ?? 0;
+    const guest = selectedGuest();
+    const openStation = !session?.active || session.stations.some(station => !station.guest);
     wrap.innerHTML = TREATMENTS.map(t => {
       const unlocked = spaLevel >= t.level;
+      const recommended = !!guest && unlocked && t.id === guest.mood.best;
+      const disabled = !unlocked || !session?.active || !guest || !openStation;
       return `
-        <button class="treatment-btn ${unlocked ? '' : 'locked'}" type="button"
-                data-treatment-id="${t.id}" ${unlocked && session?.active ? '' : 'disabled'}>
+        <button class="treatment-btn ${unlocked ? '' : 'locked'} ${recommended ? 'best-match' : ''}" type="button"
+                data-treatment-id="${t.id}" ${disabled ? 'disabled' : ''}>
           <i class="fa-solid ${t.icon}"></i>
           ${t.label}
-          <small>${unlocked ? t.style : `Spa Lv ${t.level}`}</small>
+          <small>${recommended ? 'Best Match' : unlocked ? t.style : `Spa Lv ${t.level}`}</small>
         </button>
       `;
     }).join('');
@@ -366,6 +378,8 @@ const SpaRush = (() => {
   function updateAll() {
     renderGuests();
     renderStations();
+    renderTreatments();
+    updateNextStep();
     updateStats();
     updateSessionMeter();
   }
@@ -420,6 +434,31 @@ const SpaRush = (() => {
     const link = $('spa-return-link');
     if (!link) return;
     link.innerHTML = `<i class="fa-solid ${icon}"></i> ${label}`;
+  }
+
+  function selectedGuest() {
+    if (!session?.active) return null;
+    return session.guests.find(g => g.id === session.selectedGuestId && g.status === 'waiting') ?? null;
+  }
+
+  function updateNextStep() {
+    if (!session?.active) return;
+    const guest = selectedGuest();
+    if (!guest) {
+      setNextStep('Select a waiting guest.');
+      return;
+    }
+    if (!session.stations.some(station => !station.guest)) {
+      setNextStep('All treatment rooms are busy. Wait for one to open.');
+      return;
+    }
+    setNextStep(`Choose ${treatmentLabel(guest.mood.best)} for ${guest.name}.`);
+  }
+
+  function setNextStep(message) {
+    const el = $('spa-next-step');
+    if (!el) return;
+    el.querySelector('strong').textContent = message;
   }
 
   function clearLog() {

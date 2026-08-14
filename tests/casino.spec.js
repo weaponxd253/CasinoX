@@ -37,12 +37,12 @@ const LIVE_GAMES = [
 ];
 
 const HOTEL_OPERATION_PAGES = [
-  { name: 'Floor Ops', dept: 'rooms', path: '/hotel/rooms/index.html', start: '#start-ops-btn', startText: 'Start Floor Ops', back: '#ops-return-link' },
-  { name: 'Check-In Rush', dept: 'lobby', path: '/hotel/checkin/index.html', start: '#ci-start-btn', startText: 'Start Check-In', back: '#overlay-idle .ci-back-link' },
-  { name: 'Tasting Room', dept: 'restaurant', path: '/hotel/restaurant/index.html', start: '#start-tasting-btn', startText: 'Open Service', back: '#restaurant-return-link' },
-  { name: 'Bar Shift', dept: 'bar', path: '/hotel/bar/index.html', start: '#start-shift-btn', startText: 'Start Bar Shift', back: '#bar-return-link' },
-  { name: 'Show Lineup', dept: 'entertainment', path: '/hotel/entertainment/index.html', start: '#book-btn', startText: 'Book Show', back: '#booker-return-link' },
-  { name: 'Spa Rush', dept: 'spa', path: '/hotel/spa/index.html', start: '#start-spa-btn', startText: 'Start Spa Rush', back: '#spa-return-link' },
+  { name: 'Floor Ops', dept: 'rooms', path: '/hotel/rooms/index.html', start: '#start-ops-btn', startText: 'Start Floor Ops', back: '#ops-return-link', next: '#ops-next-step' },
+  { name: 'Check-In Rush', dept: 'lobby', path: '/hotel/checkin/index.html', start: '#ci-start-btn', startText: 'Start Check-In', back: '#overlay-idle .ci-back-link', next: '#ci-next-step' },
+  { name: 'Tasting Room', dept: 'restaurant', path: '/hotel/restaurant/index.html', start: '#start-tasting-btn', startText: 'Open Service', back: '#restaurant-return-link', next: '#tasting-next-step' },
+  { name: 'Bar Shift', dept: 'bar', path: '/hotel/bar/index.html', start: '#start-shift-btn', startText: 'Start Bar Shift', back: '#bar-return-link', next: '#bar-next-step' },
+  { name: 'Show Lineup', dept: 'entertainment', path: '/hotel/entertainment/index.html', start: '#book-btn', startText: 'Pick Slot and Act', back: '#booker-return-link', next: '#booker-next-step' },
+  { name: 'Spa Rush', dept: 'spa', path: '/hotel/spa/index.html', start: '#start-spa-btn', startText: 'Start Spa Rush', back: '#spa-return-link', next: '#spa-next-step' },
 ];
 
 test.beforeEach(async ({ page }) => {
@@ -150,6 +150,8 @@ test.describe('launch navigation', () => {
       await expect(briefing).toContainText('Staff Impact');
       await expect(page.locator(operation.start)).toContainText(operation.startText);
       await expect(page.locator(operation.back)).toContainText('Back to Hotel');
+      await expect(page.locator(operation.next)).toContainText('Next Step');
+      await expect(page.locator(operation.next).locator('strong')).not.toHaveText('');
     }
   });
 
@@ -176,6 +178,52 @@ test.describe('launch navigation', () => {
     });
     await expect.poll(() => page.evaluate(() => HotelState.get().shifts.lastResult?.deptId)).toBe('rooms');
     await expect.poll(() => page.evaluate(() => HotelState.get().shifts.lastResult?.staffImpact)).toContain('coverage');
+  });
+
+  test('hotel mini-games guide the next in-game action', async ({ page }) => {
+    await page.goto('/hotel/rooms/index.html');
+    await page.evaluate(() => {
+      HotelState.resetSave();
+      HotelShiftBriefing.mount('rooms');
+    });
+    await page.locator('#start-ops-btn').click();
+    await expect(page.locator('#ops-next-step')).toContainText('Assign');
+    await expect(page.locator('.staff-card.recommended')).toContainText('Best Fit');
+
+    await page.goto('/hotel/restaurant/index.html');
+    await page.evaluate(() => {
+      HotelState.resetSave();
+      const state = HotelState.get();
+      state.departments.restaurant.unlocked = true;
+      state.departments.restaurant.level = 2;
+      state.departments.restaurant.lastCollected = Date.now();
+      HotelState.save();
+      location.reload();
+    });
+    await page.waitForLoadState('domcontentloaded');
+    await page.locator('#start-tasting-btn').click();
+    await expect(page.locator('#tasting-next-step')).toContainText('Choose 3 dishes');
+    await expect(page.locator('#fire-course-btn')).toContainText('Choose 3 Dishes');
+    for (let i = 0; i < 3; i++) {
+      await page.locator('.dish-card:not([disabled])').first().click();
+    }
+    await expect(page.locator('#tasting-next-step')).toContainText('Flight ready');
+    await expect(page.locator('#fire-course-btn')).toContainText('Fire Flight');
+
+    await page.goto('/hotel/spa/index.html');
+    await page.evaluate(() => {
+      HotelState.resetSave();
+      const state = HotelState.get();
+      state.departments.spa.unlocked = true;
+      state.departments.spa.level = 5;
+      state.departments.spa.lastCollected = Date.now();
+      HotelState.save();
+      location.reload();
+    });
+    await page.waitForLoadState('domcontentloaded');
+    await page.locator('#start-spa-btn').click();
+    await expect(page.locator('#spa-next-step')).toContainText('Choose');
+    await expect(page.locator('.treatment-btn.best-match')).toContainText('Best Match');
   });
 
   test('casino lobby exposes only working live game links', async ({ page }) => {

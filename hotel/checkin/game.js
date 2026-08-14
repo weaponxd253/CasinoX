@@ -135,6 +135,7 @@ const CheckInGame = (() => {
     guestQueue = _buildGuestQueue();
 
     _renderRoomList();
+    setNextStep('Select the best matching room for the arriving guest.');
     _startRaf();
     nextGuest();
   }
@@ -155,10 +156,13 @@ const CheckInGame = (() => {
   function nextGuest() {
     selectedRoom = null;
     $('ci-confirm-btn').disabled = true;
-    $('ci-confirm-btn').textContent = 'Select a room first';
+    $('ci-confirm-btn').className = 'ci-confirm-btn';
+    $('ci-confirm-btn').innerHTML = '<i class="fa-solid fa-key"></i> Select a room first';
+    renderSelectionSummary(null);
 
     if (guestQueue.length === 0) {
       // All guests processed — end session
+      setNextStep('All arrivals processed. Calculating results.');
       setTimeout(endSession, 800);
       return;
     }
@@ -170,6 +174,7 @@ const CheckInGame = (() => {
 
     _renderGuestCard(activeGuest);
     _highlightRooms();
+    setNextStep(`Select the best matching room for ${activeGuest.name}.`);
 
     // Animate card in
     const slot = $('ci-guest-slot');
@@ -271,6 +276,8 @@ const CheckInGame = (() => {
     if (nextTile) nextTile.classList.add('selected');
 
     const match = _computeMatch(activeGuest, room);
+    renderSelectionSummary(room, match);
+    setNextStep(`Confirm Room ${room.number} for ${activeGuest.name}. Match: ${_matchPlainLabel(match.quality)}.`);
     const btn   = $('ci-confirm-btn');
     btn.disabled = false;
     btn.innerHTML = match.quality === 'perfect'
@@ -553,6 +560,7 @@ const CheckInGame = (() => {
   function _renderRoomList() {
     const avail = rooms.filter(r => !r.occupied).length;
     $('room-count').textContent = `(${avail} available)`;
+    const bestQuality = activeGuest ? _bestRoomQuality(activeGuest) : null;
 
     $('ci-room-list').innerHTML = rooms.map(room => {
       if (room.occupied) {
@@ -566,11 +574,12 @@ const CheckInGame = (() => {
       const match    = activeGuest ? _computeMatch(activeGuest, room) : null;
       const isSelected = selectedRoom === room.id;
       const qualClass  = match ? `match-${match.quality}` : '';
+      const bestClass = match && match.quality === bestQuality ? 'best-choice' : '';
       const featHtml   = room.features.slice(0, 2).map(f =>
         `<span class="room-feat">${_prefShort(f)}</span>`
       ).join('');
 
-      return `<div class="ci-room-tile ${qualClass} ${isSelected ? 'selected' : ''}"
+      return `<div class="ci-room-tile ${qualClass} ${bestClass} ${isSelected ? 'selected' : ''}"
                    data-room-id="${room.id}" onclick="CheckInGame.selectRoom('${room.id}')">
         <div class="room-tile-top">
           <span class="room-num">${room.number}</span>
@@ -614,6 +623,28 @@ const CheckInGame = (() => {
     $('stat-perfect').textContent = results.filter(r => r.match?.quality === 'perfect').length;
   }
 
+  function renderSelectionSummary(room, match = null) {
+    const el = $('ci-selected-room-summary');
+    if (!el) return;
+    if (!room || !match) {
+      el.hidden = true;
+      el.innerHTML = '';
+      return;
+    }
+    el.hidden = false;
+    el.innerHTML = `
+      <span>Selected Room</span>
+      <strong>${room.number} · ${room.label}</strong>
+      <small>${_matchPlainLabel(match.quality)} match for ${activeGuest?.name ?? 'guest'}.</small>
+    `;
+  }
+
+  function setNextStep(message) {
+    const el = $('ci-next-step');
+    if (!el) return;
+    el.querySelector('strong').textContent = message;
+  }
+
   /* ────────────────────────────────────────────────────────────
      VISUAL FEEDBACK
   ─────────────────────────────────────────────────────────── */
@@ -638,6 +669,25 @@ const CheckInGame = (() => {
   ─────────────────────────────────────────────────────────── */
   function _matchLabel(q) {
     return { perfect:'✦ Perfect', good:'✓ Good', acceptable:'~ Ok', wrong:'✗ Wrong' }[q] ?? q;
+  }
+
+  function _matchPlainLabel(q) {
+    return { perfect:'Perfect', good:'Good', acceptable:'Okay', wrong:'Poor' }[q] ?? q;
+  }
+
+  function _bestRoomQuality(guest) {
+    const rank = { perfect: 4, good: 3, acceptable: 2, wrong: 1 };
+    let best = null;
+    let bestRank = 0;
+    rooms.filter(room => !room.occupied).forEach(room => {
+      const quality = _computeMatch(guest, room).quality;
+      const value = rank[quality] ?? 0;
+      if (value > bestRank) {
+        bestRank = value;
+        best = quality;
+      }
+    });
+    return best;
   }
 
   function _prefShort(p) {

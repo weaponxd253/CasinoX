@@ -58,6 +58,7 @@ const BarGame = (() => {
     document.getElementById('start-shift-btn').disabled = true;
     document.getElementById('start-shift-btn').innerHTML = '<i class="fa-solid fa-spinner"></i> On Shift';
     setReturnLink('Back to Hotel', 'fa-arrow-left');
+    setNextStep('Serve the current ticket before patience runs out.');
     hideResults();
     setOrderState('active');
     setDrinkButtons(true);
@@ -81,6 +82,8 @@ const BarGame = (() => {
 
     document.getElementById('ticket-drink').textContent = `${shift.order.icon} ${shift.order.label}`;
     setOrderState('active');
+    setDrinkHighlight(shift.order.id);
+    setNextStep(`Serve ${shift.order.label} for the ${shift.guest} before patience runs out.`);
     setCustomerMood('');
     updatePatience();
   }
@@ -114,6 +117,8 @@ const BarGame = (() => {
     }
 
     updateStats();
+    setDrinkHighlight(null);
+    setNextStep('Next guest incoming.');
     setTimeout(nextOrder, 520);
   }
 
@@ -169,6 +174,7 @@ const BarGame = (() => {
     document.getElementById('start-shift-btn').disabled = false;
     document.getElementById('start-shift-btn').innerHTML = '<i class="fa-solid fa-rotate-right"></i> Start Bar Shift Again';
     setReturnLink('Return to Hotel', 'fa-building');
+    setNextStep('Return to Hotel with the tips, or start Bar Shift again.');
     document.getElementById('ticket-drink').textContent = 'Closed';
     document.getElementById('patience-fill').style.width = '0%';
     setOrderState('complete');
@@ -227,6 +233,8 @@ const BarGame = (() => {
     document.getElementById('served-target').textContent = Math.min(8, 4 + Math.max(1, barLevel));
     log(barLevel > 0 ? 'Bar is ready.' : 'Bar & Lounge is not built yet.', barLevel > 0 ? 'gold' : 'bad', true);
     setReturnLink('Back to Hotel', 'fa-arrow-left');
+    setNextStep(barLevel > 0 ? 'Start Bar Shift to open the first ticket.' : 'Build Bar & Lounge to unlock this shift.');
+    setDrinkHighlight(null);
     resetServeDrink();
   }
 
@@ -280,6 +288,18 @@ const BarGame = (() => {
     const link = document.getElementById('bar-return-link');
     if (!link) return;
     link.innerHTML = `<i class="fa-solid ${icon}"></i> ${label}`;
+  }
+
+  function setNextStep(message) {
+    const el = document.getElementById('bar-next-step');
+    if (!el) return;
+    el.querySelector('strong').textContent = message;
+  }
+
+  function setDrinkHighlight(drinkId) {
+    document.querySelectorAll('.drink-btn').forEach(btn => {
+      btn.classList.toggle('is-order', !!drinkId && btn.dataset.drink === drinkId);
+    });
   }
 
   function clearLog() {

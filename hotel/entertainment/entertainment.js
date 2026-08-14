@@ -52,6 +52,7 @@ const EntertainmentBooker = (() => {
 
   let selectedSlot = null;
   let selectedActId = null;
+  let bookingConfirmation = null;
 
   const $ = id => document.getElementById(id);
 
@@ -66,6 +67,7 @@ const EntertainmentBooker = (() => {
     $('calendar-grid')?.addEventListener('click', e => {
       const slot = e.target.closest('[data-date-key][data-slot-id]');
       if (!slot) return;
+      bookingConfirmation = null;
       selectedSlot = { dateKey: slot.dataset.dateKey, slotId: slot.dataset.slotId, day: Number(slot.dataset.day) };
       renderAll();
     });
@@ -73,6 +75,7 @@ const EntertainmentBooker = (() => {
     $('act-list')?.addEventListener('click', e => {
       const card = e.target.closest('[data-act-id]');
       if (!card || card.classList.contains('locked')) return;
+      bookingConfirmation = null;
       selectedActId = card.dataset.actId;
       renderAll();
     });
@@ -131,6 +134,7 @@ const EntertainmentBooker = (() => {
 
     CasinoShell.sound.win();
     CasinoShell.toast(`${act.label} booked.`);
+    bookingConfirmation = `${act.label} booked. Return to Hotel to see the schedule impact.`;
     syncHotelCash();
     selectedSlot = firstOpenSlot() ?? selectedSlot;
     renderAll();
@@ -146,6 +150,7 @@ const EntertainmentBooker = (() => {
     renderLineup();
     renderTodayEffects();
     updateBookButton();
+    updateNextStep();
     syncHotelCash();
   }
 
@@ -270,9 +275,35 @@ const EntertainmentBooker = (() => {
     const alreadyBooked = selectedSlot && bookingFor(selectedSlot.dateKey, selectedSlot.slotId);
     const disabled = !act || !selectedSlot || !!alreadyBooked || entertainmentLevel() < act.level;
     btn.disabled = disabled;
-    btn.innerHTML = alreadyBooked
-      ? '<i class="fa-solid fa-lock"></i> Slot Booked'
-      : `<i class="fa-solid fa-calendar-plus"></i> Book Show${act ? ` · $${fmt(act.cost)}` : ''}`;
+    if (!selectedSlot || !act) {
+      btn.innerHTML = '<i class="fa-solid fa-calendar-plus"></i> Pick Slot and Act';
+    } else if (alreadyBooked) {
+      btn.innerHTML = '<i class="fa-solid fa-lock"></i> Slot Booked';
+    } else {
+      btn.innerHTML = `<i class="fa-solid fa-calendar-plus"></i> Book Show · $${fmt(act.cost)}`;
+    }
+  }
+
+  function updateNextStep() {
+    if (bookingConfirmation) {
+      setNextStep(bookingConfirmation);
+      return;
+    }
+    const act = selectedAct();
+    const alreadyBooked = selectedSlot && bookingFor(selectedSlot.dateKey, selectedSlot.slotId);
+    if (!selectedSlot) {
+      setNextStep('Pick an open slot in the 7-day lineup.');
+      return;
+    }
+    if (alreadyBooked) {
+      setNextStep('That slot is booked. Pick another open slot.');
+      return;
+    }
+    if (!act) {
+      setNextStep('Choose an available act for the selected slot.');
+      return;
+    }
+    setNextStep(`Book ${act.label} for Day ${selectedSlot.day} ${slotLabel(selectedSlot.slotId)}.`);
   }
 
   function ensureSchedule() {
@@ -358,6 +389,12 @@ const EntertainmentBooker = (() => {
     const link = $('booker-return-link');
     if (!link) return;
     link.innerHTML = `<i class="fa-solid ${icon}"></i> ${label}`;
+  }
+
+  function setNextStep(message) {
+    const el = $('booker-next-step');
+    if (!el) return;
+    el.querySelector('strong').textContent = message;
   }
 
   return { init };

@@ -79,6 +79,7 @@
 .spa-kicker,
 .spa-section-title,
 .spa-session-meter span,
+.next-step-panel span,
 .spa-boost-top span,
 .spa-stats span,
 .results-grid span {
@@ -419,6 +420,14 @@
   filter: saturate(0.45);
 }
 
+.treatment-btn.best-match:not(:disabled) {
+  border-color: var(--gold);
+  background:
+    linear-gradient(135deg, rgba(201,168,76,0.16), rgba(111,207,151,0.1)),
+    rgba(0,0,0,0.22);
+  box-shadow: 0 0 0 1px rgba(201,168,76,0.24), 0 0 20px rgba(201,168,76,0.14);
+}
+
 .spa-panel {
   padding: 17px;
   display: flex;
@@ -438,6 +447,24 @@
 
 .spa-panel-title i {
   color: var(--gold);
+}
+
+.next-step-panel {
+  padding: 12px;
+  border: 1px solid rgba(111,207,151,0.34);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(111,207,151,0.11), rgba(201,168,76,0.06)),
+    rgba(0,0,0,0.2);
+}
+
+.next-step-panel strong {
+  display: block;
+  margin-top: 5px;
+  color: #a7e6d7;
+  font-family: var(--font-display);
+  font-size: 16px;
+  line-height: 1.14;
 }
 
 .spa-stats,

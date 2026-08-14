@@ -30,6 +30,7 @@
 
 .tasting-cash span,
 .brief-label,
+.next-step-panel span,
 .balance-top span,
 .tasting-stats span,
 .results-grid span,
@@ -236,6 +237,14 @@
   background: rgba(111,207,151,0.08);
 }
 
+.course-slot.active {
+  border-color: var(--gold);
+  background:
+    linear-gradient(135deg, rgba(201,168,76,0.14), rgba(108,185,163,0.07)),
+    rgba(0,0,0,0.24);
+  box-shadow: 0 0 0 1px rgba(201,168,76,0.2), 0 0 18px rgba(201,168,76,0.14);
+}
+
 /* Keep left accent when filled */
 .course-slot.filled:nth-child(1) { border-left: 2px solid rgba(108,185,163,0.8); }
 .course-slot.filled:nth-child(2) { border-left: 2px solid rgba(201,168,76,0.8); }
@@ -365,6 +374,23 @@
   border-color: rgba(111,207,151,0.72);
 }
 
+.dish-card.suggested:not(:disabled) {
+  border-color: rgba(111,207,151,0.62);
+  box-shadow: inset 0 0 22px rgba(111,207,151,0.07);
+}
+
+.dish-hint {
+  min-height: 18px;
+  padding: 2px 7px;
+  border: 1px solid rgba(111,207,151,0.38);
+  border-radius: 999px;
+  color: #a7e6d7;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 /* ── Right panel ── */
 .tasting-panel {
   padding: 16px;
@@ -384,6 +410,7 @@
 }
 
 .table-brief,
+.next-step-panel,
 .balance-card,
 .tasting-results,
 .tasting-log,
@@ -424,6 +451,23 @@
   background: rgba(108,185,163,0.08);
   padding: 4px 9px;
   font-size: 12px;
+}
+
+.next-step-panel {
+  padding: 12px;
+  border-color: rgba(111,207,151,0.34);
+  background:
+    linear-gradient(135deg, rgba(111,207,151,0.11), rgba(201,168,76,0.06)),
+    rgba(0,0,0,0.2);
+}
+
+.next-step-panel strong {
+  display: block;
+  margin-top: 5px;
+  color: #a7e6d7;
+  font-family: var(--font-display);
+  font-size: 16px;
+  line-height: 1.14;
 }
 
 /* ── Balance card with radar ── */

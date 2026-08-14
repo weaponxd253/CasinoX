@@ -85,6 +85,7 @@ const RoomsGame = (() => {
     $('start-ops-btn').disabled = true;
     $('start-ops-btn').innerHTML = '<i class="fa-solid fa-spinner"></i> On Shift';
     setReturnLink('Back to Hotel', 'fa-arrow-left');
+    setNextStep('Pick a room request, then assign the best staff match.');
     hideResults();
     clearLog();
     log(`Floor Ops opened. Room staff coverage: ${shift.staffEffect?.score ?? 0}% ${shift.staffEffect?.label ?? 'Short'}.`, 'gold');
@@ -143,6 +144,7 @@ const RoomsGame = (() => {
     if (!request || request.status !== 'waiting') return;
     shift.selectedRequestId = requestId;
     renderRooms();
+    renderStaff();
     renderSelectedBrief();
   }
 
@@ -269,6 +271,7 @@ const RoomsGame = (() => {
     $('start-ops-btn').disabled = false;
     $('start-ops-btn').innerHTML = '<i class="fa-solid fa-rotate-right"></i> Run Floor Ops Again';
     setReturnLink('Return to Hotel', 'fa-building');
+    setNextStep('Return to Hotel with the result, or run Floor Ops again.');
     syncHotelCash();
     updateAll();
     showResults(satBonus);
@@ -298,6 +301,7 @@ const RoomsGame = (() => {
     $('ops-session-fill').style.width = '0%';
     log('Guest Rooms are ready for Floor Ops.', 'gold', true);
     setReturnLink('Back to Hotel', 'fa-arrow-left');
+    setNextStep('Start Floor Ops to open room requests.');
     updateStats();
     renderSelectedBrief();
   }
@@ -344,14 +348,17 @@ const RoomsGame = (() => {
     const wrap = $('staff-grid');
     if (!wrap) return;
     const staff = shift?.staff ?? STAFF.map(s => ({ ...s, request:null, doneAt:0, startedAt:0 }));
+    const request = findRequest(shift?.selectedRequestId);
     wrap.innerHTML = staff.map(member => {
       const busy = !!member.request;
+      const recommended = !!request && !busy && shift?.active && (member.id === request.need || member.specialty.includes(request.type));
       const pct = staffPct(member);
       return `
-        <button class="staff-card ${busy ? 'busy' : ''}" type="button" data-staff-id="${member.id}" ${busy || !shift?.active ? 'disabled' : ''}>
+        <button class="staff-card ${busy ? 'busy' : ''} ${recommended ? 'recommended' : ''}" type="button" data-staff-id="${member.id}" ${busy || !shift?.active ? 'disabled' : ''}>
           <i class="fa-solid ${member.icon}"></i>
           <span>${member.label}</span>
           <strong>${busy ? `Room ${member.request.roomNumber}` : 'Available'}</strong>
+          ${recommended ? '<small class="staff-fit-label">Best Fit</small>' : ''}
           <div class="staff-track"><div class="staff-fill" style="width:${pct}%"></div></div>
         </button>
       `;
@@ -368,6 +375,7 @@ const RoomsGame = (() => {
         <strong>No request selected</strong>
         <p>Pick an active room request, then assign the best available staff member.</p>
       `;
+      setNextStep(shift?.active ? 'Pick an active room request, then assign staff.' : 'Start Floor Ops to open room requests.');
       return;
     }
     const staff = STAFF.find(member => member.id === request.need);
@@ -376,6 +384,7 @@ const RoomsGame = (() => {
       <strong>Room ${request.roomNumber}: ${request.label}</strong>
       <p>${request.guestName} needs ${request.risk} handled. Best staff: ${staff?.label ?? 'Any staff'}.</p>
     `;
+    setNextStep(`Assign ${staff?.label ?? 'available staff'} to Room ${request.roomNumber}.`);
   }
 
   function updateAll() {
@@ -449,6 +458,12 @@ const RoomsGame = (() => {
     const link = $('ops-return-link');
     if (!link) return;
     link.innerHTML = `<i class="fa-solid ${icon}"></i> ${label}`;
+  }
+
+  function setNextStep(message) {
+    const el = $('ops-next-step');
+    if (!el) return;
+    el.querySelector('strong').textContent = message;
   }
 
   function clearLog() {

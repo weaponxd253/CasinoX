@@ -78,6 +78,7 @@ const RestaurantGame = (() => {
     $('start-tasting-btn').disabled = true;
     $('start-tasting-btn').innerHTML = '<i class="fa-solid fa-spinner"></i> In Service';
     setReturnLink('Back to Hotel', 'fa-arrow-left');
+    setNextStep('Choose 3 dishes for the first table.');
     hideResults();
     clearLog();
     nextTable();
@@ -174,7 +175,9 @@ const RestaurantGame = (() => {
     $('start-tasting-btn').innerHTML = '<i class="fa-solid fa-rotate-right"></i> Open Service Again';
     setReturnLink('Return to Hotel', 'fa-building');
     $('fire-course-btn').disabled = true;
+    $('fire-course-btn').innerHTML = '<i class="fa-solid fa-bell-concierge"></i> Service Complete';
     $('clear-flight-btn').disabled = true;
+    setNextStep('Return to Hotel with the result, or open service again.');
     syncHotelCash();
     updateStats();
     showResults({ cash, served, signatures, satBonus });
@@ -211,7 +214,11 @@ const RestaurantGame = (() => {
     $('harmony-fill').style.width = `${score.harmony}%`;
     $('harmony-fill').className = score.harmony >= 82 ? 'high' : score.harmony >= 58 ? 'mid' : 'low';
     $('fire-course-btn').disabled = !ready;
+    $('fire-course-btn').innerHTML = ready
+      ? '<i class="fa-solid fa-bell-concierge"></i> Fire Flight'
+      : `<i class="fa-solid fa-utensils"></i> ${selected.length ? `Choose ${MAX_COURSES - selected.length} More` : 'Choose 3 Dishes'}`;
     $('clear-flight-btn').disabled = !service?.active || selected.length === 0;
+    updateNextStep();
 
     // Update radar — animate from current to new totals
     radarTarget = { ...score.totals };
@@ -408,10 +415,11 @@ const RestaurantGame = (() => {
 
   function renderFlight() {
     const selected = service?.selected ?? [];
+    const activeIndex = service?.active ? selected.length : -1;
     $('course-rail').innerHTML = [0, 1, 2].map(i => {
       const dish = selected[i];
       return `
-        <div class="course-slot ${dish ? 'filled' : ''}">
+        <div class="course-slot ${dish ? 'filled' : ''} ${i === activeIndex ? 'active' : ''}">
           <span>${i === 0 ? 'Open' : i === 1 ? 'Turn' : 'Finish'}</span>
           <strong>${dish ? dish.name : 'Choose dish'}</strong>
           ${dish ? `<i class="fa-solid ${dish.icon}"></i>` : '<i class="fa-solid fa-plus"></i>'}
@@ -426,6 +434,7 @@ const RestaurantGame = (() => {
     $('dish-grid').innerHTML = DISHES.map((dish, index) => {
       const unlocked = level >= Math.max(1, Math.ceil((index + 1) / 2));
       const disabled = !service?.active || selectedIds.has(dish.id) || service.selected.length >= MAX_COURSES || !unlocked;
+      const suggested = service?.active && unlocked && !selectedIds.has(dish.id) && dish.flavor[service.table?.bonus] > 0;
 
       // Build mini flavor bars (4 axes, each 0–3)
       const flavorBars = unlocked ? `
@@ -439,10 +448,11 @@ const RestaurantGame = (() => {
         </div>` : '';
 
       return `
-        <button class="dish-card ${selectedIds.has(dish.id) ? 'selected' : ''}" type="button" data-dish="${dish.id}" ${disabled ? 'disabled' : ''}>
+        <button class="dish-card ${selectedIds.has(dish.id) ? 'selected' : ''} ${suggested ? 'suggested' : ''}" type="button" data-dish="${dish.id}" ${disabled ? 'disabled' : ''}>
           <i class="fa-solid ${dish.icon}"></i>
           <span class="dish-name">${dish.name}</span>
           <span class="dish-tags">${unlocked ? dish.tags.join(' / ') : 'Lv ' + Math.max(1, Math.ceil((index + 1) / 2))}</span>
+          ${suggested ? '<span class="dish-hint">Table Fit</span>' : ''}
           ${flavorBars}
         </button>
       `;
@@ -466,6 +476,7 @@ const RestaurantGame = (() => {
     drawRadar(radarCurrent, null);
     log(level > 0 ? 'Dining room is ready.' : 'Restaurant is not built yet.', level > 0 ? 'gold' : 'bad', true);
     setReturnLink('Back to Hotel', 'fa-arrow-left');
+    setNextStep(level > 0 ? 'Open service to see the first table.' : 'Build the Restaurant to unlock service.');
   }
 
   function updateStats() {
@@ -507,6 +518,28 @@ const RestaurantGame = (() => {
     const link = $('restaurant-return-link');
     if (!link) return;
     link.innerHTML = `<i class="fa-solid ${icon}"></i> ${label}`;
+  }
+
+  function updateNextStep() {
+    if (!service?.active) return;
+    const tableName = service.table?.name ?? 'this table';
+    const count = service.selected?.length ?? 0;
+    if (count >= MAX_COURSES) {
+      setNextStep(`Flight ready. Fire Flight for ${tableName}.`);
+      return;
+    }
+    const remaining = MAX_COURSES - count;
+    if (count === 0) {
+      setNextStep(`Choose 3 dishes for ${tableName}.`);
+      return;
+    }
+    setNextStep(`Choose ${remaining} more dish${remaining === 1 ? '' : 'es'} for ${tableName}.`);
+  }
+
+  function setNextStep(message) {
+    const el = $('tasting-next-step');
+    if (!el) return;
+    el.querySelector('strong').textContent = message;
   }
 
   function clearLog() {
