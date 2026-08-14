@@ -53,13 +53,28 @@ test.describe('launch navigation', () => {
 
   test('hotel dashboard keeps shifts prominent and exposes the full shift catalog', async ({ page }) => {
     await page.goto('/hotel/index.html');
+    await page.evaluate(() => {
+      HotelState.resetSave();
+      HotelState.setGuidanceMode('expert');
+      HotelState.restStaff('housekeeping_rosa');
+      HotelState.unlockDept('restaurant');
+      HotelUI.renderAll();
+    });
 
     await expect(page.locator('.hotel-snapshot-card')).toBeVisible();
     await expect(page.locator('.hotel-view-wrap')).toHaveCount(0);
     await expect(page.locator('.shift-card')).toHaveCount(3);
     await expect(page.locator('.shift-card.featured')).toContainText('Recommended');
     await expect(page.locator('.shift-card-state')).toHaveCount(3);
+    await expect(page.locator('.shift-card-prep')).toHaveCount(3);
+    await expect(page.locator('.shift-card').first()).toContainText('Risk:');
     await expect(page.locator('.next-reward-rail')).toContainText('Next Reward');
+    await expect(page.locator('.command-primary')).toContainText('Prepare Next Shift');
+
+    await page.locator('.shift-card-prepare').first().click();
+    await expect(page.locator('.mgmt-tab[data-tab="staff"]')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('.staff-shift-fit').first()).toContainText('Prepare');
+    await expect(page.locator('.staff-assign-btn.prepare-target-control').first()).toBeVisible();
 
     await page.evaluate(() => {
       HotelState.recordShiftResult('rooms', {
@@ -73,6 +88,7 @@ test.describe('launch navigation', () => {
       HotelUI.renderAll();
     });
     await expect(page.locator('.shift-return-banner')).toContainText('Floor Ops complete');
+    await expect(page.locator('.recent-shift-history')).toContainText('Floor Ops complete');
     await expect(page.locator('.shift-card', { hasText: 'Floor Ops' })).toContainText('Completed');
     await page.locator('.shift-result-dismiss').click();
     await expect(page.locator('.shift-return-banner')).toHaveCount(0);

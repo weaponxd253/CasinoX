@@ -11,6 +11,7 @@ const HotelUI = (() => {
   let activeMgmtTab = 'departments';
   let activeStaffView = 'coverage';
   let previousUnlocks = null;
+  let activePrepareDept = null;
   let onboardingDebugVisible = typeof location !== 'undefined'
     && new URLSearchParams(location.search).get('onboardingDebug') === '1';
   let guideConfirmation = null;
@@ -270,19 +271,21 @@ const HotelUI = (() => {
     const feed = document.getElementById('hotel-activity-feed');
     const guided = isGuidedOnboarding();
     const unlocks = systemUnlocks(state);
+    const shiftSet = todayShiftOps(state);
     const priorities = guided ? [guidedPriority(state)] : commandPriorities(state);
     const onboarding = isPhaseOneOnboarding() || guided;
     const compactFeed = onboarding || !unlocks.reports;
-    const primary = priorities[0] ?? {
-      tone: 'good',
-      icon: 'fa-circle-check',
-      label: 'Stable',
-      detail: 'Hotel is operating smoothly',
-      action: 'departments',
-      actionLabel: 'Review departments',
-    };
+    const primary = (guided || onboarding)
+      ? priorities[0]
+      : (prepareNextShiftPriority(state, shiftSet.playable) ?? priorities[0] ?? {
+        tone: 'good',
+        icon: 'fa-circle-check',
+        label: 'Stable',
+        detail: 'Hotel is operating smoothly',
+        action: 'departments',
+        actionLabel: 'Review departments',
+      });
     const summary = guided ? [] : priorities.slice(onboarding ? 1 : 0, unlocks.fullDashboard ? 4 : 2);
-    const shiftSet = todayShiftOps(state);
 
     if (strip) {
       strip.innerHTML = `
@@ -307,7 +310,7 @@ const HotelUI = (() => {
         <div class="command-primary ${primary.tone} ${severityClass(primary)} ${onboarding ? 'onboarding-primary' : ''}">
           <span class="command-icon"><i class="fa-solid ${primary.icon}"></i></span>
           <div>
-            <span>Best Next Move</span>
+            <span>${escapeHtml(primary.kicker ?? 'Prepare Next Shift')}</span>
             <strong>${escapeHtml(primary.label)}</strong>
             <em>${escapeHtml(primary.detail)}</em>
           </div>
@@ -331,6 +334,7 @@ const HotelUI = (() => {
           dismissShiftResultBanner(btn.dataset.shiftResultDismiss);
         });
       });
+      wireCommandActions(strip);
     }
 
     if (feed) {
@@ -348,8 +352,35 @@ const HotelUI = (() => {
             </button>
           `).join('')}
         </div>
+        ${renderRecentShiftHistory(state)}
       `;
+      wireCommandActions(feed);
     }
+  }
+
+  function renderRecentShiftHistory(state = HotelState.get()) {
+    const history = (state.shifts?.history ?? [])
+      .filter(result => result?.deptId)
+      .slice(0, 3);
+    if (!history.length) return '';
+    return `
+      <div class="recent-shift-history">
+        <div class="recent-shift-title">
+          <span><i class="fa-solid fa-clock-rotate-left"></i> Recent Shifts</span>
+          <strong>${history.length}</strong>
+        </div>
+        ${history.map(result => {
+          const op = operationCatalog().find(item => item.dept === result.deptId);
+          return `
+            <button type="button" class="recent-shift-item" data-command-action="prepare_shift" data-command-dept="${escapeHtml(result.deptId)}">
+              <i class="fa-solid ${op?.icon ?? 'fa-clipboard-check'}"></i>
+              <span>${escapeHtml(result.title ?? op?.title ?? deptMiniGameLabel(result.deptId))}</span>
+              <strong>${escapeHtml(shiftResultRewardText(result))}</strong>
+            </button>
+          `;
+        }).join('')}
+      </div>
+    `;
   }
 
   function renderShiftReturnBanner(state = HotelState.get()) {
@@ -389,6 +420,16 @@ const HotelUI = (() => {
   function dismissShiftResultBanner(resultId) {
     HotelState.dismissShiftResult?.(resultId);
     renderAll();
+  }
+
+  function wireCommandActions(root) {
+    root?.querySelectorAll('[data-command-action]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        handleCommandAction(btn);
+      });
+    });
   }
 
   function operationCatalog() {
@@ -459,15 +500,20 @@ const HotelUI = (() => {
   function decorateShiftOp(op, state, context, sortIndex) {
     const ui = operationUiState(op, state);
     const statusInfo = HotelState.getShiftStatus?.(ui.dept, state) ?? { state:'ready', result:null };
+    const score = shiftScore(ui, context);
+    const readiness = shiftReadiness(ui, state, context, score);
+    const expected = shiftExpectedReward(ui, state, context, readiness);
     return {
       ...ui,
       sortIndex,
       rep: context.rep,
-      score: shiftScore(ui, context),
+      score,
       priorityLabel: shiftPriorityLabel(ui, context),
       reason: shiftDetail(ui, state, context),
       reward: shiftReward(ui, state),
       impact: shiftImpact(ui, state, context),
+      readiness,
+      expected,
       statusInfo,
       statusState: statusInfo.state,
       completedResult: statusInfo.result,
@@ -537,21 +583,37 @@ const HotelUI = (() => {
     const guideMuted = currentGuidedStep(state) === 'run_checkin' && op.dept !== 'lobby';
     const style = `--operation-color:${op.meta?.color ?? '#0d2218'};--operation-accent:${op.meta?.accent ?? '#1a3d2a'}`;
     return `
-      <a class="shift-card shift-state-${shiftStateClass(op)} ${op.featured ? 'featured' : ''} ${guideTarget ? 'guide-target-control' : ''} ${guideMuted ? 'guide-muted-control' : ''}" href="${op.href}" data-shift-dept="${op.dept}" style="${style}">
-        <span class="shift-card-icon"><i class="fa-solid ${op.icon}"></i></span>
-        <span class="shift-card-copy">
-          <span class="shift-card-state">${escapeHtml(shiftStateLabel(op))}</span>
-          <span>${escapeHtml(op.priorityLabel)}</span>
-          <strong>${escapeHtml(op.title)}</strong>
-          <em>${escapeHtml(op.reason ?? shiftDetail(op, state))}</em>
-          <small>${escapeHtml(op.impact)}</small>
+      <article class="shift-card shift-state-${shiftStateClass(op)} readiness-${op.readiness?.key ?? 'ready'} ${op.featured ? 'featured' : ''} ${guideTarget ? 'guide-target-control' : ''} ${guideMuted ? 'guide-muted-control' : ''}" style="${style}">
+        <a class="shift-card-main" href="${op.href}" data-shift-dept="${op.dept}" aria-label="${escapeHtml(op.title)}">
+          <span class="shift-card-icon"><i class="fa-solid ${op.icon}"></i></span>
+          <span class="shift-card-copy">
+            <span class="shift-card-state">${escapeHtml(shiftStateLabel(op))}</span>
+            <span>${escapeHtml(op.priorityLabel)}</span>
+            <strong>${escapeHtml(op.title)}</strong>
+            <em>${escapeHtml(op.reason ?? shiftDetail(op, state))}</em>
+            <small class="shift-card-prep">${escapeHtml(shiftPrepNote(op))}</small>
+          </span>
+          <span class="shift-card-reward">
+            <span>Expected</span>
+            <strong>${escapeHtml(shiftCardRewardValue(op, state))}</strong>
+            <em>${escapeHtml(op.expected?.detail ?? '')}</em>
+          </span>
+        </a>
+        <span class="shift-card-actions">
+          ${renderShiftPrepareButton(op)}
+          <a class="shift-card-cta" href="${op.href}" data-shift-dept="${op.dept}">${escapeHtml(shiftCta(op))}</a>
         </span>
-        <span class="shift-card-reward">
-          <span>Reward</span>
-          <strong>${escapeHtml(shiftDisplayReward(op, state))}</strong>
-        </span>
-        <span class="shift-card-cta">${escapeHtml(shiftCta(op))}</span>
-      </a>
+      </article>
+    `;
+  }
+
+  function renderShiftPrepareButton(op) {
+    if (!op.readiness?.prepareTarget || op.statusState === 'completed') return '';
+    return `
+      <button class="shift-card-prepare" type="button" data-command-action="prepare_shift" data-command-dept="${op.dept}">
+        <i class="fa-solid ${op.readiness.prepareTarget === 'staff' ? 'fa-user-tie' : 'fa-arrow-up-right-dots'}"></i>
+        Prepare
+      </button>
     `;
   }
 
@@ -642,6 +704,109 @@ const HotelUI = (() => {
     return 'Cash + satisfaction';
   }
 
+  function shiftReadiness(op, state = HotelState.get(), context = todayShiftContext(state), score = shiftScore(op, context)) {
+    const coverage = context.coverage.get(op.dept);
+    const title = op.title ?? deptMiniGameLabel(op.dept);
+    if (!op.enabled) {
+      return {
+        key: op.deptState?.unlocked ? 'needs_build' : 'locked',
+        label: op.deptState?.unlocked ? 'Build First' : 'Locked',
+        tone: 'locked',
+        note: lockedShiftDetail(op),
+        prepareTarget: 'dept',
+      };
+    }
+    if (coverage?.status === 'short') {
+      return {
+        key: 'short_staffed',
+        label: 'Short Staffed',
+        tone: 'warn',
+        note: `Assign ${assignmentLabel(op.dept)} staff before ${title} for better rewards.`,
+        prepareTarget: 'staff',
+      };
+    }
+    if ((state.satisfaction?.current ?? 100) < 55 && ['rooms', 'restaurant', 'spa', 'bar'].includes(op.dept)) {
+      return {
+        key: 'low_satisfaction',
+        label: 'Low Satisfaction',
+        tone: 'warn',
+        note: `${title} can recover satisfaction; strong coverage lowers the risk.`,
+        prepareTarget: coverage?.status === 'covered' ? null : 'staff',
+      };
+    }
+    if (coverage?.status === 'thin') {
+      return {
+        key: 'thin_staff',
+        label: 'Ready',
+        tone: 'neutral',
+        note: `${assignmentLabel(op.dept)} coverage is thin; add staff for a cleaner run.`,
+        prepareTarget: 'staff',
+      };
+    }
+    if (score >= 82 || op.dept === 'rooms' || op.dept === 'lobby') {
+      return {
+        key: 'high_reward',
+        label: 'High Reward',
+        tone: 'good',
+        note: `${title} is a strong play right now.`,
+        prepareTarget: null,
+      };
+    }
+    return {
+      key: 'ready',
+      label: 'Ready',
+      tone: 'good',
+      note: `${title} is ready to run.`,
+      prepareTarget: null,
+    };
+  }
+
+  function shiftExpectedReward(op, state = HotelState.get(), context = todayShiftContext(state), readiness = shiftReadiness(op, state, context)) {
+    const coverage = context.coverage.get(op.dept);
+    const staffEffect = HotelState.getStaffEffect?.(op.dept, state);
+    const staffBonus = Math.round(((staffEffect?.incomeMult ?? 1) - 1) * 100);
+    const level = Math.max(1, op.level || state.departments?.[op.dept]?.level || 1);
+    const guests = Math.max(0, context.population ?? 0);
+    const openRooms = Math.max(0, (context.capacity ?? 0) - guests);
+    let low = 40 + level * 12;
+    let high = 95 + level * 34;
+
+    if (op.dept === 'lobby') {
+      low = Math.max(25, openRooms * 28);
+      high = Math.max(70, openRooms * 86);
+    } else if (op.dept === 'rooms') {
+      low = Math.max(45, guests * 12 + level * 18);
+      high = Math.max(110, guests * 30 + level * 45);
+    } else if (op.dept === 'casino') {
+      low = 0;
+      high = 0;
+    } else if (op.dept === 'entertainment') {
+      low = 0;
+      high = 0;
+    } else {
+      low = Math.round((55 + level * 24) * (staffEffect?.incomeMult ?? 1));
+      high = Math.round((130 + level * 58) * (staffEffect?.incomeMult ?? 1));
+    }
+
+    const risk = readiness.key === 'short_staffed' || coverage?.status === 'short'
+      ? 'high'
+      : (state.satisfaction?.current ?? 100) < 55 || coverage?.status === 'thin'
+        ? 'medium'
+        : 'low';
+    const cashText = op.dept === 'casino'
+      ? 'casino progress'
+      : op.dept === 'entertainment'
+        ? 'traffic boost'
+        : `+$${fmtShort(low)}-$${fmtShort(high)}`;
+    return {
+      cashText,
+      risk,
+      staffBonus,
+      label: `Expected: ${cashText}`,
+      detail: `Risk: ${risk}${staffBonus > 0 ? ` · Staff +${staffBonus}%` : ''}`,
+    };
+  }
+
   function shiftImpact(op, state = HotelState.get(), context = todayShiftContext(state)) {
     if (op.dept === 'lobby') return 'Fills rooms and starts guest revenue.';
     if (op.dept === 'rooms') return 'Protects satisfaction and guest retention.';
@@ -655,7 +820,19 @@ const HotelUI = (() => {
 
   function shiftDisplayReward(op, state = HotelState.get()) {
     if (op.statusState === 'completed' && op.completedResult) return shiftResultRewardText(op.completedResult);
-    return op.reward ?? shiftReward(op, state);
+    return op.expected?.label ?? op.reward ?? shiftReward(op, state);
+  }
+
+  function shiftCardRewardValue(op, state = HotelState.get()) {
+    if (op.statusState === 'completed' && op.completedResult) return shiftResultRewardText(op.completedResult);
+    return op.expected?.cashText ?? op.reward ?? shiftReward(op, state);
+  }
+
+  function shiftPrepNote(op) {
+    if (op.statusState === 'completed' && op.completedResult) {
+      return op.completedResult.impact || op.completedResult.summary || 'Result saved for this hotel phase.';
+    }
+    return op.readiness?.note || op.impact || 'Ready for hotel progress.';
   }
 
   function shiftResultRewardText(result) {
@@ -670,8 +847,7 @@ const HotelUI = (() => {
   function shiftStateLabel(op) {
     if (op.statusState === 'completed') return 'Completed';
     if (op.statusState === 'in_progress') return 'In Progress';
-    if (op.featured) return 'Best Reward';
-    return 'Ready';
+    return op.readiness?.label ?? 'Ready';
   }
 
   function shiftStateClass(op) {
@@ -1092,6 +1268,28 @@ const HotelUI = (() => {
     return items;
   }
 
+  function prepareNextShiftPriority(state = HotelState.get(), playable = todayShiftOps(state).playable) {
+    const target = playable.find(op => op.statusState !== 'completed') ?? playable[0];
+    if (!target) return null;
+    const prepTarget = target.readiness?.prepareTarget;
+    const issueTone = target.readiness?.tone === 'warn' ? 'warn' : 'good';
+    const detail = prepTarget
+      ? `${target.readiness.note} Then run ${target.title} for ${target.expected?.cashText ?? 'hotel progress'}.`
+      : `${target.title} is ready. ${target.expected?.label ?? 'Expected rewards are available'} · ${target.expected?.detail ?? target.impact}`;
+    return {
+      tone: issueTone,
+      severity: prepTarget ? 'warning' : 'opportunity',
+      icon: prepTarget === 'staff' ? 'fa-user-tie' : prepTarget === 'dept' ? 'fa-arrow-up-right-dots' : target.icon,
+      label: prepTarget ? `Prepare ${target.title}` : `Run ${target.title}`,
+      detail,
+      action: prepTarget ? 'prepare_shift' : 'play_shift',
+      dept: target.dept,
+      href: target.href,
+      actionLabel: prepTarget === 'staff' ? 'Prepare staff' : prepTarget === 'dept' ? 'Open build path' : shiftCta(target),
+      kicker: 'Prepare Next Shift',
+    };
+  }
+
   function activityEvents(state, priorities) {
     if (isPhaseOneOnboarding()) {
       const primary = priorities[0];
@@ -1354,7 +1552,7 @@ const HotelUI = (() => {
       <span class="operation-copy">
         <strong>${escapeHtml(op.title)}</strong>
         <span>${escapeHtml(op.enabled ? op.reason : lockedShiftDetail(op))}</span>
-        <em>${escapeHtml(op.enabled ? `${shiftDisplayReward(op, state)} · ${op.impact}` : lockedShiftReward(op, state))}</em>
+        <em>${escapeHtml(op.enabled ? `${op.readiness?.label ?? 'Ready'} · ${op.expected?.label ?? shiftDisplayReward(op, state)} · ${op.expected?.detail ?? op.impact}` : lockedShiftReward(op, state))}</em>
       </span>
       <span class="operation-status">${escapeHtml(status)}</span>
     `;
@@ -1373,6 +1571,7 @@ const HotelUI = (() => {
   function allShiftStatus(op) {
     if (op.enabled && op.statusState === 'completed') return 'Completed';
     if (op.enabled && op.statusState === 'in_progress') return 'In Progress';
+    if (op.enabled && op.readiness?.key === 'short_staffed') return 'Prepare';
     if (op.enabled) return shiftCta(op);
     if (op.deptState?.unlocked) return 'Build';
     return `Rep ${op.repRequired}`;
@@ -1608,7 +1807,7 @@ const HotelUI = (() => {
 
   function renderCoverageCard(item) {
     return `
-      <div class="staff-coverage-card ${item.status}">
+      <div class="staff-coverage-card ${item.status} ${activePrepareDept === item.id ? 'prepare-target-control' : ''}">
         <span>${escapeHtml(item.label)}</span>
         <strong>${item.score}%</strong>
         <em>${item.copy} · ${slotText(item.slots)}</em>
@@ -1710,9 +1909,14 @@ const HotelUI = (() => {
     const traitEffect = HotelState.getStaffTraitEffect?.(member, current) ?? { trait:member.trait, applies:false, copy:'Reliable personality fit' };
     const guideTarget = currentGuidedStep() === 'assign_staff' ? guidedStaffTarget() : null;
     const staffAdvanced = systemUnlocks().staffAdvanced;
+    const bestShiftDept = member.specialty && member.specialty !== 'rest' ? member.specialty : current;
+    const bestShiftLabel = bestShiftDept && bestShiftDept !== 'rest' ? deptMiniGameLabel(bestShiftDept) : 'Any covered shift';
+    const prepareFit = activePrepareDept
+      ? HotelState.departmentFitScore?.(member, activePrepareDept) ?? 0
+      : null;
 
     return `
-      <article class="staff-card">
+      <article class="staff-card ${activePrepareDept && (current === activePrepareDept || member.specialty === activePrepareDept) ? 'prepare-match' : ''}">
         <div class="staff-avatar">${escapeHtml(initials)}</div>
         <div class="staff-card-main">
           <div class="staff-card-head">
@@ -1723,6 +1927,10 @@ const HotelUI = (() => {
             <span class="staff-assignment ${current === 'rest' ? 'resting' : ''}">
               ${assignmentLabel(current)}
             </span>
+          </div>
+          <div class="staff-shift-fit">
+            <i class="fa-solid ${activePrepareDept ? 'fa-bullseye' : 'fa-gamepad'}"></i>
+            <span>${activePrepareDept ? `Prepare ${deptMiniGameLabel(activePrepareDept)}: ${prepareFit}% fit` : `Helps most: ${bestShiftLabel}`}</span>
           </div>
           <div class="staff-stat-row">
             ${staffStat('Speed', member.speed, statCap)}
@@ -1742,7 +1950,7 @@ const HotelUI = (() => {
           </div>
           <div class="staff-assign-grid">
             ${targets.map(target => `
-              <button class="staff-assign-btn ${current === target.id ? 'active' : ''} ${guideTarget?.id === target.id ? 'guide-target-control' : ''}" type="button"
+              <button class="staff-assign-btn ${current === target.id ? 'active' : ''} ${guideTarget?.id === target.id ? 'guide-target-control' : ''} ${activePrepareDept === target.id ? 'prepare-target-control' : ''}" type="button"
                       data-staff-action="assign" data-staff-id="${escapeHtml(member.id)}" data-assignment="${target.id}"
                       ${current !== target.id && target.slots?.full ? 'disabled' : ''}
                       title="${current !== target.id && target.slots?.full ? `${target.short} slots full` : `Assign to ${target.short}`}">
@@ -2532,6 +2740,47 @@ const HotelUI = (() => {
     CasinoShell.toast(`Debug scenario: ${scenario.replaceAll('_', ' ')}.`);
   }
 
+  function handleCommandAction(actionEl) {
+    if (!actionEl) return;
+    const action = actionEl.dataset.commandAction;
+    if (action === 'dept') {
+      selectDepartment(actionEl.dataset.commandDept);
+      return;
+    }
+    if (action === 'prepare_shift') {
+      prepareShift(actionEl.dataset.commandDept);
+      return;
+    }
+    if (action === 'play_shift') {
+      playShift(actionEl.dataset.commandDept);
+      return;
+    }
+    if (action === 'advance_time') {
+      const btn = document.getElementById('advance-time-btn');
+      btn?.focus?.();
+      btn?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    if (action === 'review_report') {
+      completeGuidedStep('review_report');
+      CasinoShell.toast('Guided setup complete. Keep building your resort.');
+      return;
+    }
+    if (action === 'hiring') {
+      activeStaffView = 'hiring';
+      setManagementTab('staff');
+      renderStaffPanel();
+      return;
+    }
+    if (action === 'staff') {
+      activeStaffView = isPhaseOneOnboarding() || currentGuidedStep() === 'assign_staff' ? 'roster' : 'coverage';
+      setManagementTab('staff');
+      renderStaffPanel();
+      return;
+    }
+    setManagementTab(action);
+  }
+
   function _wireCommandCenter() {
     document.addEventListener('click', e => {
       const modeEl = e.target.closest('[data-guidance-mode]');
@@ -2563,7 +2812,7 @@ const HotelUI = (() => {
         return;
       }
 
-      const operationLink = e.target.closest('.operation-card[href], .shift-card[href]');
+      const operationLink = e.target.closest('.operation-card[href], .shift-card-main[href], .shift-card-cta[href]');
       if (operationLink) {
         const deptId = operationLink.dataset.shiftDept ?? shiftDeptFromHref(operationLink.getAttribute('href'));
         if (deptId) HotelState.recordShiftStart?.(deptId, { title: operationLink.textContent?.trim() ?? '' });
@@ -2574,35 +2823,7 @@ const HotelUI = (() => {
 
       const actionEl = e.target.closest('[data-command-action]');
       if (!actionEl) return;
-      const action = actionEl.dataset.commandAction;
-      if (action === 'dept') {
-        selectDepartment(actionEl.dataset.commandDept);
-        return;
-      }
-      if (action === 'advance_time') {
-        const btn = document.getElementById('advance-time-btn');
-        btn?.focus?.();
-        btn?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
-        return;
-      }
-      if (action === 'review_report') {
-        completeGuidedStep('review_report');
-        CasinoShell.toast('Guided setup complete. Keep building your resort.');
-        return;
-      }
-      if (action === 'hiring') {
-        activeStaffView = 'hiring';
-        setManagementTab('staff');
-        renderStaffPanel();
-        return;
-      }
-      if (action === 'staff') {
-        activeStaffView = isPhaseOneOnboarding() || currentGuidedStep() === 'assign_staff' ? 'roster' : 'coverage';
-        setManagementTab('staff');
-        renderStaffPanel();
-        return;
-      }
-      setManagementTab(action);
+      handleCommandAction(actionEl);
     });
 
     document.addEventListener('click', e => {
@@ -2747,7 +2968,7 @@ const HotelUI = (() => {
     });
   }
 
-  function setManagementTab(tabId) {
+  function setManagementTab(tabId, force = false) {
     if (!canOpenManagementTab(tabId)) {
       const message = tabId === 'guests'
         ? 'Guest tracking unlocks after Check-In Rush.'
@@ -2757,7 +2978,7 @@ const HotelUI = (() => {
       CasinoShell.toast(message);
       return;
     }
-    if (!tabId || tabId === activeMgmtTab) return;
+    if (!tabId || (!force && tabId === activeMgmtTab)) return;
     activeMgmtTab = tabId;
     document.querySelectorAll('[data-tab]').forEach(btn => {
       const active = btn.dataset.tab === tabId;
@@ -2774,7 +2995,7 @@ const HotelUI = (() => {
 
   function selectDepartment(deptId) {
     if (!deptId) return;
-    setManagementTab('departments');
+    setManagementTab('departments', true);
     selectedDeptId = deptId;
     renderDeptPanel();
     renderHotelSnapshot(HotelState.get());
@@ -2882,6 +3103,41 @@ const HotelUI = (() => {
       checkin_game: { key: 'checkin', label: 'Check-In' },
       simulated: { key: 'simulated', label: 'Sim' },
     }[source] ?? { key: 'other', label: 'Hotel' };
+  }
+
+  function decoratedShiftByDept(deptId, state = HotelState.get()) {
+    const context = todayShiftContext(state);
+    return operationCatalog()
+      .map((op, index) => decorateShiftOp(op, state, context, index))
+      .find(op => op.dept === deptId) ?? null;
+  }
+
+  function prepareShift(deptId) {
+    if (!deptId) return;
+    const state = HotelState.get();
+    const op = decoratedShiftByDept(deptId, state);
+    activePrepareDept = deptId;
+    if (!op?.enabled || op?.readiness?.prepareTarget === 'dept') {
+      selectDepartment(deptId);
+      CasinoShell.toast(`Build path opened for ${op?.title ?? assignmentLabel(deptId)}.`);
+      return;
+    }
+    activeStaffView = 'roster';
+    setManagementTab('staff', true);
+    renderStaffPanel();
+    renderCommandCenter(HotelState.get());
+    document.getElementById('staff-panel')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    CasinoShell.toast(`Prepare ${op.title}: assign staff to ${assignmentLabel(deptId)}.`);
+  }
+
+  function playShift(deptId) {
+    const op = decoratedShiftByDept(deptId);
+    if (!op?.enabled || !op.href) {
+      prepareShift(deptId);
+      return;
+    }
+    HotelState.recordShiftStart?.(op.dept, { title: op.title });
+    window.location.href = op.href;
   }
 
   function shiftDeptFromHref(href = '') {
