@@ -36,6 +36,7 @@ const RoomsGame = (() => {
 
   function init() {
     syncHotelCash();
+    window.HotelShiftBriefing?.mount?.('rooms');
     renderIdle();
     renderRooms();
     renderStaff();
@@ -61,6 +62,7 @@ const RoomsGame = (() => {
       return;
     }
 
+    window.HotelShiftBriefing?.start?.('rooms', 'Floor Ops');
     const now = Date.now();
     shift = {
       active: true,

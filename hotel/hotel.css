@@ -288,7 +288,7 @@
 .shift-return-banner {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) minmax(210px, auto) 32px;
+  grid-template-columns: 42px minmax(0, 1fr) minmax(240px, auto) minmax(112px, auto);
   align-items: center;
   gap: 12px;
   padding: 11px 12px;
@@ -344,6 +344,14 @@
   line-height: 1.25;
 }
 
+.shift-return-staff {
+  display: block;
+  margin-top: 6px;
+  color: #a7e6d7;
+  font-size: 11px;
+  line-height: 1.22;
+}
+
 .shift-return-metrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(92px, 1fr));
@@ -365,6 +373,33 @@
   font-family: var(--font-body);
   font-size: 12px;
   line-height: 1.1;
+}
+
+.shift-return-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.shift-return-next {
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid rgba(112,224,157,0.46);
+  border-radius: 8px;
+  background: rgba(112,224,157,0.12);
+  color: #9effc3;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.shift-return-next:hover {
+  border-color: var(--gold-light);
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: #132113;
 }
 
 .shift-result-dismiss {
@@ -513,6 +548,22 @@
   color: #9ee7ff;
   font-size: 9px;
   letter-spacing: 0.12em;
+}
+
+.shift-card-copy .shift-prepared-badge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 3px 5px;
+  padding: 2px 7px;
+  border: 1px solid rgba(112,224,157,0.38);
+  border-radius: 999px;
+  background: rgba(112,224,157,0.12);
+  color: #9effc3;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .shift-state-completed .shift-card-copy .shift-card-state {
@@ -1284,11 +1335,23 @@ body[data-guided-step="run_checkin"] .operation-card:not(.guide-target-control) 
   color: #9ee7ff;
 }
 
-.recent-shift-item span {
+.recent-shift-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.recent-shift-copy > span {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.recent-shift-copy small {
+  color: rgba(237,229,190,0.62);
+  font-size: 10px;
+  line-height: 1.1;
 }
 
 .recent-shift-item strong {
@@ -1296,6 +1359,24 @@ body[data-guided-step="run_checkin"] .operation-card:not(.guide-target-control) 
   font-family: var(--font-display);
   font-size: 11px;
   white-space: nowrap;
+}
+
+.recent-shift-item.prepared {
+  border-color: rgba(112,224,157,0.32);
+}
+
+.recent-shift-item.prepared i,
+.recent-shift-item.prepared .recent-shift-copy small {
+  color: #9effc3;
+}
+
+.recent-shift-item.risk-high {
+  border-color: rgba(226,125,114,0.42);
+}
+
+.recent-shift-item.risk-high i,
+.recent-shift-item.risk-high .recent-shift-copy small {
+  color: #ffb3ad;
 }
 
 .recent-shift-item:hover {
@@ -3839,10 +3920,14 @@ body.light-theme .shift-card-copy small,
 body.light .shift-card-copy small,
 body.light-theme .shift-card-copy .shift-card-state,
 body.light .shift-card-copy .shift-card-state,
+body.light-theme .shift-card-copy .shift-prepared-badge,
+body.light .shift-card-copy .shift-prepared-badge,
 body.light-theme .shift-card-reward em,
 body.light .shift-card-reward em,
 body.light-theme .shift-return-copy span,
 body.light .shift-return-copy span,
+body.light-theme .shift-return-staff,
+body.light .shift-return-staff,
 body.light-theme .shift-return-metrics small,
 body.light .shift-return-metrics small {
   color: #1c5b38;
@@ -3858,6 +3943,8 @@ body.light-theme .shift-return-icon,
 body.light .shift-return-icon,
 body.light-theme .shift-return-metrics > span,
 body.light .shift-return-metrics > span,
+body.light-theme .shift-return-next,
+body.light .shift-return-next,
 body.light-theme .shift-result-dismiss,
 body.light .shift-result-dismiss,
 body.light-theme .next-reward-rail > span,
@@ -3978,6 +4065,12 @@ body.light .operation-status {
   }
   .shift-return-metrics {
     grid-template-columns: 1fr 1fr;
+  }
+  .shift-return-actions {
+    justify-content: flex-start;
+  }
+  .shift-return-next {
+    width: 100%;
   }
   .shift-result-dismiss {
     position: absolute;

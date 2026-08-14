@@ -1,0 +1,178 @@
+.mini-shift-briefing {
+  width: min(1100px, calc(100% - 32px));
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(300px, 0.92fr) minmax(220px, 0.76fr);
+  gap: 12px;
+  align-items: stretch;
+  margin: 12px auto 0;
+  padding: 11px 12px;
+  border: 1px solid rgba(232,203,128,0.44);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(16,68,43,0.88), rgba(4,16,10,0.9)),
+    rgba(0,0,0,0.22);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.mini-shift-briefing.is-prepared {
+  border-color: rgba(112,224,157,0.46);
+}
+
+.mini-shift-briefing.risk-high {
+  border-color: rgba(226,125,114,0.58);
+}
+
+.mini-shift-title {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.mini-shift-icon {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(232,203,128,0.34);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.24);
+  color: #9ee7ff;
+  font-size: 18px;
+}
+
+.mini-shift-title small,
+.mini-shift-fact small {
+  display: block;
+  color: var(--gold, #c9a84c);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.mini-shift-title strong {
+  display: block;
+  margin-top: 2px;
+  color: var(--gold-light, #f2d06b);
+  font-family: var(--font-display, serif);
+  font-size: 19px;
+  line-height: 1.05;
+}
+
+.mini-shift-title em {
+  display: block;
+  margin-top: 4px;
+  color: rgba(237,229,190,0.78);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.22;
+}
+
+.mini-shift-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.mini-shift-fact {
+  min-height: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 7px 8px;
+  border: 1px solid rgba(201,168,76,0.22);
+  border-radius: 7px;
+  background: rgba(0,0,0,0.16);
+}
+
+.mini-shift-fact strong {
+  margin-top: 3px;
+  color: #a7e6d7;
+  font-family: var(--font-body, serif);
+  font-size: 12px;
+  line-height: 1.12;
+}
+
+.mini-shift-note {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid rgba(201,168,76,0.18);
+  border-radius: 7px;
+  background: rgba(0,0,0,0.12);
+}
+
+.mini-shift-note span {
+  color: var(--gold-light, #f2d06b);
+  font-family: var(--font-display, serif);
+  font-size: 13px;
+  line-height: 1.14;
+}
+
+.mini-shift-note small {
+  color: rgba(237,229,190,0.68);
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+body.light-theme .mini-shift-briefing,
+body.light .mini-shift-briefing {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.78), rgba(237,243,226,0.64));
+  border-color: rgba(138,110,40,0.36);
+  box-shadow: 0 8px 18px rgba(28,52,25,0.08), inset 0 1px 0 rgba(255,255,255,0.42);
+}
+
+body.light-theme .mini-shift-icon,
+body.light .mini-shift-icon,
+body.light-theme .mini-shift-fact,
+body.light .mini-shift-fact,
+body.light-theme .mini-shift-note,
+body.light .mini-shift-note {
+  background: rgba(255,255,255,0.5);
+  border-color: rgba(138,110,40,0.3);
+}
+
+body.light-theme .mini-shift-title strong,
+body.light .mini-shift-title strong,
+body.light-theme .mini-shift-note span,
+body.light .mini-shift-note span {
+  color: #172512;
+}
+
+body.light-theme .mini-shift-title em,
+body.light .mini-shift-title em,
+body.light-theme .mini-shift-note small,
+body.light .mini-shift-note small {
+  color: #5f6e48;
+}
+
+body.light-theme .mini-shift-title small,
+body.light .mini-shift-title small,
+body.light-theme .mini-shift-fact small,
+body.light .mini-shift-fact small,
+body.light-theme .mini-shift-fact strong,
+body.light .mini-shift-fact strong {
+  color: #1c5b38;
+}
+
+@media (max-width: 920px) {
+  .mini-shift-briefing {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .mini-shift-briefing {
+    width: min(100% - 20px, 1100px);
+    padding: 10px;
+  }
+
+  .mini-shift-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

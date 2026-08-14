@@ -35,6 +35,7 @@ const SpaRush = (() => {
 
   function init() {
     syncHotelCash();
+    window.HotelShiftBriefing?.mount?.('spa');
     renderIdle();
     renderTreatments();
     renderStations();
@@ -68,6 +69,7 @@ const SpaRush = (() => {
       return;
     }
 
+    window.HotelShiftBriefing?.start?.('spa', 'Spa Rush');
     session = {
       active: true,
       spaLevel,

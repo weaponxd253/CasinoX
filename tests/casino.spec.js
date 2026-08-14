@@ -88,7 +88,10 @@ test.describe('launch navigation', () => {
       HotelUI.renderAll();
     });
     await expect(page.locator('.shift-return-banner')).toContainText('Floor Ops complete');
+    await expect(page.locator('.shift-return-banner')).toContainText('coverage');
+    await expect(page.locator('.shift-return-next')).toContainText('Prepare Guest Rooms staff');
     await expect(page.locator('.recent-shift-history')).toContainText('Floor Ops complete');
+    await expect(page.locator('.recent-shift-history')).toContainText('High risk');
     await expect(page.locator('.shift-card', { hasText: 'Floor Ops' })).toContainText('Completed');
     await page.locator('.shift-result-dismiss').click();
     await expect(page.locator('.shift-return-banner')).toHaveCount(0);
@@ -98,6 +101,22 @@ test.describe('launch navigation', () => {
     await expect(page.locator('#operations-list .all-shift-group')).toHaveCount(3);
     await expect(page.locator('#operations-list .all-shift-group')).toContainText(['Playable Now', 'Build To Unlock', 'Reputation Locked']);
     await expect(page.locator('#operations-list .all-shift-card')).toHaveCount(7);
+  });
+
+  test('hotel mini-game pages carry the shift briefing into direct play', async ({ page }) => {
+    await page.goto('/hotel/rooms/index.html');
+    await page.evaluate(() => {
+      HotelState.resetSave();
+      HotelShiftBriefing.mount('rooms');
+    });
+
+    await expect(page.locator('.mini-shift-briefing')).toContainText('Shift Briefing');
+    await expect(page.locator('.mini-shift-briefing')).toContainText('Floor Ops');
+    await expect(page.locator('.mini-shift-briefing')).toContainText('Coverage');
+
+    await page.locator('#start-ops-btn').click();
+    await expect.poll(() => page.evaluate(() => HotelState.get().shifts.active?.deptId)).toBe('rooms');
+    await expect.poll(() => page.evaluate(() => HotelState.get().shifts.active?.briefing?.title)).toBe('Floor Ops');
   });
 
   test('casino lobby exposes only working live game links', async ({ page }) => {

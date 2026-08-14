@@ -60,6 +60,7 @@ const CheckInGame = (() => {
 
     HotelState.init();
     HotelGuestPool.init();
+    window.HotelShiftBriefing?.mount?.('lobby');
 
     const lobbyLevel = HotelState.get().departments.lobby?.level ?? 1;
     diff = DIFFICULTY[Math.min(lobbyLevel, 5)];
@@ -121,6 +122,7 @@ const CheckInGame = (() => {
   ─────────────────────────────────────────────────────────── */
   function startSession() {
     phase = 'active';
+    window.HotelShiftBriefing?.start?.('lobby', 'Check-In Rush');
     $('overlay-countdown').style.display = 'none';
     $('ci-hud').style.display            = 'flex';
     $('ci-game-area').style.display      = 'grid';

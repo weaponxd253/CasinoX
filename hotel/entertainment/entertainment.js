@@ -57,6 +57,7 @@ const EntertainmentBooker = (() => {
 
   function init() {
     syncHotelCash();
+    window.HotelShiftBriefing?.mount?.('entertainment');
     ensureSchedule();
     selectedSlot = firstOpenSlot();
     selectedActId = firstUnlockedAct()?.id ?? null;
@@ -100,6 +101,7 @@ const EntertainmentBooker = (() => {
       return;
     }
 
+    window.HotelShiftBriefing?.start?.('entertainment', 'Show Lineup');
     HotelState.bookEntertainmentShow({
       id: `show_${Date.now()}_${Math.random().toString(16).slice(2)}`,
       actId: act.id,

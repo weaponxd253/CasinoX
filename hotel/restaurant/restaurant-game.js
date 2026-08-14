@@ -38,6 +38,7 @@ const RestaurantGame = (() => {
 
   function init() {
     syncHotelCash();
+    window.HotelShiftBriefing?.mount?.('restaurant');
     renderDishes();
     renderIdle();
     $('start-tasting-btn')?.addEventListener('click', startService);
@@ -60,6 +61,7 @@ const RestaurantGame = (() => {
       return;
     }
 
+    window.HotelShiftBriefing?.start?.('restaurant', 'Tasting Room');
     service = {
       active: true,
       restaurantLevel,

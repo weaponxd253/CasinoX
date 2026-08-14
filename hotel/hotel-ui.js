@@ -371,10 +371,14 @@ const HotelUI = (() => {
         </div>
         ${history.map(result => {
           const op = operationCatalog().find(item => item.dept === result.deptId);
+          const riskClass = `risk-${result.risk ?? result.briefing?.risk ?? 'medium'}`;
           return `
-            <button type="button" class="recent-shift-item" data-command-action="prepare_shift" data-command-dept="${escapeHtml(result.deptId)}">
+            <button type="button" class="recent-shift-item ${result.prepared ? 'prepared' : riskClass}" data-command-action="prepare_shift" data-command-dept="${escapeHtml(result.deptId)}">
               <i class="fa-solid ${op?.icon ?? 'fa-clipboard-check'}"></i>
-              <span>${escapeHtml(result.title ?? op?.title ?? deptMiniGameLabel(result.deptId))}</span>
+              <span class="recent-shift-copy">
+                <span>${escapeHtml(result.title ?? op?.title ?? deptMiniGameLabel(result.deptId))}</span>
+                <small>${escapeHtml(recentShiftMeta(result))}</small>
+              </span>
               <strong>${escapeHtml(shiftResultRewardText(result))}</strong>
             </button>
           `;
@@ -383,12 +387,28 @@ const HotelUI = (() => {
     `;
   }
 
+  function recentShiftMeta(result) {
+    const coverage = result.coverageScore ?? result.briefing?.coverageScore;
+    const coverageText = Number.isFinite(coverage) ? `${coverage}% coverage` : '';
+    const stateText = result.prepared ? 'Prepared' : shiftRiskCopy(result.risk ?? result.briefing?.risk);
+    return [stateText, coverageText].filter(Boolean).join(' · ');
+  }
+
+  function shiftRiskCopy(risk = 'medium') {
+    return { high:'High risk', medium:'Medium risk', low:'Low risk' }[risk] ?? 'Medium risk';
+  }
+
   function renderShiftReturnBanner(state = HotelState.get()) {
     const result = HotelState.getLatestShiftResult?.(state);
     if (!result || result.id === state.shifts?.dismissedResultId) return '';
     if (Date.now() - (result.completedAt ?? 0) > 45 * 60 * 1000) return '';
     const op = operationCatalog().find(item => item.dept === result.deptId);
     const meta = HotelConfig.DEPT_META[result.deptId];
+    const metrics = [
+      renderShiftResultMetric('Reward', shiftResultRewardText(result)),
+      result.primaryLabel ? renderShiftResultMetric(result.primaryLabel, result.primaryValue) : '',
+      ...(Array.isArray(result.metrics) ? result.metrics.slice(0, 2).map(metric => renderShiftResultMetric(metric.label, metric.value)) : []),
+    ].filter(Boolean).join('');
     return `
       <section class="shift-return-banner" style="--operation-color:${meta?.color ?? '#0d2218'}">
         <span class="shift-return-icon"><i class="fa-solid ${op?.icon ?? 'fa-clipboard-check'}"></i></span>
@@ -396,15 +416,28 @@ const HotelUI = (() => {
           <span>Shift Results</span>
           <strong>${escapeHtml(result.title)}</strong>
           <em>${escapeHtml(result.summary || result.impact || shiftResultRewardText(result))}</em>
+          ${result.staffImpact ? `<small class="shift-return-staff">${escapeHtml(result.staffImpact)}</small>` : ''}
         </span>
         <span class="shift-return-metrics">
-          ${renderShiftResultMetric('Reward', shiftResultRewardText(result))}
-          ${result.primaryLabel ? renderShiftResultMetric(result.primaryLabel, result.primaryValue) : ''}
+          ${metrics}
         </span>
-        <button type="button" class="shift-result-dismiss" data-shift-result-dismiss="${escapeHtml(result.id)}" aria-label="Dismiss shift results">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
+        <span class="shift-return-actions">
+          ${renderShiftReturnAction(result)}
+          <button type="button" class="shift-result-dismiss" data-shift-result-dismiss="${escapeHtml(result.id)}" aria-label="Dismiss shift results">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </span>
       </section>
+    `;
+  }
+
+  function renderShiftReturnAction(result) {
+    const next = result?.nextAction;
+    if (!next?.label || !next?.action) return '';
+    return `
+      <button type="button" class="shift-return-next" data-command-action="${escapeHtml(next.action)}" ${next.deptId ? `data-command-dept="${escapeHtml(next.deptId)}"` : ''}>
+        ${escapeHtml(next.label)}
+      </button>
     `;
   }
 
@@ -503,6 +536,7 @@ const HotelUI = (() => {
     const score = shiftScore(ui, context);
     const readiness = shiftReadiness(ui, state, context, score);
     const expected = shiftExpectedReward(ui, state, context, readiness);
+    const briefing = HotelState.getShiftBriefing?.(ui.dept, state) ?? null;
     return {
       ...ui,
       sortIndex,
@@ -514,6 +548,7 @@ const HotelUI = (() => {
       impact: shiftImpact(ui, state, context),
       readiness,
       expected,
+      briefing,
       statusInfo,
       statusState: statusInfo.state,
       completedResult: statusInfo.result,
@@ -583,11 +618,12 @@ const HotelUI = (() => {
     const guideMuted = currentGuidedStep(state) === 'run_checkin' && op.dept !== 'lobby';
     const style = `--operation-color:${op.meta?.color ?? '#0d2218'};--operation-accent:${op.meta?.accent ?? '#1a3d2a'}`;
     return `
-      <article class="shift-card shift-state-${shiftStateClass(op)} readiness-${op.readiness?.key ?? 'ready'} ${op.featured ? 'featured' : ''} ${guideTarget ? 'guide-target-control' : ''} ${guideMuted ? 'guide-muted-control' : ''}" style="${style}">
+      <article class="shift-card shift-state-${shiftStateClass(op)} readiness-${op.readiness?.key ?? 'ready'} ${op.briefing?.prepared ? 'is-prepared' : ''} ${op.featured ? 'featured' : ''} ${guideTarget ? 'guide-target-control' : ''} ${guideMuted ? 'guide-muted-control' : ''}" style="${style}">
         <a class="shift-card-main" href="${op.href}" data-shift-dept="${op.dept}" aria-label="${escapeHtml(op.title)}">
           <span class="shift-card-icon"><i class="fa-solid ${op.icon}"></i></span>
           <span class="shift-card-copy">
             <span class="shift-card-state">${escapeHtml(shiftStateLabel(op))}</span>
+            ${op.briefing?.prepared ? '<span class="shift-prepared-badge"><i class="fa-solid fa-circle-check"></i> Prepared</span>' : ''}
             <span>${escapeHtml(op.priorityLabel)}</span>
             <strong>${escapeHtml(op.title)}</strong>
             <em>${escapeHtml(op.reason ?? shiftDetail(op, state))}</em>
@@ -2815,7 +2851,7 @@ const HotelUI = (() => {
       const operationLink = e.target.closest('.operation-card[href], .shift-card-main[href], .shift-card-cta[href]');
       if (operationLink) {
         const deptId = operationLink.dataset.shiftDept ?? shiftDeptFromHref(operationLink.getAttribute('href'));
-        if (deptId) HotelState.recordShiftStart?.(deptId, { title: operationLink.textContent?.trim() ?? '' });
+        if (deptId) HotelState.recordShiftStart?.(deptId, shiftStartInfo(deptId));
         const isCheckIn = operationLink.getAttribute('href')?.includes('checkin/');
         if (isCheckIn) markGuidedOperationStart('lobby');
         else if (isPhaseOneOnboarding()) completePhaseOne('operation');
@@ -3136,8 +3172,16 @@ const HotelUI = (() => {
       prepareShift(deptId);
       return;
     }
-    HotelState.recordShiftStart?.(op.dept, { title: op.title });
+    HotelState.recordShiftStart?.(op.dept, shiftStartInfo(op.dept, op.title));
     window.location.href = op.href;
+  }
+
+  function shiftStartInfo(deptId, title = null) {
+    const briefing = HotelState.getShiftBriefing?.(deptId) ?? null;
+    return {
+      title: title ?? briefing?.title ?? deptMiniGameLabel(deptId),
+      briefing,
+    };
   }
 
   function shiftDeptFromHref(href = '') {

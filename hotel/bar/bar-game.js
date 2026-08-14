@@ -19,6 +19,7 @@ const BarGame = (() => {
 
   function init() {
     syncHotelCash();
+    window.HotelShiftBriefing?.mount?.('bar');
     setDrinkButtons(false);
     renderIdle();
 
@@ -39,6 +40,7 @@ const BarGame = (() => {
       return;
     }
 
+    window.HotelShiftBriefing?.start?.('bar', 'Bar Shift');
     shift = {
       active: true,
       served: 0,

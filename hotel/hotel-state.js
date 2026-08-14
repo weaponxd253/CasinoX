@@ -677,15 +677,164 @@ const HotelState = (() => {
     return state.shifts;
   }
 
+  function shiftOperationTitle(deptId) {
+    return {
+      lobby: 'Check-In Rush',
+      rooms: 'Floor Ops',
+      casino: 'Casino Floor',
+      restaurant: 'Tasting Room',
+      bar: 'Bar Shift',
+      entertainment: 'Show Lineup',
+      spa: 'Spa Rush',
+    }[deptId] ?? `${deptLabel(deptId)} shift`;
+  }
+
+  function shiftGoalForDept(deptId, state = _state) {
+    const guests = Math.max(0, state?.guests?.population ?? 0);
+    const level = Math.max(1, state?.departments?.[deptId]?.level ?? 1);
+    if (deptId === 'lobby') return guests ? 'Match arrivals quickly and grow the guest roster.' : 'Fill open rooms and start guest revenue.';
+    if (deptId === 'rooms') return `Resolve guest requests for ${guests || 'incoming'} in-house guests.`;
+    if (deptId === 'casino') return 'Push casino floor progress and keep VIP energy high.';
+    if (deptId === 'restaurant') return `Serve ${Math.min(7, 3 + level)} tables with strong harmony.`;
+    if (deptId === 'bar') return `Serve ${Math.min(8, 4 + level)} lounge guests before patience drops.`;
+    if (deptId === 'entertainment') return 'Book the best show slot for traffic and mood.';
+    if (deptId === 'spa') return `Treat ${7 + level} wellness guests before walkouts.`;
+    return 'Complete the shift and return with hotel progress.';
+  }
+
+  function shiftRewardHint(deptId, state = _state) {
+    const level = Math.max(1, state?.departments?.[deptId]?.level ?? 1);
+    const current = HotelConfig.UPGRADE_CATALOG?.[deptId]?.[level - 1];
+    if (deptId === 'lobby') return 'Guests, room revenue, and arrival momentum.';
+    if (deptId === 'casino') return 'Casino progress and chip-loop momentum.';
+    if (deptId === 'entertainment') return 'Traffic window, income lift, and guest mood.';
+    if (current?.ipm) return `Cash, satisfaction, and $${current.ipm}/min department value.`;
+    return 'Cash, satisfaction, and department progress.';
+  }
+
+  function shiftRiskFromCoverage(deptId, coverage, state = _state) {
+    if (coverage?.status === 'short') return 'high';
+    if (coverage?.status === 'thin') return 'medium';
+    const satisfaction = state?.satisfaction?.current ?? 100;
+    if (satisfaction < 55 && ['rooms', 'restaurant', 'bar', 'spa'].includes(deptId)) return 'medium';
+    return 'low';
+  }
+
+  function shiftRiskLabel(risk) {
+    return { high:'High risk', medium:'Medium risk', low:'Low risk' }[risk] ?? 'Medium risk';
+  }
+
+  function shiftNextAction(deptId, result = {}, state = _state) {
+    const coverage = getStaffCoverage(deptId, state);
+    if (coverage.status !== 'covered' && deptId !== 'casino') {
+      return { label:`Prepare ${deptLabel(deptId)} staff`, action:'prepare_shift', deptId };
+    }
+
+    const dept = state?.departments?.[deptId];
+    const catalog = HotelConfig.UPGRADE_CATALOG?.[deptId] ?? [];
+    const nextUpgrade = catalog[dept?.level ?? 0];
+    if (nextUpgrade) {
+      return { label:`Review ${deptLabel(deptId)} upgrade`, action:'dept', deptId };
+    }
+    if (deptId === 'lobby') return { label:'Review guest roster', action:'guests', deptId };
+    return { label:`Run ${shiftOperationTitle(deptId)} again`, action:'play_shift', deptId };
+  }
+
+  function normalizeShiftAction(action) {
+    if (!action) return null;
+    return {
+      label: String(action.label ?? 'Review next step'),
+      action: String(action.action ?? 'departments'),
+      deptId: action.deptId ? String(action.deptId) : null,
+    };
+  }
+
+  function normalizeShiftBriefing(briefing) {
+    if (!briefing || typeof briefing !== 'object') return null;
+    return {
+      deptId: briefing.deptId ?? null,
+      title: briefing.title ?? null,
+      department: briefing.department ?? null,
+      level: briefing.level ?? null,
+      goal: briefing.goal ?? null,
+      rewardHint: briefing.rewardHint ?? null,
+      coverageLabel: briefing.coverageLabel ?? null,
+      coverageScore: briefing.coverageScore ?? null,
+      coverageStatus: briefing.coverageStatus ?? null,
+      assignedCount: briefing.assignedCount ?? 0,
+      demand: briefing.demand ?? 0,
+      staffBonus: briefing.staffBonus ?? 0,
+      speedBonus: briefing.speedBonus ?? 0,
+      qualityBonus: briefing.qualityBonus ?? 0,
+      satisfactionBonus: briefing.satisfactionBonus ?? 0,
+      risk: briefing.risk ?? 'medium',
+      riskLabel: briefing.riskLabel ?? shiftRiskLabel(briefing.risk),
+      prepared: !!briefing.prepared,
+      prepNote: briefing.prepNote ?? null,
+      nextAction: normalizeShiftAction(briefing.nextAction),
+    };
+  }
+
+  function shiftStaffImpact(briefing) {
+    if (!briefing) return null;
+    const score = Number.isFinite(briefing.coverageScore) ? `${briefing.coverageScore}%` : 'unknown';
+    const staffing = `${briefing.assignedCount ?? 0}/${Math.max(1, briefing.demand ?? 1)} staff demand`;
+    if (briefing.prepared) return `Prepared shift: ${staffing}, ${score} coverage.`;
+    if (briefing.coverageStatus === 'thin') return `Thin coverage: ${staffing}, ${score} coverage. Assign one stronger fit before the next run.`;
+    return `Short staffed: ${staffing}, ${score} coverage. Prepare the team before retrying.`;
+  }
+
+  function getShiftBriefing(deptId, state = _state) {
+    if (!state || !deptId) return null;
+    const coverage = getStaffCoverage(deptId, state);
+    const effect = getStaffEffect(deptId, state);
+    const level = Math.max(1, state.departments?.[deptId]?.level ?? 1);
+    const risk = shiftRiskFromCoverage(deptId, coverage, state);
+    const staffBonus = Math.max(0, Math.round(((effect?.incomeMult ?? 1) - 1) * 100));
+    const speedBonus = Math.max(0, Math.round((1 - (effect?.speedMult ?? 1)) * 100));
+    const prepared = coverage.status === 'covered';
+    const briefing = {
+      deptId,
+      title: shiftOperationTitle(deptId),
+      department: deptLabel(deptId),
+      level,
+      goal: shiftGoalForDept(deptId, state),
+      rewardHint: shiftRewardHint(deptId, state),
+      coverageLabel: effect?.label ?? (coverage.status === 'covered' ? 'Covered' : coverage.status === 'thin' ? 'Thin' : 'Short'),
+      coverageScore: coverage.score,
+      coverageStatus: coverage.status,
+      assignedCount: coverage.assignedCount,
+      demand: coverage.demand,
+      staffBonus,
+      speedBonus,
+      qualityBonus: effect?.qualityBonus ?? 0,
+      satisfactionBonus: effect?.satisfactionBonus ?? 0,
+      risk,
+      riskLabel: shiftRiskLabel(risk),
+      prepared,
+      prepNote: prepared
+        ? `${deptLabel(deptId)} is prepared for this shift.`
+        : `Assign staff to ${deptLabel(deptId)} to lower risk before starting.`,
+    };
+    briefing.nextAction = shiftNextAction(deptId, {}, state);
+    return normalizeShiftBriefing(briefing);
+  }
+
   function recordShiftStart(deptId, info = {}) {
     if (!_state || !deptId) return null;
     const shifts = ensureShiftState();
+    const now = Date.now();
+    const briefing = normalizeShiftBriefing(info.briefing) ?? getShiftBriefing(deptId);
     shifts.active = {
-      id: `shift_start_${Date.now()}`,
+      id: `shift_start_${now}`,
       deptId,
-      title: info.title ?? null,
-      startedAt: Date.now(),
+      title: info.title ?? briefing?.title ?? null,
+      startedAt: now,
       cycleKey: shiftCycleKey(),
+      briefing,
+      prepared: !!briefing?.prepared,
+      risk: briefing?.risk ?? null,
+      coverageScore: briefing?.coverageScore ?? null,
     };
     save();
     return shifts.active;
@@ -696,12 +845,14 @@ const HotelState = (() => {
     const shifts = ensureShiftState();
     const now = Date.now();
     const cycleKey = shiftCycleKey();
+    const active = shifts.active?.deptId === deptId ? shifts.active : null;
+    const briefing = normalizeShiftBriefing(result.briefing) ?? normalizeShiftBriefing(active?.briefing) ?? getShiftBriefing(deptId);
     const entry = {
       id: `shift_result_${now}_${deptId}`,
       deptId,
       cycleKey,
       completedAt: now,
-      title: result.title ?? `${deptLabel(deptId)} shift complete`,
+      title: result.title ?? `${briefing?.title ?? deptLabel(deptId)} complete`,
       cash: Math.max(0, Math.round(Number(result.cash ?? 0))),
       satisfaction: Math.max(0, Math.round(Number(result.satisfaction ?? 0))),
       rewardText: result.rewardText ?? null,
@@ -710,6 +861,12 @@ const HotelState = (() => {
       primaryLabel: result.primaryLabel ?? null,
       primaryValue: result.primaryValue ?? null,
       metrics: Array.isArray(result.metrics) ? result.metrics.slice(0, 4) : [],
+      briefing,
+      prepared: result.prepared ?? briefing?.prepared ?? false,
+      risk: result.risk ?? briefing?.risk ?? 'medium',
+      coverageScore: result.coverageScore ?? briefing?.coverageScore ?? null,
+      staffImpact: result.staffImpact ?? shiftStaffImpact(briefing),
+      nextAction: normalizeShiftAction(result.nextAction ?? shiftNextAction(deptId, result, _state)),
     };
 
     shifts.lastResult = entry;
@@ -1868,7 +2025,7 @@ const HotelState = (() => {
     bookEntertainmentShow, cancelEntertainmentShow,
     setCalendar, addCalendarReport,
     recordShiftStart, recordShiftResult, dismissShiftResult,
-    getShiftStatus, getShiftResult, getLatestShiftResult, shiftCycleKey,
+    getShiftStatus, getShiftResult, getLatestShiftResult, getShiftBriefing, shiftCycleKey,
     addGuestToRoster, removeGuestFromRoster, pruneExpiredFromRoster,
     getRoster, getRosterCount,
     applyCheckInBoost, consumeCheckInBoost, getCheckInBoost,
