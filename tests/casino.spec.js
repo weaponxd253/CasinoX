@@ -64,12 +64,14 @@ test.describe('launch navigation', () => {
     await expect(page.locator('.hotel-snapshot-card')).toBeVisible();
     await expect(page.locator('.hotel-view-wrap')).toHaveCount(0);
     await expect(page.locator('.shift-card')).toHaveCount(3);
-    await expect(page.locator('.shift-card.featured')).toContainText('Recommended');
+    await expect(page.locator('.shift-card-featured')).toHaveCount(1);
+    await expect(page.locator('.shift-card-featured')).toContainText('Best Now');
+    await expect(page.locator('.shift-secondary-stack .shift-card-secondary')).toHaveCount(2);
     await expect(page.locator('.shift-card-state')).toHaveCount(3);
-    await expect(page.locator('.shift-card-prep')).toHaveCount(3);
-    await expect(page.locator('.shift-card').first()).toContainText('Risk:');
+    await expect(page.locator('.shift-card-featured .shift-card-prep')).toBeVisible();
+    await expect(page.locator('.shift-card-featured')).toContainText('Risk:');
     await expect(page.locator('.next-reward-rail')).toContainText('Next Reward');
-    await expect(page.locator('.command-primary')).toContainText('Prepare Next Shift');
+    await expect(page.locator('.command-primary')).toContainText('staff gaps');
 
     await page.locator('.shift-card-prepare').first().click();
     await expect(page.locator('.mgmt-tab[data-tab="staff"]')).toHaveAttribute('aria-selected', 'true');
@@ -101,6 +103,24 @@ test.describe('launch navigation', () => {
     await expect(page.locator('#operations-list .all-shift-group')).toHaveCount(3);
     await expect(page.locator('#operations-list .all-shift-group')).toContainText(['Playable Now', 'Build To Unlock', 'Reputation Locked']);
     await expect(page.locator('#operations-list .all-shift-card')).toHaveCount(7);
+  });
+
+  test('featured shift CTA starts the selected shift from the dashboard', async ({ page }) => {
+    await page.goto('/hotel/index.html');
+    await page.evaluate(() => {
+      HotelState.resetSave();
+      HotelState.setGuidanceMode('expert');
+      HotelUI.renderAll();
+    });
+
+    const featuredTitle = await page.locator('.shift-card-featured .shift-card-copy strong').textContent();
+    if (await page.locator('.command-primary').count()) {
+      const primaryText = await page.locator('.command-primary').textContent();
+      expect(primaryText).not.toContain(featuredTitle);
+    }
+    const dept = await page.locator('.shift-card-featured .shift-card-cta').getAttribute('data-shift-dept');
+    await page.locator('.shift-card-featured .shift-card-cta').click();
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('hotelGameState'))?.shifts?.active?.deptId)).toBe(dept);
   });
 
   test('hotel mini-game pages carry the shift briefing into direct play', async ({ page }) => {
