@@ -39,21 +39,9 @@ const SpaRush = (() => {
     renderIdle();
     renderTreatments();
     renderStations();
-    renderGuests();
+    renderActiveGuest();
 
     $('start-spa-btn')?.addEventListener('click', startSession);
-    $('guest-slots')?.addEventListener('click', e => {
-      const card = e.target.closest('[data-guest-id]');
-      if (!card || card.classList.contains('empty')) return;
-      selectGuest(card.dataset.guestId);
-    });
-    $('guest-slots')?.addEventListener('keydown', e => {
-      if (e.key !== 'Enter' && e.key !== ' ') return;
-      const card = e.target.closest('[data-guest-id]');
-      if (!card || card.classList.contains('empty')) return;
-      e.preventDefault();
-      selectGuest(card.dataset.guestId);
-    });
     $('treatment-bar')?.addEventListener('click', e => {
       const btn = e.target.closest('[data-treatment-id]');
       if (!btn || btn.disabled) return;
@@ -85,41 +73,30 @@ const SpaRush = (() => {
       perfect: 0,
       earned: 0,
       satPoints: 0,
+      lastOutcome: null,
     };
 
     $('start-spa-btn').disabled = true;
     $('start-spa-btn').innerHTML = '<i class="fa-solid fa-spinner"></i> In Session';
     setReturnLink('Back to Hotel', 'fa-arrow-left');
-    setNextStep('Select a waiting guest, then choose their best treatment.');
+    setNextStep('Choose a treatment for the active guest.');
     hideResults();
     clearLog();
     log('Spa session opened.', 'gold');
     renderTreatments();
-    spawnUntilFull();
-    ensureSelectedGuest();
+    presentNextGuest();
     updateAll();
     startTick();
   }
 
-  function selectGuest(guestId) {
-    if (!session?.active) return;
-    const guest = session.guests.find(g => g.id === guestId);
-    if (!guest || guest.status !== 'waiting') return;
-    session.selectedGuestId = guestId;
-    renderGuests();
-    renderTreatments();
-    updateNextStep();
-  }
-
   function assignTreatment(treatmentId) {
     if (!session?.active) return;
-    ensureSelectedGuest();
-    if (!session.selectedGuestId) return;
+    const guest = activeGuest();
+    if (!guest) return;
 
     const treatment = TREATMENTS.find(t => t.id === treatmentId);
     if (!treatment || treatment.level > session.spaLevel) return;
 
-    const guest = session.guests.find(g => g.id === session.selectedGuestId);
     const station = session.stations.find(s => !s.guest);
     if (!guest || !station) {
       log('All treatment rooms are busy.', 'bad');
@@ -128,20 +105,24 @@ const SpaRush = (() => {
     }
 
     const now = Date.now();
+    const read = evaluateTreatment(treatment, guest);
     guest.status = 'treating';
     guest.assignedTreatment = treatment.id;
+    guest.treatmentRead = read;
     station.guest = guest;
     station.treatment = treatment;
     station.startedAt = now;
     station.doneAt = now + treatment.time;
     session.selectedGuestId = null;
-    ensureSelectedGuest();
+    session.lastOutcome = {
+      tone: read.tier === 'risky' ? 'bad' : 'gold',
+      title: `${treatment.label} started`,
+      body: `${read.label}: ${read.reason}`,
+    };
+    presentNextGuest();
 
     CasinoShell.sound.tone(560, 'sine', 0.08, 0.18);
-    renderGuests();
-    renderStations();
-    renderTreatments();
-    updateNextStep();
+    updateAll();
   }
 
   function startTick() {
@@ -149,18 +130,27 @@ const SpaRush = (() => {
     tickTimer = setInterval(() => {
       if (!session?.active) return;
       const now = Date.now();
+      let boardChanged = false;
 
-      session.guests
-        .filter(g => g.status === 'waiting' && now >= g.patienceEnd)
-        .forEach(handleWalkout);
+      const guest = activeGuest();
+      if (guest && now >= guest.patienceEnd) {
+        handleWalkout(guest);
+        boardChanged = true;
+      }
 
       session.stations
         .filter(s => s.guest && now >= s.doneAt)
-        .forEach(completeTreatment);
+        .forEach(station => {
+          completeTreatment(station);
+          boardChanged = true;
+        });
 
-      spawnUntilFull();
-      ensureSelectedGuest();
-      updateAll();
+      boardChanged = presentNextGuest() || boardChanged;
+      if (boardChanged) {
+        updateAll();
+      } else {
+        updateLiveMeters();
+      }
 
       if (now >= session.endsAt || session.treated + session.walkouts >= session.target) {
         finishSession();
@@ -168,22 +158,17 @@ const SpaRush = (() => {
     }, 120);
   }
 
-  function spawnUntilFull() {
-    if (!session?.active) return;
-    while (
-      session.guests.filter(g => g.status === 'waiting').length < SLOT_COUNT &&
-      session.spawned < session.target
-    ) {
-      session.guests.push(makeGuest());
-      session.spawned++;
+  function presentNextGuest() {
+    if (!session?.active || activeGuest()) return false;
+    if (session.spawned >= session.target) {
+      session.selectedGuestId = null;
+      return false;
     }
-  }
-
-  function ensureSelectedGuest() {
-    if (!session?.active) return;
-    const current = session.guests.find(g => g.id === session.selectedGuestId && g.status === 'waiting');
-    if (current) return;
-    session.selectedGuestId = session.guests.find(g => g.status === 'waiting')?.id ?? null;
+    const guest = makeGuest();
+    session.guests.push(guest);
+    session.spawned++;
+    session.selectedGuestId = guest.id;
+    return true;
   }
 
   function makeGuest() {
@@ -207,7 +192,11 @@ const SpaRush = (() => {
     guest.status = 'left';
     session.walkouts++;
     session.selectedGuestId = session.selectedGuestId === guest.id ? null : session.selectedGuestId;
-    ensureSelectedGuest();
+    session.lastOutcome = {
+      tone: 'bad',
+      title: 'Guest Walked Out',
+      body: `${guest.name} waited too long for ${guest.mood.wants.toLowerCase()}.`,
+    };
     log(`${guest.name} left before treatment.`, 'bad');
     CasinoShell.sound.lose();
   }
@@ -215,8 +204,9 @@ const SpaRush = (() => {
   function completeTreatment(station) {
     const guest = station.guest;
     const treatment = station.treatment;
-    const perfect = treatment.id === guest.mood.best || treatment.bestFor.includes(guest.mood.id);
-    const acceptable = !perfect && treatment.level >= Math.max(1, session.spaLevel - 1);
+    const read = guest.treatmentRead ?? evaluateTreatment(treatment, guest);
+    const perfect = read.tier === 'best';
+    const acceptable = read.tier === 'acceptable';
     const vipBonus = guest.mood.vip && treatment.id === 'signature' ? 60 : 0;
     const earned = Math.round(treatment.cash + vipBonus + session.spaLevel * 8 + (perfect ? treatment.cash * 0.45 : 0));
     const sat = perfect ? treatment.sat : acceptable ? Math.max(1, treatment.sat - 2) : 0;
@@ -226,19 +216,51 @@ const SpaRush = (() => {
     session.earned += earned;
     session.satPoints += sat;
     if (perfect) session.perfect++;
+    session.lastOutcome = {
+      tone: perfect ? 'good' : acceptable ? 'gold' : 'bad',
+      title: perfect ? 'Perfect Match' : acceptable ? 'Good Recovery' : 'Wrong Treatment',
+      body: `${guest.name} received ${treatment.label}. +$${fmt(earned)}${sat ? `, satisfaction +${sat}` : ''}.`,
+    };
 
     log(
       perfect
         ? `${guest.name} loved the ${treatment.label}. +$${earned}`
-        : `${guest.name} finished the ${treatment.label}. +$${earned}`,
-      perfect ? 'good' : 'gold'
+        : acceptable
+          ? `${guest.name} recovered with ${treatment.label}. +$${earned}`
+          : `${guest.name} disliked the ${treatment.label}. +$${earned}`,
+      perfect ? 'good' : acceptable ? 'gold' : 'bad'
     );
-    CasinoShell.sound.tone(perfect ? 760 : 520, 'sine', 0.12, 0.22);
+    CasinoShell.sound.tone(perfect ? 760 : acceptable ? 520 : 330, 'sine', 0.12, 0.22);
 
     station.guest = null;
     station.treatment = null;
     station.startedAt = 0;
     station.doneAt = 0;
+  }
+
+  function evaluateTreatment(treatment, guest) {
+    if (!treatment || !guest) {
+      return { tier:'risky', label:'Risky', reason:'No active guest.' };
+    }
+    if (treatment.id === guest.mood.best) {
+      return {
+        tier: 'best',
+        label: 'Best Match',
+        reason: `Matches ${guest.mood.wants.toLowerCase()}.`,
+      };
+    }
+    if (treatment.bestFor.includes(guest.mood.id) || treatment.level >= Math.max(1, session.spaLevel - 1)) {
+      return {
+        tier: 'acceptable',
+        label: 'Good Backup',
+        reason: 'Can help, but not the cleanest fit.',
+      };
+    }
+    return {
+      tier: 'risky',
+      label: 'Risky',
+      reason: `Does not match ${guest.mood.wants.toLowerCase()}.`,
+    };
   }
 
   function finishSession() {
@@ -299,38 +321,60 @@ const SpaRush = (() => {
     updateStats();
   }
 
-  function renderGuests() {
+  function renderActiveGuest() {
     const wrap = $('guest-slots');
     if (!wrap) return;
-    const waiting = session?.guests?.filter(g => g.status === 'waiting') ?? [];
-    const cards = Array.from({ length: SLOT_COUNT }, (_, i) => {
-      const guest = waiting[i];
-      if (!guest) return '<div class="guest-card empty">Open waiting seat</div>';
-      const selected = session.selectedGuestId === guest.id ? 'selected' : '';
-      const pct = patiencePct(guest);
-      const mood = guest.mood;
-      return `
-        <article class="guest-card ${selected}" data-guest-id="${guest.id}" role="button" tabindex="0">
-          <div class="guest-top">
-            <div class="guest-avatar"><i class="fa-solid ${mood.avatar}"></i></div>
-            <div>
-              <div class="guest-name">${guest.name}</div>
-              <div class="guest-sub">${mood.label} · Wants ${mood.wants}</div>
-            </div>
-            ${mood.vip ? '<span class="guest-vip">VIP</span>' : ''}
+    const guest = activeGuest();
+    if (!session?.active) {
+      wrap.innerHTML = `
+        <article class="active-guest-card idle">
+          <span class="active-guest-label">Ready</span>
+          <strong>Start Spa Rush</strong>
+          <p>One guest will appear here. Choose a treatment below to serve them.</p>
+        </article>
+      `;
+      return;
+    }
+    if (!guest) {
+      wrap.innerHTML = `
+        <article class="active-guest-card idle">
+          <span class="active-guest-label">Waiting</span>
+          <strong>No active guest</strong>
+          <p>Treatment rooms are catching up. The next guest will appear shortly.</p>
+        </article>
+      `;
+      return;
+    }
+
+    const pct = patiencePct(guest);
+    const mood = guest.mood;
+    const treatment = treatmentLabel(mood.best);
+    wrap.innerHTML = `
+      <article class="active-guest-card" data-active-guest-id="${guest.id}">
+        <div class="active-guest-header">
+          <div class="guest-avatar"><i class="fa-solid ${mood.avatar}"></i></div>
+          <div>
+            <span class="active-guest-label">Active Guest</span>
+            <strong>${guest.name}</strong>
+            <p>${mood.label} · Wants ${mood.wants}</p>
           </div>
-          <div class="guest-request">
-            <i class="fa-solid fa-spa"></i>
-            Best match: ${treatmentLabel(mood.best)}
+          ${mood.vip ? '<span class="guest-vip">VIP</span>' : ''}
+        </div>
+        <div class="active-guest-read">
+          <div><span>Need</span><strong>${mood.wants}</strong></div>
+          <div><span>Best Treatment</span><strong>${treatment}</strong></div>
+        </div>
+        <div class="active-patience">
+          <div class="active-patience-top">
+            <span>Patience</span>
+            <strong>${pct}%</strong>
           </div>
           <div class="patience-track">
             <div class="patience-fill ${pct < 26 ? 'danger' : pct < 52 ? 'warn' : ''}" style="width:${pct}%"></div>
           </div>
-          <div class="guest-action">${selected ? 'Selected' : 'Select guest'}</div>
-        </article>
-      `;
-    }).join('');
-    wrap.innerHTML = cards;
+        </div>
+      </article>
+    `;
   }
 
   function renderStations() {
@@ -342,7 +386,7 @@ const SpaRush = (() => {
       const guest = station.guest;
       const pct = stationPct(station);
       return `
-        <article class="station-card ${guest ? 'busy' : 'idle'}">
+        <article class="station-card ${guest ? 'busy' : 'idle'}" data-station-id="${station.id}">
           <div>
             <div class="station-icon"><i class="fa-solid ${treatment?.icon ?? 'fa-spa'}"></i></div>
             <div class="station-name">Room ${i + 1}</div>
@@ -358,30 +402,91 @@ const SpaRush = (() => {
     const wrap = $('treatment-bar');
     if (!wrap) return;
     const spaLevel = session?.spaLevel ?? HotelState.get().departments.spa?.level ?? 0;
-    const guest = selectedGuest();
+    const guest = activeGuest();
     const openStation = !session?.active || session.stations.some(station => !station.guest);
     wrap.innerHTML = TREATMENTS.map(t => {
       const unlocked = spaLevel >= t.level;
-      const recommended = !!guest && unlocked && t.id === guest.mood.best;
+      const read = guest && unlocked ? evaluateTreatment(t, guest) : null;
+      const recommended = read?.tier === 'best';
+      const acceptable = read?.tier === 'acceptable';
+      const risky = read?.tier === 'risky';
       const disabled = !unlocked || !session?.active || !guest || !openStation;
+      const label = recommended
+        ? 'Best Match'
+        : !guest && unlocked
+          ? 'Waiting'
+          : unlocked
+            ? read?.label ?? 'Available'
+            : `Spa Lv ${t.level}`;
       return `
-        <button class="treatment-btn ${unlocked ? '' : 'locked'} ${recommended ? 'best-match' : ''}" type="button"
+        <button class="treatment-btn ${unlocked ? '' : 'locked'} ${recommended ? 'best-match next-action' : acceptable ? 'good-backup' : risky ? 'risky-treatment' : ''}" type="button"
                 data-treatment-id="${t.id}" ${disabled ? 'disabled' : ''}>
+          <span class="treatment-step">${label}</span>
           <i class="fa-solid ${t.icon}"></i>
-          ${t.label}
-          <small>${recommended ? 'Best Match' : unlocked ? t.style : `Spa Lv ${t.level}`}</small>
+          <strong>${t.label}</strong>
+          <small>${read?.reason ?? (unlocked ? t.style : `Spa Lv ${t.level}`)}</small>
         </button>
       `;
     }).join('');
   }
 
   function updateAll() {
-    renderGuests();
+    renderActiveGuest();
     renderStations();
     renderTreatments();
+    renderOutcome();
     updateNextStep();
     updateStats();
     updateSessionMeter();
+  }
+
+  function updateLiveMeters() {
+    updateStats();
+    updateSessionMeter();
+    updateActiveGuestMeter();
+    updateStationMeters();
+  }
+
+  function updateActiveGuestMeter() {
+    const guest = activeGuest();
+    if (!guest) return;
+    const card = document.querySelector('[data-active-guest-id]');
+    if (!card) return;
+    const pct = patiencePct(guest);
+    const fill = card.querySelector('.patience-fill');
+    const label = card.querySelector('.active-patience-top strong');
+    if (fill) {
+      fill.style.width = `${pct}%`;
+      fill.classList.toggle('danger', pct < 26);
+      fill.classList.toggle('warn', pct >= 26 && pct < 52);
+    }
+    if (label) label.textContent = `${pct}%`;
+  }
+
+  function updateStationMeters() {
+    (session?.stations ?? []).forEach(station => {
+      const card = document.querySelector(`[data-station-id="${station.id}"]`);
+      const fill = card?.querySelector('.station-fill');
+      if (fill) fill.style.width = `${stationPct(station)}%`;
+    });
+  }
+
+  function renderOutcome() {
+    const el = $('spa-outcome');
+    if (!el) return;
+    const outcome = session?.lastOutcome;
+    if (!outcome) {
+      el.hidden = true;
+      el.innerHTML = '';
+      return;
+    }
+    el.hidden = false;
+    el.className = `spa-outcome ${outcome.tone}`;
+    el.innerHTML = `
+      <span>Latest Result</span>
+      <strong>${outcome.title}</strong>
+      <p>${outcome.body}</p>
+    `;
   }
 
   function updateStats() {
@@ -436,23 +541,23 @@ const SpaRush = (() => {
     link.innerHTML = `<i class="fa-solid ${icon}"></i> ${label}`;
   }
 
-  function selectedGuest() {
+  function activeGuest() {
     if (!session?.active) return null;
     return session.guests.find(g => g.id === session.selectedGuestId && g.status === 'waiting') ?? null;
   }
 
   function updateNextStep() {
     if (!session?.active) return;
-    const guest = selectedGuest();
+    const guest = activeGuest();
     if (!guest) {
-      setNextStep('Select a waiting guest.');
+      setNextStep('Treatment rooms are full. Wait for a room to open.');
       return;
     }
     if (!session.stations.some(station => !station.guest)) {
       setNextStep('All treatment rooms are busy. Wait for one to open.');
       return;
     }
-    setNextStep(`Choose ${treatmentLabel(guest.mood.best)} for ${guest.name}.`);
+    setNextStep(`Choose a treatment for ${guest.name}. Best match: ${treatmentLabel(guest.mood.best)}.`);
   }
 
   function setNextStep(message) {

@@ -11,20 +11,20 @@ const RoomsGame = (() => {
   const MAX_ACTIVE_REQUESTS = 5;
 
   const STAFF = [
-    { id:'housekeeper', label:'Housekeeping', icon:'fa-broom', specialty:['housekeeping','turndown','spill'], speed:1.0 },
-    { id:'runner', label:'Runner', icon:'fa-person-running', specialty:['tray','minibar','towels'], speed:0.82 },
-    { id:'engineer', label:'Engineer', icon:'fa-screwdriver-wrench', specialty:['maintenance','noise'], speed:1.12 },
+    { id:'housekeeper', label:'Housekeeping', icon:'fa-broom', specialty:['housekeeping','turndown','spill'], speed:1.0, strength:'Protects cleanliness and guest comfort.' },
+    { id:'runner', label:'Runner', icon:'fa-person-running', specialty:['tray','minibar','towels'], speed:0.82, strength:'Moves fast on revenue and comfort requests.' },
+    { id:'engineer', label:'Engineer', icon:'fa-screwdriver-wrench', specialty:['maintenance','noise'], speed:1.12, strength:'Prevents downtime and technical complaints.' },
   ];
 
   const REQUESTS = [
-    { id:'tray', label:'Room Service Tray', icon:'fa-utensils', need:'runner', type:'tray', patience:15000, duration:4300, cash:48, sat:1, risk:'tip' },
-    { id:'towels', label:'Fresh Towels', icon:'fa-soap', need:'runner', type:'towels', patience:17000, duration:3600, cash:24, sat:2, risk:'comfort' },
-    { id:'housekeeping', label:'Housekeeping Reset', icon:'fa-broom', need:'housekeeper', type:'housekeeping', patience:19000, duration:5200, cash:36, sat:2, risk:'room quality' },
-    { id:'turndown', label:'VIP Turndown', icon:'fa-champagne-glasses', need:'housekeeper', type:'turndown', patience:13500, duration:5900, cash:72, sat:3, risk:'VIP mood', vip:true },
-    { id:'spill', label:'Spill Cleanup', icon:'fa-droplet', need:'housekeeper', type:'spill', patience:12000, duration:4100, cash:28, sat:2, risk:'complaint' },
-    { id:'noise', label:'Noise Complaint', icon:'fa-volume-xmark', need:'engineer', type:'noise', patience:10500, duration:3900, cash:18, sat:3, risk:'walkout' },
-    { id:'maintenance', label:'Leaky Fixture', icon:'fa-wrench', need:'engineer', type:'maintenance', patience:14500, duration:6100, cash:52, sat:2, risk:'room downtime' },
-    { id:'minibar', label:'Minibar Restock', icon:'fa-wine-bottle', need:'runner', type:'minibar', patience:16000, duration:4600, cash:56, sat:1, risk:'lost sale' },
+    { id:'tray', label:'Room Service Tray', icon:'fa-utensils', need:'runner', fallback:['housekeeper'], type:'tray', patience:15000, duration:4300, cash:48, sat:1, risk:'tip', urgency:'normal', pressure:'lost tip', rewardLabel:'Tip recovery', consequence:'Tip disappears if it waits.', fitReason:'Runner clears trays fastest.' },
+    { id:'towels', label:'Fresh Towels', icon:'fa-soap', need:'runner', fallback:['housekeeper'], type:'towels', patience:17000, duration:3600, cash:24, sat:2, risk:'comfort', urgency:'low', pressure:'comfort slip', rewardLabel:'Comfort save', consequence:'Guest comfort drops.', fitReason:'Runner keeps comfort requests moving.' },
+    { id:'housekeeping', label:'Housekeeping Reset', icon:'fa-broom', need:'housekeeper', fallback:['runner'], type:'housekeeping', patience:19000, duration:5200, cash:36, sat:2, risk:'room quality', urgency:'normal', pressure:'quality hit', rewardLabel:'Room quality', consequence:'Room quality falls for the next guest.', fitReason:'Housekeeping restores the room cleanly.' },
+    { id:'turndown', label:'VIP Turndown', icon:'fa-champagne-glasses', need:'housekeeper', fallback:['runner'], type:'turndown', patience:13500, duration:5900, cash:72, sat:3, risk:'VIP mood', urgency:'vip', pressure:'VIP mood', rewardLabel:'VIP satisfaction', consequence:'VIP mood can sour quickly.', fitReason:'Housekeeping protects the VIP detail.', vip:true },
+    { id:'spill', label:'Spill Cleanup', icon:'fa-droplet', need:'housekeeper', fallback:['engineer'], type:'spill', patience:12000, duration:4100, cash:28, sat:2, risk:'complaint', urgency:'high', pressure:'complaint', rewardLabel:'Complaint save', consequence:'Complaint risk rises fast.', fitReason:'Housekeeping fixes guest-facing messes.' },
+    { id:'noise', label:'Noise Complaint', icon:'fa-volume-xmark', need:'engineer', fallback:['housekeeper'], type:'noise', patience:10500, duration:3900, cash:18, sat:3, risk:'walkout', urgency:'critical', pressure:'walkout', rewardLabel:'Walkout prevention', consequence:'Guest may walk out.', fitReason:'Engineer can stop the source of the noise.' },
+    { id:'maintenance', label:'Leaky Fixture', icon:'fa-wrench', need:'engineer', fallback:['housekeeper'], type:'maintenance', patience:14500, duration:6100, cash:52, sat:2, risk:'room downtime', urgency:'high', pressure:'downtime', rewardLabel:'Downtime prevention', consequence:'Room downtime eats future revenue.', fitReason:'Engineer prevents maintenance downtime.' },
+    { id:'minibar', label:'Minibar Restock', icon:'fa-wine-bottle', need:'runner', fallback:['housekeeper'], type:'minibar', patience:16000, duration:4600, cash:56, sat:1, risk:'lost sale', urgency:'normal', pressure:'lost sale', rewardLabel:'Revenue save', consequence:'Minibar sale is lost.', fitReason:'Runner recovers minibar revenue.' },
   ];
 
   const NAMES = ['Vale', 'Park', 'Wynn', 'Cross', 'Sol', 'Reed', 'Stone', 'Marin', 'Kade', 'Lux'];
@@ -45,12 +45,12 @@ const RoomsGame = (() => {
     $('room-grid')?.addEventListener('click', e => {
       const card = e.target.closest('[data-request-id]');
       if (!card || card.classList.contains('empty') || card.classList.contains('busy')) return;
-      selectRequest(card.dataset.requestId);
+      dispatchRequest(card.dataset.requestId);
     });
     $('staff-grid')?.addEventListener('click', e => {
       const card = e.target.closest('[data-staff-id]');
       if (!card || card.classList.contains('busy')) return;
-      assignStaff(card.dataset.staffId);
+      selectManualStaff(card.dataset.staffId);
     });
   }
 
@@ -74,23 +74,24 @@ const RoomsGame = (() => {
       rooms: buildRooms(roomsLevel),
       staff: STAFF.map(s => ({ ...s, request:null, doneAt:0, startedAt:0 })),
       selectedRequestId: null,
+      selectedStaffId: null,
       spawned: 0,
       resolved: 0,
       complaints: 0,
       perfect: 0,
       earned: 0,
       satPoints: 0,
+      lastOutcome: null,
     };
 
     $('start-ops-btn').disabled = true;
     $('start-ops-btn').innerHTML = '<i class="fa-solid fa-spinner"></i> On Shift';
     setReturnLink('Back to Hotel', 'fa-arrow-left');
-    setNextStep('Pick a room request, then assign the best staff match.');
+    setNextStep('Click a room request to dispatch the best available staff.');
     hideResults();
     clearLog();
     log(`Floor Ops opened. Room staff coverage: ${shift.staffEffect?.score ?? 0}% ${shift.staffEffect?.label ?? 'Short'}.`, 'gold');
     spawnRequests(3);
-    ensureSelection();
     updateAll();
     startTimer();
   }
@@ -123,7 +124,7 @@ const RoomsGame = (() => {
   }
 
   function spawnRequests(minimum = 1) {
-    if (!shift?.active) return;
+    if (!shift?.active) return false;
     const activeCount = shift.rooms.filter(room => room.request && room.request.status !== 'done').length;
     const openRooms = shift.rooms.filter(room => !room.request);
     const canSpawn = Math.min(
@@ -131,45 +132,80 @@ const RoomsGame = (() => {
       shift.target - shift.spawned,
       Math.max(minimum, MAX_ACTIVE_REQUESTS - activeCount)
     );
+    let spawned = false;
     for (let i = 0; i < canSpawn; i++) {
       const room = openRooms.splice(Math.floor(Math.random() * openRooms.length), 1)[0];
       room.request = makeRequest(room);
       shift.spawned++;
+      spawned = true;
     }
+    return spawned;
   }
 
-  function selectRequest(requestId) {
+  function dispatchRequest(requestId) {
     if (!shift?.active) return;
     const request = findRequest(requestId);
     if (!request || request.status !== 'waiting') return;
-    shift.selectedRequestId = requestId;
-    renderRooms();
-    renderStaff();
-    renderSelectedBrief();
+    const staff = chooseStaffForRequest(request);
+    if (!staff) {
+      shift.selectedRequestId = requestId;
+      shift.lastOutcome = {
+        tone: 'bad',
+        title: 'All Staff Busy',
+        body: `Room ${request.roomNumber} is queued. Free staff will be needed before patience runs out.`,
+      };
+      updateAll();
+      CasinoShell.sound.tone(260, 'sine', 0.08, 0.18);
+      return;
+    }
+    assignStaffToRequest(staff, request);
   }
 
-  function assignStaff(staffId) {
+  function selectManualStaff(staffId) {
     if (!shift?.active) return;
-    ensureSelection();
     const staff = shift.staff.find(s => s.id === staffId);
-    const request = findRequest(shift.selectedRequestId);
-    if (!staff || staff.request || !request || request.status !== 'waiting') return;
+    if (!staff || staff.request) return;
+    shift.selectedStaffId = shift.selectedStaffId === staffId ? null : staffId;
+    shift.selectedRequestId = null;
+    shift.lastOutcome = shift.selectedStaffId
+      ? {
+          tone: 'gold',
+          title: `Manual Override: ${staff.label}`,
+          body: `Click a room to send ${staff.label}, or click ${staff.label} again to return to auto-dispatch.`,
+        }
+      : {
+          tone: 'gold',
+          title: 'Auto Dispatch On',
+          body: 'Click a room request to send the best available staff automatically.',
+        };
+    updateAll();
+    CasinoShell.sound.tone(500, 'sine', 0.06, 0.14);
+  }
 
+  function assignStaffToRequest(staff, request) {
     const now = Date.now();
-    const match = staff.id === request.need || staff.specialty.includes(request.type);
-    const slowPenalty = match ? 1 : 1.38;
+    const fit = evaluateDispatch(staff, request);
+    const manual = shift.selectedStaffId === staff.id;
     request.status = 'assigned';
     request.staffId = staff.id;
-    request.matched = match;
+    request.matched = fit.tier === 'best';
+    request.fitTier = fit.tier;
+    request.fitLabel = fit.label;
+    request.fitReason = fit.reason;
+    request.assignedBy = staff.label;
+    request.manual = manual;
     staff.request = request;
     staff.startedAt = now;
-    staff.doneAt = now + Math.round(request.duration * staff.speed * slowPenalty * (shift.staffEffect?.speedMult ?? 1));
+    staff.doneAt = now + Math.round(request.duration * staff.speed * fit.timeMult * (shift.staffEffect?.speedMult ?? 1));
     shift.selectedRequestId = null;
-    ensureSelection();
-    CasinoShell.sound.tone(match ? 660 : 420, 'sine', 0.08, 0.2);
-    renderStaff();
-    renderRooms();
-    renderSelectedBrief();
+    shift.selectedStaffId = null;
+    shift.lastOutcome = {
+      tone: fit.tier === 'risky' ? 'bad' : 'gold',
+      title: `${staff.label} dispatched`,
+      body: `${manual ? 'Manual override' : 'Auto dispatch'} - ${fit.label}: ${fit.reason}`,
+    };
+    CasinoShell.sound.tone(fit.tier === 'best' ? 660 : fit.tier === 'acceptable' ? 520 : 420, 'sine', 0.08, 0.2);
+    updateAll();
   }
 
   function startTimer() {
@@ -177,6 +213,7 @@ const RoomsGame = (() => {
     timer = setInterval(() => {
       if (!shift?.active) return;
       const now = Date.now();
+      let boardChanged = false;
 
       shift.rooms.forEach(room => {
         const request = room.request;
@@ -186,17 +223,25 @@ const RoomsGame = (() => {
           if (shift.selectedRequestId === request.requestId) shift.selectedRequestId = null;
           log(`Room ${request.roomNumber} escalated: ${request.label}.`, 'bad');
           CasinoShell.sound.lose();
+          boardChanged = true;
         }
       });
 
       shift.staff
         .filter(staff => staff.request && now >= staff.doneAt)
-        .forEach(completeRequest);
+        .forEach(staff => {
+          completeRequest(staff);
+          boardChanged = true;
+        });
 
-      cleanupCompletedRooms();
-      spawnRequests(1);
+      boardChanged = cleanupCompletedRooms() || boardChanged;
+      boardChanged = spawnRequests(1) || boardChanged;
       ensureSelection();
-      updateAll();
+      if (boardChanged) {
+        updateAll();
+      } else {
+        updateLiveMeters();
+      }
 
       if (now >= shift.endsAt || shift.resolved + shift.complaints >= shift.target) {
         finishShift();
@@ -208,24 +253,35 @@ const RoomsGame = (() => {
     const request = staff.request;
     const patienceLeft = Math.max(0, (request.patienceEnd - Date.now()) / request.patience);
     const fast = patienceLeft > 0.45;
-    const perfect = request.matched && fast;
-    const earned = Math.round((request.cash + shift.roomsLevel * 7 + (perfect ? request.cash * 0.55 : request.matched ? request.cash * 0.18 : 0)) * (shift.staffEffect?.incomeMult ?? 1));
-    const sat = perfect ? request.sat : request.matched ? Math.max(1, request.sat - 1) : 0;
+    const fit = evaluateDispatch(staff, request);
+    const perfect = fit.tier === 'best' && fast;
+    const handled = fit.tier !== 'risky';
+    const base = request.cash + shift.roomsLevel * 7;
+    const speedBonus = fast ? request.cash * 0.22 : 0;
+    const earned = Math.round((base * fit.cashMult + speedBonus + (perfect ? request.cash * 0.35 : 0)) * (shift.staffEffect?.incomeMult ?? 1));
+    const sat = perfect
+      ? request.sat
+      : fit.tier === 'best'
+        ? Math.max(1, request.sat - 1)
+        : fit.tier === 'acceptable'
+          ? Math.max(0, request.sat - 1)
+          : 0;
+    const outcome = buildOutcome(request, staff, fit, perfect, fast, earned, sat);
 
     request.status = 'done';
     request.completedAt = Date.now();
+    request.outcome = outcome;
     shift.resolved++;
     shift.earned += earned;
     shift.satPoints += sat;
     if (perfect) shift.perfect++;
+    shift.lastOutcome = outcome;
 
     log(
-      perfect
-        ? `${staff.label} nailed Room ${request.roomNumber}: ${request.label}. +$${earned}`
-        : `${staff.label} handled Room ${request.roomNumber}. +$${earned}`,
-      perfect ? 'good' : 'gold'
+      `${outcome.title}: Room ${request.roomNumber}. +$${earned}`,
+      outcome.tone
     );
-    CasinoShell.sound.tone(perfect ? 760 : 540, 'sine', 0.11, 0.22);
+    CasinoShell.sound.tone(perfect ? 760 : handled ? 540 : 360, 'sine', 0.11, 0.22);
 
     staff.request = null;
     staff.startedAt = 0;
@@ -234,11 +290,19 @@ const RoomsGame = (() => {
 
   function cleanupCompletedRooms() {
     const now = Date.now();
+    let removed = false;
     shift.rooms.forEach(room => {
       if (!room.request) return;
-      if (room.request.status === 'done' && now - room.request.completedAt > 700) room.request = null;
-      if (room.request?.status === 'complaint' && now - room.request.patienceEnd > 850) room.request = null;
+      if (room.request.status === 'done' && now - room.request.completedAt > 700) {
+        room.request = null;
+        removed = true;
+      }
+      if (room.request?.status === 'complaint' && now - room.request.patienceEnd > 850) {
+        room.request = null;
+        removed = true;
+      }
     });
+    return removed;
   }
 
   function finishShift() {
@@ -284,12 +348,107 @@ const RoomsGame = (() => {
     if (!shift?.active) return;
     const current = findRequest(shift.selectedRequestId);
     if (current?.status === 'waiting') return;
-    shift.selectedRequestId = shift.rooms.find(room => room.request?.status === 'waiting')?.request.requestId ?? null;
+    shift.selectedRequestId = null;
+    const selectedStaff = shift.staff.find(staff => staff.id === shift.selectedStaffId);
+    if (selectedStaff?.request) shift.selectedStaffId = null;
   }
 
   function findRequest(requestId) {
     if (!requestId || !shift) return null;
     return shift.rooms.map(room => room.request).find(request => request?.requestId === requestId) ?? null;
+  }
+
+  function chooseStaffForRequest(request) {
+    const available = shift.staff.filter(staff => !staff.request);
+    if (!available.length) return null;
+    const manualStaff = available.find(staff => staff.id === shift.selectedStaffId);
+    if (manualStaff) return manualStaff;
+
+    const tierScore = { best: 3, acceptable: 2, risky: 1 };
+    return available
+      .map(staff => {
+        const fit = evaluateDispatch(staff, request);
+        return { staff, fit, score: tierScore[fit.tier] ?? 0 };
+      })
+      .sort((a, b) => b.score - a.score || (a.fit.timeMult * a.staff.speed) - (b.fit.timeMult * b.staff.speed))[0]?.staff ?? null;
+  }
+
+  function evaluateDispatch(staff, request) {
+    if (!staff || !request) return { tier:'risky', label:'No Fit', reason:'Select a request first.', timeMult:1.55, cashMult:0.55 };
+    if (staff.id === request.need || staff.specialty.includes(request.type)) {
+      return {
+        tier: 'best',
+        label: 'Best Fit',
+        reason: request.fitReason,
+        timeMult: 1,
+        cashMult: 1,
+      };
+    }
+    if ((request.fallback ?? []).includes(staff.id)) {
+      return {
+        tier: 'acceptable',
+        label: 'Can Cover',
+        reason: `${staff.label} can stabilize the ${request.pressure}, but slower.`,
+        timeMult: 1.18,
+        cashMult: 0.82,
+      };
+    }
+    return {
+      tier: 'risky',
+      label: 'Risky Match',
+      reason: `${staff.label} may miss the core issue: ${request.consequence}`,
+      timeMult: 1.55,
+      cashMult: 0.52,
+    };
+  }
+
+  function buildOutcome(request, staff, fit, perfect, fast, earned, sat) {
+    if (perfect) {
+      return {
+        tone: 'good',
+        title: 'Perfect Match',
+        body: `${staff.label} solved ${request.label.toLowerCase()} before pressure built.`,
+        detail: `${request.rewardLabel}: +$${fmt(earned)} and satisfaction +${sat}.`,
+      };
+    }
+    if (fit.tier === 'best') {
+      return {
+        tone: 'gold',
+        title: fast ? 'Handled Cleanly' : 'Handled Late',
+        body: `${staff.label} was the right call, but timing limited the upside.`,
+        detail: `${request.rewardLabel}: +$${fmt(earned)} and satisfaction +${sat}.`,
+      };
+    }
+    if (fit.tier === 'acceptable') {
+      return {
+        tone: 'gold',
+        title: 'Covered',
+        body: `${staff.label} covered outside their lane and kept the room stable.`,
+        detail: `${request.rewardLabel}: +$${fmt(earned)}${sat ? ` and satisfaction +${sat}` : ''}.`,
+      };
+    }
+    return {
+      tone: 'bad',
+      title: 'Wrong Staff',
+      body: `${staff.label} handled the call, but ${request.consequence}`,
+      detail: `Partial recovery: +$${fmt(earned)}.`,
+    };
+  }
+
+  function urgencyState(request) {
+    if (!request) return { tier:'idle', label:'Clear' };
+    if (request.status === 'assigned') return { tier:'assigned', label:'Assigned' };
+    if (request.status === 'done') return { tier:'done', label:'Done' };
+    if (request.status === 'complaint') return { tier:'critical', label:'Complaint' };
+    const pct = patiencePct(request);
+    if (request.urgency === 'vip') return { tier:'vip', label:'VIP' };
+    if (pct < 25 || request.urgency === 'critical') return { tier:'critical', label:'Critical' };
+    if (pct < 50 || request.urgency === 'high') return { tier:'high', label:'Urgent' };
+    return { tier:'normal', label:'Stable' };
+  }
+
+  function staffLabel(staffId) {
+    return STAFF.find(member => member.id === staffId)?.label ?? 'Any staff';
   }
 
   function renderIdle() {
@@ -301,7 +460,7 @@ const RoomsGame = (() => {
     $('ops-session-fill').style.width = '0%';
     log('Guest Rooms are ready for Floor Ops.', 'gold', true);
     setReturnLink('Back to Hotel', 'fa-arrow-left');
-    setNextStep('Start Floor Ops to open room requests.');
+    setNextStep('Start Floor Ops, then click a room to dispatch staff.');
     updateStats();
     renderSelectedBrief();
   }
@@ -323,14 +482,19 @@ const RoomsGame = (() => {
       const selected = shift?.selectedRequestId === request.requestId ? 'selected' : '';
       const status = request.status;
       const pct = patiencePct(request);
+      const urgency = urgencyState(request);
       return `
-        <article class="room-tile ${selected} ${status}" data-request-id="${request.requestId}">
+        <article class="room-tile ${selected} ${status} urgency-${urgency.tier}" data-request-id="${request.requestId}">
           <div class="room-top">
             <span class="room-number">${request.roomNumber}</span>
             <i class="fa-solid ${request.icon}"></i>
           </div>
+          <div class="room-meta">
+            <span class="urgency-pill ${urgency.tier}">${urgency.label}</span>
+            <span>${staffLabel(request.need)}</span>
+          </div>
           <strong>${request.label}</strong>
-          <span class="room-risk">${request.risk}</span>
+          <span class="room-risk">${request.pressure}</span>
           <div class="patience-track">
             <div class="patience-fill ${pct < 25 ? 'danger' : pct < 50 ? 'warn' : ''}" style="width:${pct}%"></div>
           </div>
@@ -351,14 +515,16 @@ const RoomsGame = (() => {
     const request = findRequest(shift?.selectedRequestId);
     wrap.innerHTML = staff.map(member => {
       const busy = !!member.request;
-      const recommended = !!request && !busy && shift?.active && (member.id === request.need || member.specialty.includes(request.type));
+      const fit = request && !busy && shift?.active ? evaluateDispatch(member, request) : null;
+      const recommended = fit?.tier === 'best';
+      const selected = shift?.selectedStaffId === member.id;
       const pct = staffPct(member);
       return `
-        <button class="staff-card ${busy ? 'busy' : ''} ${recommended ? 'recommended' : ''}" type="button" data-staff-id="${member.id}" ${busy || !shift?.active ? 'disabled' : ''}>
+        <button class="staff-card ${busy ? 'busy' : ''} ${recommended ? 'recommended' : ''} ${selected ? 'manual-selected' : ''} ${fit ? `fit-${fit.tier}` : ''}" type="button" data-staff-id="${member.id}" ${busy || !shift?.active ? 'disabled' : ''}>
           <i class="fa-solid ${member.icon}"></i>
           <span>${member.label}</span>
-          <strong>${busy ? `Room ${member.request.roomNumber}` : 'Available'}</strong>
-          ${recommended ? '<small class="staff-fit-label">Best Fit</small>' : ''}
+          <strong>${busy ? `Room ${member.request.roomNumber}` : selected ? 'Manual Override' : 'Auto Available'}</strong>
+          ${fit ? `<small class="staff-fit-label">${fit.label}</small><em>${fit.reason}</em>` : selected ? '<small class="staff-fit-label">Selected</small><em>Click a room to send this staff member.</em>' : `<em>${member.strength}</em>`}
           <div class="staff-track"><div class="staff-fill" style="width:${pct}%"></div></div>
         </button>
       `;
@@ -370,29 +536,146 @@ const RoomsGame = (() => {
     if (!wrap) return;
     const request = findRequest(shift?.selectedRequestId);
     if (!request) {
+      const selectedStaff = shift?.staff?.find(staff => staff.id === shift.selectedStaffId);
       wrap.innerHTML = `
-        <span>Selected Request</span>
-        <strong>No request selected</strong>
-        <p>Pick an active room request, then assign the best available staff member.</p>
+        <span>${selectedStaff ? 'Manual Override' : 'Floor Triage'}</span>
+        <strong>${selectedStaff ? `${selectedStaff.label} ready` : 'No room selected'}</strong>
+        <p>${shift?.active
+          ? selectedStaff
+            ? `Click a room to send ${selectedStaff.label}. Click the staff card again to return to auto-dispatch.`
+            : 'Click any active room request to auto-dispatch the best available staff.'
+          : 'Start a shift to open live room requests and triage the floor.'}</p>
       `;
-      setNextStep(shift?.active ? 'Pick an active room request, then assign staff.' : 'Start Floor Ops to open room requests.');
+      setNextStep(shift?.active
+        ? selectedStaff
+          ? `Click a room to send ${selectedStaff.label}.`
+          : 'Click a room request to dispatch the best available staff.'
+        : 'Start Floor Ops to open room requests.');
       return;
     }
     const staff = STAFF.find(member => member.id === request.need);
+    const urgency = urgencyState(request);
     wrap.innerHTML = `
       <span>Selected Request</span>
       <strong>Room ${request.roomNumber}: ${request.label}</strong>
       <p>${request.guestName} needs ${request.risk} handled. Best staff: ${staff?.label ?? 'Any staff'}.</p>
+      <div class="request-brief-grid">
+        <div><span>Pressure</span><strong>${urgency.label}</strong></div>
+        <div><span>Reward</span><strong>${request.rewardLabel}</strong></div>
+        <div><span>Consequence</span><strong>${request.consequence}</strong></div>
+      </div>
     `;
-    setNextStep(`Assign ${staff?.label ?? 'available staff'} to Room ${request.roomNumber}.`);
+    setNextStep(`All staff are busy. Room ${request.roomNumber} is queued until someone frees up.`);
+  }
+
+  function renderDispatchPanel() {
+    const panel = $('dispatch-preview');
+    if (!panel) return;
+    const request = findRequest(shift?.selectedRequestId);
+
+    if (request) {
+      const bestStaff = STAFF.find(member => member.id === request.need);
+      const available = (shift?.staff ?? []).filter(member => !member.request);
+      const riskyCount = available.filter(member => evaluateDispatch(member, request).tier === 'risky').length;
+      const preview = bestStaff ? evaluateDispatch(bestStaff, request) : null;
+      const latest = shift?.lastOutcome
+        ? `<p class="dispatch-detail">Last: ${shift.lastOutcome.title}. ${shift.lastOutcome.body}</p>`
+        : '';
+      panel.hidden = false;
+      panel.className = 'dispatch-preview';
+      if (!available.length) {
+        panel.innerHTML = `
+          <span>Queued Request</span>
+          <strong>All staff are busy</strong>
+          <p>Room ${request.roomNumber} is selected so you can see the pressure while staff finish their current calls.</p>
+          ${latest}
+        `;
+        return;
+      }
+      panel.innerHTML = `
+        <span>Outcome Preview</span>
+        <strong>${preview?.label ?? 'Choose Staff'}: ${bestStaff?.label ?? 'Any staff'}</strong>
+        <p>${request.fitReason}</p>
+        <div class="dispatch-preview-grid">
+          <div><span>Cash</span><strong>$${fmt(request.cash + shift.roomsLevel * 7)}+</strong></div>
+          <div><span>Satisfaction</span><strong>+${request.sat}</strong></div>
+          <div><span>Risky Options</span><strong>${riskyCount}</strong></div>
+        </div>
+        ${latest}
+      `;
+      return;
+    }
+
+    if (shift?.lastOutcome) {
+      const outcome = shift.lastOutcome;
+      panel.hidden = false;
+      panel.className = `dispatch-preview outcome ${outcome.tone}`;
+      panel.innerHTML = `
+        <span>Latest Outcome</span>
+        <strong>${outcome.title}</strong>
+        <p>${outcome.body}</p>
+        ${outcome.detail ? `<p class="dispatch-detail">${outcome.detail}</p>` : ''}
+      `;
+      return;
+    }
+
+    panel.hidden = true;
+    panel.innerHTML = '';
   }
 
   function updateAll() {
     renderRooms();
     renderStaff();
     renderSelectedBrief();
+    renderDispatchPanel();
     updateStats();
     updateSessionMeter();
+  }
+
+  function updateLiveMeters() {
+    updateStats();
+    updateSessionMeter();
+    updateRoomMeters();
+    updateStaffMeters();
+  }
+
+  function updateRoomMeters() {
+    if (!shift?.active) return;
+    shift.rooms.forEach(room => {
+      const request = room.request;
+      if (!request) return;
+      const tile = document.querySelector(`[data-request-id="${request.requestId}"]`);
+      if (!tile) return;
+      const pct = patiencePct(request);
+      const urgency = urgencyState(request);
+      const fill = tile.querySelector('.patience-fill');
+      const pill = tile.querySelector('.urgency-pill');
+
+      if (fill) {
+        fill.style.width = `${pct}%`;
+        fill.classList.toggle('danger', pct < 25);
+        fill.classList.toggle('warn', pct >= 25 && pct < 50);
+      }
+
+      ['urgency-normal', 'urgency-high', 'urgency-critical', 'urgency-vip', 'urgency-assigned', 'urgency-done'].forEach(cls => {
+        tile.classList.remove(cls);
+      });
+      tile.classList.add(`urgency-${urgency.tier}`);
+
+      if (pill) {
+        pill.className = `urgency-pill ${urgency.tier}`;
+        pill.textContent = urgency.label;
+      }
+    });
+  }
+
+  function updateStaffMeters() {
+    if (!shift?.active) return;
+    shift.staff.forEach(staff => {
+      const card = document.querySelector(`[data-staff-id="${staff.id}"]`);
+      const fill = card?.querySelector('.staff-fill');
+      if (fill) fill.style.width = `${staffPct(staff)}%`;
+    });
   }
 
   function updateStats() {
@@ -484,7 +767,13 @@ const RoomsGame = (() => {
     return Number(value || 0).toLocaleString('en-US', { maximumFractionDigits: 0 });
   }
 
-  return { init };
+  function debugEvaluateDispatch(staffId, requestId) {
+    const staff = STAFF.find(member => member.id === staffId);
+    const request = REQUESTS.find(item => item.id === requestId) ?? REQUESTS[0];
+    return evaluateDispatch(staff, request);
+  }
+
+  return { init, debugEvaluateDispatch };
 })();
 
 if (typeof window !== 'undefined') window.RoomsGame = RoomsGame;

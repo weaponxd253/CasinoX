@@ -187,8 +187,10 @@ test.describe('launch navigation', () => {
       HotelShiftBriefing.mount('rooms');
     });
     await page.locator('#start-ops-btn').click();
-    await expect(page.locator('#ops-next-step')).toContainText('Assign');
-    await expect(page.locator('.staff-card.recommended')).toContainText('Best Fit');
+    await expect(page.locator('#ops-next-step')).toContainText('Click a room');
+    await page.locator('.room-tile[data-request-id]').first().click();
+    await expect(page.locator('#dispatch-preview')).toContainText('Latest Outcome');
+    await expect(page.locator('#dispatch-preview')).toContainText('Auto dispatch');
 
     await page.goto('/hotel/restaurant/index.html');
     await page.evaluate(() => {
@@ -218,12 +220,51 @@ test.describe('launch navigation', () => {
       state.departments.spa.level = 5;
       state.departments.spa.lastCollected = Date.now();
       HotelState.save();
-      location.reload();
     });
-    await page.waitForLoadState('domcontentloaded');
+    await page.reload({ waitUntil: 'domcontentloaded' });
     await page.locator('#start-spa-btn').click();
-    await expect(page.locator('#spa-next-step')).toContainText('Choose');
-    await expect(page.locator('.treatment-btn.best-match')).toContainText('Best Match');
+    await expect(page.locator('#spa-next-step')).toContainText('Choose a treatment');
+    await expect(page.locator('.active-guest-card')).toContainText('Active Guest');
+    await expect(page.locator('.treatment-btn.best-match.next-action')).toContainText('Best Match');
+    await page.locator('.treatment-btn.best-match.next-action').click();
+    await expect(page.locator('.station-card.busy')).toHaveCount(1);
+    await expect(page.locator('#spa-outcome')).toContainText('started');
+  });
+
+  test('floor ops previews staff fit and distinguishes risky dispatches', async ({ page }) => {
+    await page.goto('/hotel/rooms/index.html');
+    await page.evaluate(() => {
+      HotelState.resetSave();
+      const state = HotelState.get();
+      state.departments.rooms.unlocked = true;
+      state.departments.rooms.level = 4;
+      state.departments.rooms.lastCollected = Date.now();
+      HotelState.save();
+    });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+
+    const fits = await page.evaluate(() => ({
+      best: RoomsGame.debugEvaluateDispatch('runner', 'minibar'),
+      cover: RoomsGame.debugEvaluateDispatch('housekeeper', 'minibar'),
+      risky: RoomsGame.debugEvaluateDispatch('engineer', 'minibar'),
+    }));
+
+    expect(fits.best.tier).toBe('best');
+    expect(fits.cover.tier).toBe('acceptable');
+    expect(fits.risky.tier).toBe('risky');
+    expect(fits.best.timeMult).toBeLessThan(fits.cover.timeMult);
+    expect(fits.cover.cashMult).toBeGreaterThan(fits.risky.cashMult);
+
+    await page.locator('#start-ops-btn').click();
+    await expect(page.locator('#ops-next-step')).toContainText('Click a room request');
+    await page.locator('.staff-card[data-staff-id="engineer"]').click();
+    await expect(page.locator('.staff-card.manual-selected')).toContainText('Selected');
+    await expect(page.locator('#dispatch-preview')).toContainText('Manual Override');
+    await page.locator('.room-tile[data-request-id]').first().click();
+    await expect(page.locator('#dispatch-preview')).toContainText('Latest Outcome');
+    await expect(page.locator('#dispatch-preview')).toContainText('Manual override');
+    await expect(page.locator('#dispatch-preview')).toContainText('Risky Match');
+    await expect(page.locator('.room-tile.assigned')).toHaveCount(1);
   });
 
   test('tasting room rewards course order and explains the flight read', async ({ page }) => {

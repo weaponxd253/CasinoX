@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <link rel="stylesheet" href="../../casino-shell.css?v=theme-controls">
-  <link rel="stylesheet" href="spa.css">
+  <link rel="stylesheet" href="spa.css?v=active-guest-v1">
   <link rel="stylesheet" href="../../casino-mobile.css">
   <link rel="stylesheet" href="../shift-briefing.css?v=phase9-shifts-v1">
 
@@ -22,7 +22,7 @@
   <script src="../hotel-engine.js"></script>
   <script src="../hotel-bridge.js"></script>
   <script src="../shift-briefing.js?v=phase9-shifts-v1"></script>
-  <script src="spa-game.js?v=phase9-shifts-v1"></script>
+  <script src="spa-game.js?v=active-guest-v1"></script>
 </head>
 <body>
   <main class="game-stage spa-rush-shell">
@@ -55,7 +55,7 @@
 
         <div class="spa-layout">
           <section class="spa-guests">
-            <div class="spa-section-title">Waiting Guests</div>
+            <div class="spa-section-title">Active Guest</div>
             <div class="guest-slots" id="guest-slots"></div>
           </section>
 
@@ -78,6 +78,8 @@
           <span>Next Step</span>
           <strong>Start Spa Rush to seat waiting guests.</strong>
         </div>
+
+        <div class="spa-outcome" id="spa-outcome" hidden></div>
 
         <div class="spa-stats">
           <div>
