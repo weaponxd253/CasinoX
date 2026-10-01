@@ -88,8 +88,8 @@ const CasinoShell = (function () {
 
   const dailyBonus = {
     available() { return profile.data.lastClaim !== dayStr(new Date()); },
-    open() { const m = document.getElementById('shell-bonus-modal'); if (m) { renderBonusModal(); m.classList.add('open'); } },
-    close() { const m = document.getElementById('shell-bonus-modal'); if (m) m.classList.remove('open'); },
+    open() { const m = document.getElementById('shell-bonus-modal'); if (m) { renderBonusModal(); openModal(m); } },
+    close() { closeModal(document.getElementById('shell-bonus-modal')); },
     claim() {
       if (!this.available()) return false;
       const s = bonusState();
@@ -196,6 +196,52 @@ const CasinoShell = (function () {
     lose() { this.tone(180, 'sawtooth', 0.18, 0.15, 0); this.tone(140, 'sawtooth', 0.2, 0.1, 0.15); }
   };
 
+  /* ───────── DIALOGS ─────────
+     Every shell modal goes through openModal/closeModal: focus moves into
+     the dialog and back to whatever opened it, Tab stays inside, and
+     Escape or a backdrop click closes it. */
+  const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])';
+  const modalReturnFocus = new Map();
+
+  function openModal(modal) {
+    if (!modal) return;
+    if (!modal.classList.contains('open')) modalReturnFocus.set(modal, document.activeElement);
+    modal.classList.add('open');
+    const box = modal.querySelector('.shell-modal-box');
+    const first = [...modal.querySelectorAll(FOCUSABLE)].find(el => el.offsetParent !== null);
+    (first || box)?.focus({ preventScroll: true });
+  }
+
+  function closeModal(modal) {
+    if (!modal || !modal.classList.contains('open')) return;
+    modal.classList.remove('open');
+    const back = modalReturnFocus.get(modal);
+    modalReturnFocus.delete(modal);
+    if (back && document.contains(back)) back.focus({ preventScroll: true });
+  }
+
+  function topModal() {
+    const open = [...document.querySelectorAll('.shell-modal.open')];
+    return open[open.length - 1] || null;
+  }
+
+  function wireModalKeys() {
+    document.addEventListener('keydown', (e) => {
+      const modal = topModal();
+      if (!modal) return;
+      if (e.key === 'Escape') { e.preventDefault(); closeModal(modal); return; }
+      if (e.key !== 'Tab') return;
+      const items = [...modal.querySelectorAll(FOCUSABLE)].filter(el => el.offsetParent !== null);
+      if (!items.length) { e.preventDefault(); return; }
+      const first = items[0], last = items[items.length - 1];
+      if (e.shiftKey && (document.activeElement === first || !modal.contains(document.activeElement))) {
+        e.preventDefault(); last.focus();
+      } else if (!e.shiftKey && (document.activeElement === last || !modal.contains(document.activeElement))) {
+        e.preventDefault(); first.focus();
+      }
+    });
+  }
+
   /* ───────── TOAST ───────── */
   function toast(msg, ms = 4000) {
     const wrap = document.getElementById('shell-toasts');
@@ -248,7 +294,7 @@ const CasinoShell = (function () {
     if (!modal) return;
     modal.querySelector('.shell-modal-box h3').textContent = opts.title || '💸 Out of Chips';
     modal.querySelector('.shell-modal-box p').textContent = opts.message || "You've run out of funds. Visit the Cashier to keep playing.";
-    modal.classList.add('open');
+    openModal(modal);
   }
 
   /* ───────── INFO / RULES ───────── */
@@ -257,7 +303,7 @@ const CasinoShell = (function () {
     if (!m) return;
     m.querySelector('.shell-info-title').textContent = title || '';
     m.querySelector('.shell-info-body').innerHTML = html || '';
-    m.classList.add('open');
+    openModal(m);
   }
 
   /* ───────── BALANCE + PROGRESSION RENDER ───────── */
@@ -304,6 +350,9 @@ const CasinoShell = (function () {
       </button>`;
   }
 
+  // "Casino Floor" → "Casino", "Hotel Lobby" → "Hotel" on narrow screens
+  function shortLabel(label) { return String(label).split(' ')[0]; }
+
   function injectHeader() {
     const lobby = cfg.lobbyHref || '../casino.html';
     const hotelOperation = String(lobby).includes('../..');
@@ -323,8 +372,8 @@ const CasinoShell = (function () {
           <span class="chip"></span> $<span id="shell-balance-amt">0.00</span>
         </div>
         ${progressHTML()}
-        <a class="shell-pill" href="${lobby}"><i class="fa-solid fa-dice"></i> ${lobbyLabel}</a>
-        ${hotel ? `<a class="shell-pill shell-hotel-link" href="${hotel}"><i class="fa-solid fa-hotel"></i> Hotel Lobby</a>` : ''}
+        <a class="shell-pill" href="${lobby}" aria-label="${lobbyLabel}"><i class="fa-solid fa-dice" aria-hidden="true"></i> <span class="pill-label" aria-hidden="true">${lobbyLabel}</span><span class="pill-label-short" aria-hidden="true">${shortLabel(lobbyLabel)}</span></a>
+        ${hotel ? `<a class="shell-pill shell-hotel-link" href="${hotel}" aria-label="Hotel Lobby"><i class="fa-solid fa-hotel" aria-hidden="true"></i> <span class="pill-label" aria-hidden="true">Hotel Lobby</span><span class="pill-label-short" aria-hidden="true">Hotel</span></a>` : ''}
         <button class="shell-pill shell-icon-btn" id="shell-theme-btn" aria-label="Switch to light theme" title="Switch to light theme"><i id="shell-theme-icon" class="fa-solid fa-moon"></i></button>
         <button class="shell-pill shell-icon-btn" id="shell-sound-btn" aria-label="Toggle sound"><i id="shell-sound-icon" class="fa-solid fa-volume-high"></i></button>
       </div>`;
@@ -337,28 +386,29 @@ const CasinoShell = (function () {
     const hotelOperation = String(lobby).includes('../..');
     const lobbyLabel = cfg.lobbyLabel || (hotelOperation ? 'Hotel Lobby' : 'Casino Floor');
     const html = `
-      <div id="shell-toasts"></div>
+      <div id="shell-toasts" role="status" aria-live="polite"></div>
       <canvas id="shell-confetti"></canvas>
       <div id="shell-bigwin"></div>
       <div class="shell-modal" id="shell-modal">
-        <div class="shell-modal-box">
-          <h3>💸 Out of Chips</h3><p>You've run out of funds.</p>
+        <div class="shell-modal-box" role="alertdialog" aria-modal="true" aria-labelledby="shell-modal-title" aria-describedby="shell-modal-desc" tabindex="-1">
+          <h3 id="shell-modal-title">💸 Out of Chips</h3><p id="shell-modal-desc">You've run out of funds.</p>
           <div class="shell-modal-actions">
             <button class="btn primary" id="shell-cashier">Cashier · $100</button>
             <a class="btn secondary" href="${lobby}">${lobbyLabel}</a>
+            <button class="btn secondary shell-modal-close">Close</button>
           </div>
         </div>
       </div>
       <div class="shell-modal" id="shell-info-modal">
-        <div class="shell-modal-box info">
-          <h3 class="shell-info-title"></h3>
+        <div class="shell-modal-box info" role="dialog" aria-modal="true" aria-labelledby="shell-info-title" tabindex="-1">
+          <h3 class="shell-info-title" id="shell-info-title"></h3>
           <div class="shell-info-body"></div>
           <div class="shell-modal-actions"><button class="btn secondary shell-info-close">Close</button></div>
         </div>
       </div>
       <div class="shell-modal" id="shell-bonus-modal">
-        <div class="shell-modal-box bonus">
-          <h3>🎁 Daily Bonus</h3>
+        <div class="shell-modal-box bonus" role="dialog" aria-modal="true" aria-labelledby="shell-bonus-title" tabindex="-1">
+          <h3 id="shell-bonus-title">🎁 Daily Bonus</h3>
           <p class="shell-bonus-sub"></p>
           <div class="shell-streak" id="shell-streak"></div>
           <div class="shell-modal-actions">
@@ -375,16 +425,19 @@ const CasinoShell = (function () {
       if (window.CasinoWallet && !CasinoWallet.topUp()) {
         toast(`The Cashier refills your bankroll once it drops below $${CasinoWallet.TOPUP_BELOW}.`);
       }
-      document.getElementById('shell-modal').classList.remove('open');
+      closeModal(document.getElementById('shell-modal'));
     });
+    const om = document.getElementById('shell-modal');
+    om.querySelector('.shell-modal-close').addEventListener('click', () => closeModal(om));
     const im = document.getElementById('shell-info-modal');
-    im.querySelector('.shell-info-close').addEventListener('click', () => im.classList.remove('open'));
-    im.addEventListener('click', (e) => { if (e.target === im) im.classList.remove('open'); });
+    im.querySelector('.shell-info-close').addEventListener('click', () => closeModal(im));
+    im.addEventListener('click', (e) => { if (e.target === im) closeModal(im); });
 
     const bm = document.getElementById('shell-bonus-modal');
     document.getElementById('shell-claim').addEventListener('click', () => dailyBonus.claim());
-    bm.querySelector('.shell-bonus-close').addEventListener('click', () => bm.classList.remove('open'));
-    bm.addEventListener('click', (e) => { if (e.target === bm) bm.classList.remove('open'); });
+    bm.querySelector('.shell-bonus-close').addEventListener('click', () => closeModal(bm));
+    bm.addEventListener('click', (e) => { if (e.target === bm) closeModal(bm); });
+    wireModalKeys();
   }
 
   /* Dev mode (?dev=1): a badge that opens the dev tools panel. The tools

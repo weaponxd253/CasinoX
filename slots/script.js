@@ -39,10 +39,37 @@ function initializeReels() {
 }
 
 function setBet(amount) {
+  if (amount > wallet().get() + 1e-9) {
+    CasinoShell.toast(`Not enough chips for a $${amount.toFixed(2)} bet.`);
+    return;
+  }
   currentBet = amount;
   document.getElementById("current-bet").textContent = amount.toFixed(2);
   updateWinningExamples(amount);
+  refreshBetButtons();
 }
+
+/* Mark the selected bet and dim bets the bankroll can't cover. If the
+   current bet is no longer affordable, step down to the largest one that is. */
+function refreshBetButtons() {
+  const balance = wallet().get();
+  const affordable = BETS.filter((b) => b <= balance + 1e-9);
+  if (currentBet > balance + 1e-9 && affordable.length && !spinning) {
+    currentBet = affordable[affordable.length - 1];
+    document.getElementById("current-bet").textContent = currentBet.toFixed(2);
+    updateWinningExamples(currentBet);
+  }
+  document.querySelectorAll(".bet-buttons [data-bet]").forEach((btn) => {
+    const value = Number(btn.dataset.bet);
+    const selected = Math.abs(value - currentBet) < 1e-9;
+    btn.classList.toggle("selected", selected);
+    btn.setAttribute("aria-pressed", selected ? "true" : "false");
+    btn.classList.toggle("unaffordable", value > balance + 1e-9);
+  });
+}
+
+// Spin locks only the game's own controls, not the shell header or dialogs.
+const gameControls = () => document.querySelectorAll(".bet-buttons button, .button-container button");
 
 function calculateWinnings(syms, betAmount) {
   const unique = Array.from(new Set(syms));
@@ -105,6 +132,7 @@ function resetMoney() {
     return;
   }
   document.querySelectorAll(".bet-buttons .pushable").forEach((b) => (b.disabled = false));
+  refreshBetButtons();
 }
 
 // ─── Typewriter ───────────────────────────────────────────────────────────────
@@ -144,7 +172,7 @@ function spin() {
   const iconContainers = reelWrappers.map((r) => r.querySelector(".icon-container"));
   const result = document.getElementById("result");
   const spinButton = document.querySelector(".spin-button");
-  const allButtons = document.querySelectorAll("button");
+  const allButtons = gameControls();
   const w = wallet();
 
   if (spinning) return;
@@ -259,9 +287,12 @@ document.addEventListener("DOMContentLoaded", () => {
   CasinoShell.mount({ name: "Lucky Reels", subtitle: "Casino Edition" });
 
   initializeReels();
-  setBet(0.6);
-  updateWinningExamples(currentBet);
+  updateWinningExamples(currentBet);   // starts at 60¢; no toast if unaffordable
+  refreshBetButtons();
 
+  document.querySelectorAll(".bet-buttons [data-bet]").forEach((btn) =>
+    btn.addEventListener("click", () => setBet(Number(btn.dataset.bet))));
+  wallet().onChange(() => refreshBetButtons());
   document.querySelector(".spin-button").addEventListener("click", spin);
   document.getElementById("reset-button").addEventListener("click", resetMoney);
   document.getElementById("help").addEventListener("click", showHelp);

@@ -571,6 +571,82 @@ test.describe('earlier fixes and round 3', () => {
   });
 });
 
+test.describe('sprint 1 UX', () => {
+  const PAGES = ['/casino.html', '/slots/index.html', '/blackjack/index.html', '/coinflip/index.html',
+    '/hotel/index.html', '/hotel/bar/index.html', '/hotel/spa/index.html', '/hotel/rooms/index.html',
+    '/hotel/restaurant/index.html', '/hotel/checkin/index.html', '/hotel/entertainment/index.html'];
+
+  test('no page scrolls sideways', async ({ page }) => {
+    for (const path of PAGES) {
+      await page.goto(path);
+      const [docWidth, viewport] = await page.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth]);
+      expect(docWidth, `${path} is ${docWidth}px wide in a ${viewport}px viewport`).toBeLessThanOrEqual(viewport);
+    }
+  });
+
+  test('Lucky Reels marks the selected bet and dims bets the bankroll cannot cover', async ({ page }) => {
+    await page.goto('/slots/index.html');
+    await page.evaluate(() => CasinoWallet.set(3));
+    await expect(page.locator('.bet-buttons [data-bet="0.6"]')).toHaveClass(/selected/);
+    await expect(page.locator('.bet-buttons [data-bet="3.6"]')).toHaveClass(/unaffordable/);
+    await expect(page.locator('.bet-buttons [data-bet="6"]')).toHaveClass(/unaffordable/);
+
+    await page.locator('.bet-buttons [data-bet="2.4"]').click();
+    await expect(page.locator('.bet-buttons [data-bet="2.4"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#current-bet')).toHaveText('2.40');
+
+    // Dropping below the selected bet steps it down to the largest affordable one
+    await page.evaluate(() => CasinoWallet.set(1.5));
+    await expect(page.locator('#current-bet')).toHaveText('1.20');
+    await expect(page.locator('.bet-buttons [data-bet="1.2"]')).toHaveClass(/selected/);
+  });
+
+  test('Blackjack shows the stake on the Deal button', async ({ page }) => {
+    await page.goto('/blackjack/index.html');
+    await page.evaluate(() => CasinoWallet.set(100));
+    await page.locator('.chip-btn[data-value="5"]').click();
+    await expect(page.locator('#deal-button')).toHaveText('Deal · $5.00');
+  });
+
+  test('dialogs take focus, keep Tab inside, close on Escape and restore focus', async ({ page }) => {
+    await page.goto('/slots/index.html');
+    const help = page.locator('#help');
+    await help.focus();
+    await help.press('Enter');
+    const dialog = page.locator('#shell-info-modal .shell-modal-box');
+    await expect(dialog).toHaveAttribute('role', 'dialog');
+    await expect(page.locator('#shell-info-modal .shell-info-close')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.locator('#shell-info-modal .shell-info-close')).toBeFocused();   // only control: focus wraps
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#shell-info-modal')).not.toHaveClass(/open/);
+    await expect(help).toBeFocused();
+  });
+
+  test('new hotel players see one next step and one gold button', async ({ page }) => {
+    await page.goto('/hotel/index.html');
+    await expect(page.locator('.dashboard-focus')).toHaveCount(1);
+    await expect(page.locator('.next-reward-rail')).toHaveCount(0);
+    await expect(page.locator('.command-chips:empty')).toHaveCount(0);
+    const gold = await page.evaluate(() => [...document.querySelectorAll('#hotel-command-strip button, #hotel-command-strip a')]
+      .filter(el => el.offsetParent && /linear-gradient/.test(getComputedStyle(el).backgroundImage))
+      .map(el => el.textContent.trim()));
+    expect(gold).toHaveLength(1);
+  });
+
+  test('shift cards show the reduced reward for a repeat run', async ({ page }) => {
+    await page.goto('/hotel/index.html');
+    await page.evaluate(() => {
+      HotelState.setGuidanceMode('expert');
+      HotelState.recordShiftResult('lobby', { cash: 200 });
+      HotelUI.renderAll();
+    });
+    const card = page.locator('.shift-card', { hasText: 'Check-In Rush' });
+    await expect(card.locator('.shift-card-cta')).toHaveText('Run Again · 50%');
+    await expect(card.locator('.shift-repeat-note')).toContainText('Next run pays 50%');
+  });
+});
+
 test.describe('live game smoke paths', () => {
   for (const game of LIVE_GAMES) {
     test(`${game.name} can place a basic wager without freezing`, async ({ page }) => {

@@ -290,36 +290,40 @@ const HotelUI = (() => {
     const summary = guided ? [] : priorities
       .filter(item => item !== primary)
       .slice(onboarding ? 1 : 0, unlocks.fullDashboard ? 4 : 2);
+    // New players get one "Your next step" card at the top and quieter shift
+    // buttons — unless the current step is itself a shift (Check-In Rush).
+    const focus = onboarding && primary;
+    const shiftIsTheStep = currentGuidedStep(state) === 'run_checkin';
 
     if (strip) {
+      strip.classList.toggle('dashboard-focus-mode', !!focus && !shiftIsTheStep);
       strip.innerHTML = `
         ${renderShiftReturnBanner(state)}
-        ${isPhaseOneOnboarding() ? renderOnboardingIntro() : ''}
-        ${guided ? renderGuidedIntro(state) : ''}
         ${renderGuideConfirmation()}
         ${onboardingDebugVisible ? renderOnboardingDebugPanel(state, unlocks) : ''}
+        ${focus ? renderFocusCard(primary, state, { guided }) : ''}
         <div class="command-strip-head">
           <div>
             <span>Playable Now</span>
             <strong>Today's Shifts</strong>
             <div class="shift-headline-meta">
               <em>${shiftSet.playableCount} playable shift${shiftSet.playableCount === 1 ? '' : 's'} · Daily hotel actions</em>
-              ${renderNextShiftChip(shiftSet.preview)}
             </div>
           </div>
           ${renderGuidanceModeControl()}
         </div>
         ${renderTodayShifts(state, shiftSet.playable)}
-        ${renderNextRewardRail(shiftSet.preview, state)}
-        ${primary ? renderCommandPrimary(primary, onboarding) : ''}
-        <div class="command-chips ${guided ? 'guide-progress-panel' : ''}">
-          ${guided ? renderGuideProgress(state) : summary.map(item => `
-            <button type="button" class="command-chip ${item.tone} ${severityClass(item)}" data-command-action="${item.action}" ${item.dept ? `data-command-dept="${item.dept}"` : ''}>
-              <i class="fa-solid ${item.icon}"></i>
-              <span>${escapeHtml(item.label)}</span>
-            </button>
-          `).join('')}
-        </div>
+        ${onboarding ? '' : renderNextRewardRail(shiftSet.preview, state)}
+        ${primary && !focus ? renderCommandPrimary(primary, onboarding) : ''}
+        ${summary.length ? `
+          <div class="command-chips">
+            ${summary.map(item => `
+              <button type="button" class="command-chip ${item.tone} ${severityClass(item)}" data-command-action="${item.action}" ${item.dept ? `data-command-dept="${item.dept}"` : ''}>
+                <i class="fa-solid ${item.icon}"></i>
+                <span>${escapeHtml(item.label)}</span>
+              </button>
+            `).join('')}
+          </div>` : ''}
       `;
       strip.querySelectorAll('[data-shift-result-dismiss]').forEach(btn => {
         btn.addEventListener('click', e => {
@@ -669,6 +673,7 @@ const HotelUI = (() => {
             <strong>${escapeHtml(op.title)}</strong>
             <em>${escapeHtml(op.reason ?? shiftDetail(op, state))}</em>
             ${featured || op.readiness?.prepareTarget ? `<small class="shift-card-prep">${escapeHtml(shiftPrepNote(op))}</small>` : ''}
+            ${renderShiftRepeatNote(op)}
           </span>
           <span class="shift-card-reward">
             <span>Expected</span>
@@ -724,21 +729,6 @@ const HotelUI = (() => {
         </button>
       </section>
     `;
-  }
-
-  function renderNextShiftChip(op) {
-    if (!op) return '';
-    return `
-      <button class="shift-next-chip" type="button" data-command-action="dept" data-command-dept="${op.dept}">
-        <i class="fa-solid ${op.icon}"></i>
-        <span>${escapeHtml(nextShiftText(op))}</span>
-      </button>
-    `;
-  }
-
-  function nextShiftText(op) {
-    if (op.deptState?.unlocked) return `Next: build ${op.title}`;
-    return `Next: ${op.title} · Rep ${op.repRequired}`;
   }
 
   function nextRewardNeed(op, state = HotelState.get()) {
@@ -936,8 +926,31 @@ const HotelUI = (() => {
     return 'ready';
   }
 
+  // Shifts whose rewards shrink on repeat runs (casino/show pay no shift cash)
+  const REPEAT_EXEMPT_DEPTS = new Set(['casino', 'entertainment']);
+
+  function shiftRepeatMult(op) {
+    if (REPEAT_EXEMPT_DEPTS.has(op.dept)) return 1;
+    return HotelState.shiftRewardMultiplier?.(op.dept) ?? 1;
+  }
+
+  /* "Next run pays 50% · full rewards in 7:32" — the countdown span is
+     refreshed every second by renderAdvanceButton(). */
+  function renderShiftRepeatNote(op) {
+    const mult = shiftRepeatMult(op);
+    if (mult >= 1) return '';
+    const wait = HotelEngine.advanceCooldownRemaining?.() ?? 0;
+    const when = wait > 0
+      ? `full rewards in <span data-advance-countdown>${formatCooldown(wait)}</span>`
+      : 'Advance Time for full rewards';
+    return `<small class="shift-repeat-note"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Next run pays ${Math.round(mult * 100)}% · ${when}</small>`;
+  }
+
   function shiftCta(op) {
-    if (op.statusState === 'completed') return 'Run Again';
+    if (op.statusState === 'completed') {
+      const mult = shiftRepeatMult(op);
+      return mult < 1 ? `Run Again · ${Math.round(mult * 100)}%` : 'Run Again';
+    }
     if (op.statusState === 'in_progress') return 'Resume Shift';
     if (op.dept === 'casino') return 'Open Casino';
     if (op.dept === 'lobby') return 'Start Check-In';
@@ -974,16 +987,29 @@ const HotelUI = (() => {
     `;
   }
 
-  function renderOnboardingIntro() {
+  /* The single next step for new players: intro, action and progress in
+     one card, so nothing else on the dashboard competes with it. */
+  function renderFocusCard(primary, state = HotelState.get(), { guided = false } = {}) {
+    const meta = guided ? guidedStepMeta(state) : null;
+    const kicker = guided ? `Your next step · ${meta.number} of 5` : 'Your next step · New manager';
+    const why = guided ? meta.why : 'Good staff coverage protects satisfaction while the hotel grows.';
     return `
-      <div class="onboarding-intro">
-        <div>
-          <span>New Manager Start</span>
-          <strong>Start with one service fix: assign staff where coverage is short.</strong>
-          <small>Use the best next move below. Good coverage protects satisfaction while the hotel grows.</small>
+      <section class="dashboard-focus ${primary.tone ?? ''} ${severityClass(primary)}" aria-label="Your next step">
+        <span class="command-icon" aria-hidden="true"><i class="fa-solid ${primary.icon}"></i></span>
+        <div class="focus-copy">
+          <span>${escapeHtml(kicker)}</span>
+          <strong>${escapeHtml(primary.label)}</strong>
+          <em>${escapeHtml(primary.detail)}</em>
+          <small>${escapeHtml(why)}</small>
         </div>
-        <button type="button" data-onboarding-action="dismiss">Skip guidance</button>
-      </div>
+        <div class="focus-actions">
+          <button type="button" class="focus-cta" data-command-action="${primary.action}" ${primary.dept ? `data-command-dept="${primary.dept}"` : ''}>
+            ${escapeHtml(primary.actionLabel)}
+          </button>
+          <button type="button" class="focus-skip" data-onboarding-action="dismiss">${guided ? 'End guidance' : 'Skip guidance'}</button>
+        </div>
+        ${guided ? `<div class="focus-progress">${renderGuideProgress(state)}</div>` : ''}
+      </section>
     `;
   }
 
@@ -1005,20 +1031,6 @@ const HotelUI = (() => {
       return;
     }
     if (deptId === 'lobby') completeGuidedStep('run_checkin');
-  }
-
-  function renderGuidedIntro(state = HotelState.get()) {
-    const meta = guidedStepMeta(state);
-    return `
-      <div class="onboarding-intro guide-step-intro">
-        <div>
-          <span>Guided Setup · Step ${meta.number} of 5</span>
-          <strong>${escapeHtml(meta.title)}</strong>
-          <small>${escapeHtml(meta.why)}</small>
-        </div>
-        <button type="button" data-onboarding-action="dismiss">End guidance</button>
-      </div>
-    `;
   }
 
   function guidedPriority(state = HotelState.get()) {
@@ -2256,6 +2268,13 @@ const HotelUI = (() => {
     btn.title = HotelConfig.isDevMode?.()
       ? 'Dev mode: Advance Time cooldown disabled (?dev=0 to turn off)'
       : cooling ? 'Each phase takes real time to play out.' : 'Advance to the next phase of the day';
+
+    // Countdowns on repeat-run shift cards
+    const countdowns = document.querySelectorAll('[data-advance-countdown]');
+    if (countdowns.length) {
+      if (cooling) countdowns.forEach(el => { el.textContent = formatCooldown(waitMs); });
+      else renderCommandCenter(state);   // swap to "Advance Time for full rewards"
+    }
   }
 
   function formatCooldown(ms) {

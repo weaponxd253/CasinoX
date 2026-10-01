@@ -193,6 +193,14 @@ h1, h2, h3 {
 }
 .shell-pill:hover { background: rgba(201, 168, 76, 0.25); border-color: var(--gold); }
 .shell-icon-btn { padding: 7px 12px; }
+
+/* Nav pills swap to one-word labels on narrow phones (see casino-mobile.css). */
+.pill-label-short { display: none; }
+@media (max-width: 420px) {
+  .pill-label { display: none; }
+  .pill-label-short { display: inline; }
+  .pill-icon-only-narrow .pill-label { display: none; }
+}
 .shell-hotel-link {
   background: rgba(0, 0, 0, 0.18);
   color: var(--text-dim);
@@ -286,6 +294,7 @@ h1, h2, h3 {
 .shell-modal-box h3 { font-size: 1.8rem; font-weight: 900; margin-bottom: 8px; }
 .shell-modal-box p  { color: var(--text-dim); font-size: 1.1rem; line-height: 1.6; margin-bottom: 22px; }
 .shell-modal-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.shell-modal-box:focus { outline: none; }  /* focused only as a fallback target */
 
 /* Info / rules variant */
 .shell-modal-box.info { max-width: 460px; text-align: left; }

@@ -74,6 +74,8 @@ function rebet() {
 }
 function updateBetUI() {
   document.getElementById('bet-amount').textContent = `$${currentBet.toFixed(2)}`;
+  // Show the stake on the Deal button so it's visible from the sticky bar
+  document.getElementById('deal-button').textContent = currentBet > 0 ? `Deal · $${currentBet.toFixed(2)}` : 'Deal';
   refreshButtons();
 }
 

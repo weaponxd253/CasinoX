@@ -26,18 +26,21 @@
   /* ════════════════════════════════════════════════════
      SHELL HEADER  (injected by casino-shell.js)
      ════════════════════════════════════════════════════ */
+  /* Logo on its own row; controls get the full width below and wrap
+     instead of pushing past the screen edge. */
   .shell-header {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: center;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
     padding: 10px 16px 12px;
-    gap: 6px 10px;
+    gap: 8px;
     margin-bottom: 14px;
   }
-  .shell-logo                { grid-column: 1; grid-row: 1 / 3; }
+  .shell-logo                { flex-direction: row; align-items: baseline; gap: 8px; flex-wrap: wrap; }
   .shell-logo .name          { font-size: 19px; }
-  .shell-logo .sub           { font-size: 9px; letter-spacing: 0.2em; margin-top: 2px; }
-  .shell-controls            { grid-column: 2; grid-row: 1; gap: 5px; flex-wrap: nowrap; }
+  .shell-logo .sub           { font-size: 9px; letter-spacing: 0.2em; margin-top: 0; }
+  .shell-controls            { width: 100%; gap: 6px; flex-wrap: wrap; justify-content: flex-start; min-width: 0; }
+  .shell-controls > .shell-progress { margin-right: auto; }  /* bankroll + level left, nav right */
 
   /* Balance pill */
   .shell-balance             { font-size: 13px; padding: 5px 10px; gap: 5px; }
@@ -48,12 +51,17 @@
   .shell-progress .lvl       { font-size: 11px; }
 
   /* Icon pill buttons */
-  .shell-pill                { font-size: 11px; padding: 6px 10px; gap: 5px; }
-  .shell-icon-btn            { padding: 6px 9px; }
+  .shell-pill                { font-size: 11px; padding: 0 10px; gap: 5px; min-height: 36px;
+                               display: inline-flex; align-items: center; }
+  .shell-icon-btn            { padding: 0 10px; min-width: 36px; justify-content: center; }
 
   /* ════════════════════════════════════════════════════
      LOBBY HEADER  (.casino-header)
      ════════════════════════════════════════════════════ */
+  /* body padding is removed on mobile, so the lobby keeps its own 16px gutter */
+  .casino-header,
+  .game-grid,
+  .lobby-footer      { width: calc(100% - 32px); margin-left: auto; margin-right: auto; }
   .casino-header     { padding: 10px 0 12px; gap: 6px; margin-bottom: 16px; }
   .logo-title        { font-size: 22px; }
   .logo-sub          { font-size: 9px; }
@@ -105,20 +113,16 @@
 
   .controls            { gap: 10px; padding: 0 16px; }
 
-  /* Bet pills: single horizontal scrollable row */
+  /* Bet pills: all five in one row (a scroller hid the Max bet off-screen) */
   .bet-buttons {
     width: 100%;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     padding: 2px 0 6px;
-    gap: 8px;
+    gap: 6px;
   }
-  .bet-buttons::-webkit-scrollbar { display: none; }
-  .bet-buttons .pushable           { flex-shrink: 0; }
-  .bet-buttons .front              { padding: 12px 20px; font-size: 1rem; }
+  .bet-buttons .front              { padding: 12px 0; font-size: 0.95rem; letter-spacing: 0; text-align: center; }
+  .bet-max-tag                     { display: none; }
 
   /* Screens: full width */
   .digital-screen, .small-screen  { width: 100%; min-width: unset; }
@@ -176,7 +180,9 @@
   .bet-amount          { font-size: 26px; }
   .bet-tools           { justify-content: center; gap: 8px; }
 
-  /* ── Sticky action bar ── */
+  /* ── Sticky action bar ──
+     One row that follows the round: Deal + Clear Table while betting,
+     Hit + Stand during a hand (body.mid-hand is set by script.js). */
   .actions-row {
     position: fixed;
     bottom: 0; left: 0; right: 0;
@@ -242,6 +248,7 @@
      SHELL MODALS
      ════════════════════════════════════════════════════ */
   .shell-modal-box     { padding: 24px 20px; max-width: calc(100% - 24px) !important; border-radius: 12px; }
+  .overlay-content     { padding: 24px 18px; }
   .shell-modal-box h3  { font-size: 1.5rem; }
   .shell-streak        { gap: 5px; }
   .shell-streak .day   { padding: 7px 2px; }
@@ -251,16 +258,18 @@
   /* ════════════════════════════════════════════════════
      MID-HAND (blackjack) — locked visual state
      ════════════════════════════════════════════════════ */
+  body:not(.mid-hand) #hit-button,
+  body:not(.mid-hand) #stand-button,
   body.mid-hand #deal-button,
-  body.mid-hand #reset-button {
-    opacity: 0.10 !important;
-    filter: grayscale(1) brightness(0.6) !important;
-    pointer-events: none;
-  }
+  body.mid-hand #reset-button { display: none; }
   body.mid-hand #hit-button,
   body.mid-hand #stand-button {
     box-shadow: 0 0 12px rgba(201,168,76,0.25);
+    font-size: 16px;
   }
+  /* Chips are locked during a hand — fold them away so the result sits
+     right under the cards instead of below the fold. */
+  body.mid-hand .wager-bar { display: none; }
 }
 
 /* ════════════════════════════════════════════════════
@@ -274,5 +283,5 @@
   .chip-btn           { width: 46px; height: 46px; font-size: 12px; }
   .action-btn         { font-size: 13px; padding: 12px 8px; }
   .coin               { width: 110px; height: 110px; }
-  .bet-buttons .front { padding: 10px 16px; font-size: 0.9rem; }
+  .bet-buttons .front { padding: 10px 0; font-size: 0.82rem; }
 }

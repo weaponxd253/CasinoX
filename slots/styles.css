@@ -59,6 +59,12 @@ h2 { font-size: 22px; text-align: center; margin: 30px 0 12px; letter-spacing: 0
   transform: translateY(-4px); transition: transform 0.15s ease;
 }
 .bet-buttons .pushable:disabled { opacity: 0.4; cursor: not-allowed; }
+.bet-buttons .pushable.selected .front {
+  background: linear-gradient(135deg, var(--gold), var(--gold-light, #e8cb80));
+  box-shadow: 0 0 0 2px var(--cream, #f5ead5), 0 0 14px rgba(201,168,76,0.6);
+}
+.bet-buttons .pushable.unaffordable { opacity: 0.35; }
+.bet-buttons .pushable.unaffordable .front { text-decoration: line-through; }
 
 /* ── Round action buttons ── */
 .button-container { display: flex; justify-content: center; align-items: center; gap: 22px; margin-top: 14px; }
