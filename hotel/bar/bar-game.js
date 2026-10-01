@@ -57,7 +57,7 @@ const BarGame = (() => {
     document.getElementById('served-target').textContent = shift.target;
     document.getElementById('start-shift-btn').disabled = true;
     document.getElementById('start-shift-btn').innerHTML = '<i class="fa-solid fa-spinner"></i> On Shift';
-    setReturnLink('Back to Hotel', 'fa-arrow-left');
+    setReturnLink('Back to Hotel Lobby', 'fa-arrow-left');
     setNextStep('Serve the current ticket before patience runs out.');
     hideResults();
     setOrderState('active');
@@ -181,8 +181,8 @@ const BarGame = (() => {
     setDrinkButtons(false);
     document.getElementById('start-shift-btn').disabled = false;
     document.getElementById('start-shift-btn').innerHTML = '<i class="fa-solid fa-rotate-right"></i> Start Bar Shift Again';
-    setReturnLink('Return to Hotel', 'fa-building');
-    setNextStep('Return to Hotel with the tips, or start Bar Shift again.');
+    setReturnLink('Back to Hotel Lobby', 'fa-building');
+    setNextStep('Head back to the Hotel Lobby with the tips, or start Bar Shift again.');
     document.getElementById('ticket-drink').textContent = 'Closed';
     document.getElementById('patience-fill').style.width = '0%';
     setOrderState('complete');
@@ -241,7 +241,7 @@ const BarGame = (() => {
     setOrderState('idle');
     document.getElementById('served-target').textContent = Math.min(8, 4 + Math.max(1, barLevel));
     log(barLevel > 0 ? 'Bar is ready.' : 'Bar & Lounge is not built yet.', barLevel > 0 ? 'gold' : 'bad', true);
-    setReturnLink('Back to Hotel', 'fa-arrow-left');
+    setReturnLink('Back to Hotel Lobby', 'fa-arrow-left');
     setNextStep(barLevel > 0 ? 'Start Bar Shift to open the first ticket.' : 'Build Bar & Lounge to unlock this shift.');
     setDrinkHighlight(null);
     resetServeDrink();

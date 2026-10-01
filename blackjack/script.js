@@ -53,8 +53,22 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('max-bet').addEventListener('click',   maxBet);
   document.getElementById('rebet').addEventListener('click',    rebet);
 
+  CasinoShell.registerShortcuts([
+    { keys: ['d'], label: 'Deal', run: () => deal() },
+    { keys: ['h'], label: 'Hit', run: () => playerHit() },
+    { keys: ['s'], label: 'Stand', run: () => playerStand() },
+    { keys: ['r'], label: 'Rebet last stake', run: () => rebet() },
+    { keys: ['x'], label: 'Clear bet', run: () => clearBet() },
+    { keys: ['1', '2', '3', '4', '5', '6'], label: 'Add a chip (smallest to largest)', run: (e) => {
+      const chip = [...document.querySelectorAll('.chip-btn')].filter(btn => !btn.hidden)[Number(e.key) - 1];
+      if (chip && !chip.disabled) addChip(parseInt(chip.dataset.value, 10));
+    } },
+  ]);
+
   enterBetting();
 });
+
+function handText(hand) { return hand.map(cardName).join(' and '); }
 
 /* ── Betting controls ─────────────────────────────────────── */
 function addChip(value) {
@@ -156,6 +170,7 @@ async function startRound() {
   else {
     gameActive = true;
     setResult('Your move…');
+    CasinoShell.announce(`You have ${handText(playerHand)}, ${playerScore}. Dealer shows ${cardName(dealerHand[0])}. Hit or stand?`);
     refreshButtons();
   }
 }
@@ -197,6 +212,7 @@ async function playerHit() {
   playerScore = calcHand(playerHand);
   renderScores();
   busy = false;
+  if (playerScore <= 21) CasinoShell.announce(`You drew ${cardName(card)}. Total ${playerScore}.`);
   if (playerScore > 21) resolve('Bust! Dealer wins.', 'lose');
   else if (playerScore === 21) playerStand();
   else refreshButtons();
@@ -264,6 +280,8 @@ function resolve(message, outcome) {
   if (net > 0)      { wm.textContent = `★ +$${net.toFixed(2)} ★`;        wm.style.color = 'var(--win)';      }
   else if (net < 0) { wm.textContent = `−$${Math.abs(net).toFixed(2)}`;  wm.style.color = 'var(--loss)';     }
   else              { wm.textContent = 'Bet returned';                     wm.style.color = 'var(--text-dim)'; }
+  CasinoShell.announce(`${message} You ${playerScore}, dealer ${dealerScore}. ${
+    net > 0 ? `Won $${net.toFixed(2)}.` : net < 0 ? `Lost $${Math.abs(net).toFixed(2)}.` : 'Bet returned.'}`);
 
   if (isWin) highlightWinner();
   updateLeaderboard(outcome, net);

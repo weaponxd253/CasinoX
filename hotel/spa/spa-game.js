@@ -78,7 +78,7 @@ const SpaRush = (() => {
 
     $('start-spa-btn').disabled = true;
     $('start-spa-btn').innerHTML = '<i class="fa-solid fa-spinner"></i> In Session';
-    setReturnLink('Back to Hotel', 'fa-arrow-left');
+    setReturnLink('Back to Hotel Lobby', 'fa-arrow-left');
     setNextStep('Choose a treatment for the active guest.');
     hideResults();
     clearLog();
@@ -300,8 +300,8 @@ const SpaRush = (() => {
     });
     $('start-spa-btn').disabled = false;
     $('start-spa-btn').innerHTML = '<i class="fa-solid fa-rotate-right"></i> Start Spa Rush Again';
-    setReturnLink('Return to Hotel', 'fa-building');
-    setNextStep('Return to Hotel with the result, or start Spa Rush again.');
+    setReturnLink('Back to Hotel Lobby', 'fa-building');
+    setNextStep('Head back to the Hotel Lobby with the result, or start Spa Rush again.');
     syncHotelCash();
     renderTreatments();
     updateAll();
@@ -320,7 +320,7 @@ const SpaRush = (() => {
     $('spa-time').textContent = '1:00';
     $('spa-session-fill').style.width = '0%';
     log(spaLevel > 0 ? 'Spa is ready for guests.' : 'Spa & Wellness is not built yet.', spaLevel > 0 ? 'gold' : 'bad', true);
-    setReturnLink('Back to Hotel', 'fa-arrow-left');
+    setReturnLink('Back to Hotel Lobby', 'fa-arrow-left');
     setNextStep(spaLevel > 0 ? 'Start Spa Rush to seat waiting guests.' : 'Build Spa & Wellness to unlock this shift.');
     updateStats();
   }

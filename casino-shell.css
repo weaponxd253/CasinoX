@@ -440,3 +440,58 @@ h1, h2, h3 {
 .spa-hotel-cash strong, .ent-hotel-cash strong { color: var(--hotel-cash); }
 .bar-hotel-cash i, .tasting-cash i, .ops-hotel-cash i,
 .spa-hotel-cash i, .ent-hotel-cash i { color: var(--hotel-cash); }
+
+/* ── Screen-reader-only text (live result announcements) ── */
+.shell-sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0);
+  white-space: nowrap; border: 0;
+}
+
+/* ── Keyboard shortcuts ── */
+.shell-shortcut-hint {
+  display: block;
+  margin: 18px auto 0;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--font-body);
+  font-size: 12px;
+  cursor: pointer;
+}
+.shell-shortcut-hint:hover { color: var(--gold-light); border-color: var(--gold); }
+kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--gold-light);
+  font: 600 0.85em/1.4 var(--font-body);
+  text-align: center;
+}
+.shell-shortcut-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; text-align: left; }
+.shell-shortcut-list li { display: flex; align-items: center; gap: 10px; }
+/* Touch screens have no keyboard to hint at */
+@media (hover: none) and (pointer: coarse) {
+  .shell-shortcut-hint { display: none; }
+}
+
+/* ── Reduce motion ──────────────────────────────────────────
+   Players who ask their OS for less motion get instant state
+   changes: no looping glows, slides, spins or confetti. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  #shell-confetti { display: none; }
+}

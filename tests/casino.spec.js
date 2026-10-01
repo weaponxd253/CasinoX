@@ -749,6 +749,64 @@ test.describe('sprint 2 casino-hotel loop', () => {
   });
 });
 
+test.describe('phase 2 polish', () => {
+  test('daily bonus pulses on game pages and only opens itself in the casino lobby', async ({ page }) => {
+    await page.addInitScript(() => sessionStorage.removeItem('shellBonusPrompted'));
+    await page.goto('/slots/index.html');
+    await expect(page.locator('#shell-bonus-btn')).toHaveClass(/ready/);
+    await page.waitForTimeout(900);
+    await expect(page.locator('#shell-bonus-modal')).not.toHaveClass(/open/);
+    await page.goto('/hotel/index.html');
+    await page.waitForTimeout(900);
+    await expect(page.locator('#shell-bonus-modal')).not.toHaveClass(/open/);
+    await page.goto('/casino.html');
+    await expect(page.locator('#shell-bonus-modal')).toHaveClass(/open/);
+  });
+
+  test('reduced motion settles games quickly and hides confetti', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/coinflip/index.html');
+    await page.evaluate(() => CasinoWallet.set(100));
+    await page.locator('#flip-heads').click();
+    await expect(page.locator('#cf-result')).not.toHaveText('Flipping…', { timeout: 600 });
+    expect(await page.evaluate(() => getComputedStyle(document.getElementById('shell-confetti')).display)).toBe('none');
+  });
+
+  test('games announce results to screen readers', async ({ page }) => {
+    await page.goto('/blackjack/index.html');
+    await page.evaluate(() => {
+      CasinoWallet.set(100);
+      const c = (value, suit, red) => ({ value, suit, symbol: '♠', red });
+      window.newShuffledDeck = () => [c('6', 'CLUBS'), c('7', 'DIAMONDS', true), c('9', 'CLUBS'), c('8', 'SPADES'), c('10', 'HEARTS', true)];
+    });
+    await page.locator('.chip-btn[data-value="1"]').click();
+    await tapCenter(page.locator('#deal-button'));
+    await expect(page.locator('#shell-announcer')).toContainText('You have 10 of Hearts and 8 of Spades, 18. Dealer shows 9 of Clubs.');
+    await tapCenter(page.locator('#stand-button'));
+    await expect(page.locator('#shell-announcer')).toContainText('Dealer busts — you win! You 18, dealer 22. Won $1.00.');
+  });
+
+  test('keyboard shortcuts play the game and ? lists them', async ({ page }) => {
+    await page.goto('/coinflip/index.html');
+    await page.evaluate(() => CasinoWallet.set(100));
+    await page.locator('body').press('ArrowUp');
+    await expect(page.locator('#bet-val')).toHaveText('$10.00');
+    await page.locator('body').press('t');
+    await expect(page.locator('#cf-result')).toContainText(/Heads|Tails/);
+    await page.locator('body').press('?');
+    await expect(page.locator('#shell-info-modal')).toHaveClass(/open/);
+    await expect(page.locator('.shell-shortcut-list')).toContainText('Bet tails');
+    // Shortcuts are ignored while a dialog is open
+    await page.keyboard.press('ArrowUp');
+    await expect(page.locator('#bet-val')).not.toHaveText('$15.00');
+  });
+
+  test('shift pages say "Back to Hotel Lobby"', async ({ page }) => {
+    await page.goto('/hotel/bar/index.html');
+    await expect(page.locator('#bar-return-link')).toContainText('Back to Hotel Lobby');
+  });
+});
+
 test.describe('live game smoke paths', () => {
   for (const game of LIVE_GAMES) {
     test(`${game.name} can place a basic wager without freezing`, async ({ page }) => {

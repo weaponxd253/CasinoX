@@ -22,18 +22,27 @@ function hotelEvent(type, data) {
   window.HotelEvents?.push(type, data);
 }
 
-document.getElementById('bet-minus').addEventListener('click', () => {
+function betDown() {
   if (flipping) return;
   bet = Math.max(MIN_BET, bet - BET_STEP);
   renderBet();
-});
-document.getElementById('bet-plus').addEventListener('click', () => {
+}
+function betUp() {
   if (flipping) return;
   bet = Math.min(bet + BET_STEP, Math.max(MIN_BET, wallet().get()));
   renderBet();
-});
+}
+document.getElementById('bet-minus').addEventListener('click', betDown);
+document.getElementById('bet-plus').addEventListener('click', betUp);
 document.getElementById('flip-heads').addEventListener('click', () => flip('heads'));
 document.getElementById('flip-tails').addEventListener('click', () => flip('tails'));
+
+CasinoShell.registerShortcuts([
+  { keys: ['h', 'ArrowLeft'], label: 'Bet heads', run: () => flip('heads') },
+  { keys: ['t', 'ArrowRight'], label: 'Bet tails', run: () => flip('tails') },
+  { keys: ['ArrowUp', '+', '='], label: 'Raise bet', run: betUp },
+  { keys: ['ArrowDown', '-'], label: 'Lower bet', run: betDown },
+]);
 
 let spins = 0;
 function flip(choice) {
@@ -53,23 +62,25 @@ function flip(choice) {
   const end = spins * 360 + (outcome === 'tails' ? 180 : 0);
   coin.style.transform = `rotateY(${end}deg)`;
 
-  setTimeout(() => {
+  setTimeout(() => {   // the coin's spin; instant for reduced motion
     flipping = false;
     if (outcome === choice) {
       const payout = bet * 2;
       w.add(payout);
       hotelEvent('coin_flip_win');
       resultEl.textContent = `${cap(outcome)}! You win $${payout.toFixed(2)}.`;
+      CasinoShell.announce(resultEl.textContent);
       CasinoShell.celebrate(bet);               // net win == bet
     } else {
       resultEl.textContent = `${cap(outcome)}. You lose $${bet.toFixed(2)}.`;
+      CasinoShell.announce(resultEl.textContent);
       CasinoShell.sound.lose();
       if (!w.canAfford(MIN_BET)) CasinoShell.gameOver();
     }
     // keep the bet within what's now affordable
     bet = Math.max(MIN_BET, Math.min(bet, w.get()));
     renderBet();
-  }, 850);
+  }, CasinoShell.reducedMotion() ? 120 : 850);
 }
 
 function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }

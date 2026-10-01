@@ -246,6 +246,82 @@ const CasinoShell = (function () {
     });
   }
 
+  /* ───────── MOTION + ANNOUNCEMENTS ───────── */
+  // Honour the OS "reduce motion" setting: no confetti, instant reels/text.
+  function reducedMotion() {
+    try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+    catch (_) { return false; }
+  }
+
+  /* Read a result to screen readers once (a live region that games write
+     to instead of their animated, character-by-character displays). */
+  function announce(text) {
+    const region = document.getElementById('shell-announcer');
+    if (!region || !text) return;
+    region.textContent = '';
+    setTimeout(() => { region.textContent = text; }, 30);
+  }
+
+  /* ───────── KEYBOARD SHORTCUTS ─────────
+     Games register shortcuts; "?" lists them. Keys are ignored while a
+     dialog is open or the player is typing, and Space/Enter still press a
+     focused button instead of triggering a shortcut. */
+  const shortcuts = [];
+
+  function registerShortcuts(list) {
+    shortcuts.push(...list);
+    renderShortcutHint();
+  }
+
+  function shortcutLabel(key) {
+    return { ' ': 'Space', ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓' }[key] ?? key.toUpperCase();
+  }
+
+  // ['1','2','3','4','5'] → "1–5"; anything else → "H / ←"
+  function shortcutKeysHtml(keys) {
+    const digits = keys.every(k => /^\d$/.test(k)) && keys.length > 2
+      && keys.every((k, i) => i === 0 || Number(k) === Number(keys[i - 1]) + 1);
+    if (digits) return `<kbd>${keys[0]}</kbd>–<kbd>${keys[keys.length - 1]}</kbd>`;
+    return keys.map(k => `<kbd>${shortcutLabel(k)}</kbd>`).join(' / ');
+  }
+
+  function showShortcuts() {
+    if (!shortcuts.length) return;
+    info('Keyboard shortcuts', `
+      <ul class="shell-shortcut-list">
+        ${shortcuts.map(s => `<li>${shortcutKeysHtml(s.keys)} <span>${s.label}</span></li>`).join('')}
+        <li><kbd>?</kbd> <span>Show this list</span></li>
+        <li><kbd>Esc</kbd> <span>Close a dialog</span></li>
+      </ul>`);
+  }
+
+  function renderShortcutHint() {
+    if (document.getElementById('shell-shortcut-hint') || !document.querySelector('.shell-footer')) return;
+    const hint = document.createElement('button');
+    hint.type = 'button';
+    hint.id = 'shell-shortcut-hint';
+    hint.className = 'shell-shortcut-hint';
+    hint.innerHTML = '<kbd>?</kbd> Keyboard shortcuts';
+    hint.addEventListener('click', showShortcuts);
+    document.querySelector('.shell-footer').before(hint);
+  }
+
+  function wireShortcutKeys() {
+    document.addEventListener('keydown', (e) => {
+      if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (topModal()) return;
+      const target = e.target;
+      if (target.closest?.('input, select, textarea, [contenteditable]')) return;
+      if ((e.key === ' ' || e.key === 'Enter') && target.closest?.('button, a')) return;
+      if (e.key === '?') { e.preventDefault(); showShortcuts(); return; }
+      const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      const match = shortcuts.find(s => s.keys.includes(key));
+      if (!match || e.repeat) return;
+      e.preventDefault();
+      match.run(e);
+    });
+  }
+
   /* ───────── TOAST ───────── */
   function toast(msg, ms = 4000) {
     const wrap = document.getElementById('shell-toasts');
@@ -275,7 +351,7 @@ const CasinoShell = (function () {
       }
     }
     if (hotel) sound.win(); else sound.jackpot();
-    confettiBurst(hotel ? ['#6fcf97', '#a8e6c3', '#f5ead5', '#c9a84c'] : undefined);
+    if (!reducedMotion()) confettiBurst(hotel ? ['#6fcf97', '#a8e6c3', '#f5ead5', '#c9a84c'] : undefined);
   }
   function confettiBurst(colors = ['#c9a84c', '#e8cb80', '#f5ead5', '#6fcf97']) {
     const canvas = document.getElementById('shell-confetti');
@@ -449,6 +525,7 @@ const CasinoShell = (function () {
     const lobbyLabel = cfg.lobbyLabel || (hotelOperation ? 'Hotel Lobby' : 'Casino Floor');
     const html = `
       <div id="shell-toasts" role="status" aria-live="polite"></div>
+      <div id="shell-announcer" class="shell-sr-only" aria-live="polite" aria-atomic="true"></div>
       <canvas id="shell-confetti"></canvas>
       <div id="shell-bigwin"></div>
       <div class="shell-modal" id="shell-modal">
@@ -532,6 +609,7 @@ const CasinoShell = (function () {
     bm.querySelector('.shell-bonus-close').addEventListener('click', () => closeModal(bm));
     bm.addEventListener('click', (e) => { if (e.target === bm) closeModal(bm); });
     wireModalKeys();
+    wireShortcutKeys();
   }
 
   /* Dev mode (?dev=1): a badge that opens the dev tools panel. The tools
@@ -587,8 +665,11 @@ const CasinoShell = (function () {
     maybePromptBonus();
   }
 
+  /* The gift button pulses whenever a bonus is waiting; the dialog only
+     opens by itself on pages that opt in (the casino lobby), once per
+     session, so it never interrupts a game or the hotel guide. */
   function maybePromptBonus() {
-    if (!dailyBonus.available()) return;
+    if (!cfg.autoBonus || !dailyBonus.available()) return;
     if (sessionStorage.getItem('shellBonusPrompted')) return;
     sessionStorage.setItem('shellBonusPrompted', '1');
     setTimeout(() => dailyBonus.open(), 650);
@@ -609,6 +690,7 @@ const CasinoShell = (function () {
 
   return {
     mount, standalone, theme, sound, toast, celebrate, gameOver, info, openCashier,
+    announce, reducedMotion, registerShortcuts, showShortcuts,
     awardXp, dailyBonus, syncBalance, renderProgression,
     get profile() { return snapshot(); },
     wallet: null

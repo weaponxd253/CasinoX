@@ -21,6 +21,8 @@ const wallet = () => (window.CasinoShell && CasinoShell.wallet) || window.Casino
 // Animation is optional: if GSAP failed to load, reels settle without it
 // instead of hanging after the bet has been taken.
 const hasGsap = () => typeof window.gsap !== "undefined";
+// Reel spin and win shakes are skipped for players who prefer less motion.
+const animate = () => hasGsap() && !CasinoShell.reducedMotion();
 
 // ─── Hotel event helper ────────────────────────────────────────────────────────
 // Queues events for the hotel — no hotel scripts needed on this page.
@@ -154,6 +156,15 @@ function typewriterEffect(element, text, baseSpeed = 100, callback = null) {
   let index = 0;
   const dynamicSpeed = text.length > 20 ? baseSpeed : baseSpeed / 2;
   spinButton.disabled = true;
+  if (CasinoShell.reducedMotion()) {           // show the whole message at once
+    element.textContent = text;
+    setTimeout(() => {
+      if (token !== typeToken) return;
+      if (!spinning) spinButton.disabled = false;
+      if (callback) callback();
+    }, 0);
+    return;
+  }
   (function type() {
     try {
       if (token !== typeToken) return;
@@ -165,7 +176,7 @@ function typewriterEffect(element, text, baseSpeed = 100, callback = null) {
 
 // ─── Win animation on reels ───────────────────────────────────────────────────
 function animateWinningReels(reelElements) {
-  if (!hasGsap()) return;
+  if (!animate()) return;
   reelElements.forEach((reel) => {
     const container = reel.querySelector(".icon-container");
     gsap.to(reel, { boxShadow: "0 0 20px 6px #ffd700", duration: 0.3, yoyo: true, repeat: 5, ease: "power1.inOut",
@@ -198,7 +209,7 @@ function spin() {
   typewriterEffect(result, "Spinning...", 100);
 
   allButtons.forEach((b) => (b.disabled = true));
-  if (hasGsap()) {
+  if (animate()) {
     gsap.to(spinButton, { scale: 1.1, duration: 0.4, yoyo: true, repeat: -1, ease: "power1.inOut" });
     reelWrappers.forEach((r) => gsap.set(r, { boxShadow: "" }));
   }
@@ -216,7 +227,7 @@ function spin() {
         CasinoShell.sound.tone([220, 262, 330][index], "sine", 0.15, 0.2); // reel-stop
         resolve(finalSymbol);
       };
-      if (!hasGsap()) { setTimeout(settle, 600 + index * 300); return; }
+      if (!animate()) { setTimeout(settle, CasinoShell.reducedMotion() ? 150 + index * 150 : 600 + index * 300); return; }
       container.innerHTML += randomSymbols.map((s) => `<div>${s}</div>`).join("") + `<div>${finalSymbol}</div>`;
       gsap.fromTo(container, { y: currentYPositions[index] }, {
         y: finalPosition, duration: 2 + index * 0.2, ease: "power2.inOut", onComplete: settle
@@ -231,7 +242,7 @@ function spin() {
 
   Promise.all(reelPromises).then((finalSymbols) => {
     spinning = false;
-    if (hasGsap()) {
+    if (animate()) {
       gsap.killTweensOf(spinButton);
       gsap.to(spinButton, { scale: 1, duration: 0.2 });
     }
@@ -262,9 +273,11 @@ function spin() {
         : net > 0  ? `🎉 You Win $${winnings.toFixed(2)}! 🎉`
         : net === 0 ? `Bet back — $${winnings.toFixed(2)} returned.`
         : `Partial match — $${winnings.toFixed(2)} back.`;
+      CasinoShell.announce(`${finalSymbols.join(" ")}. ${label.replace(/[🎰🎉]/gu, "").trim()}`);
       typewriterEffect(result, label, 80, () => { allButtons.forEach((b) => (b.disabled = false)); checkGameOver(); });
     } else {
       CasinoShell.sound.lose();
+      CasinoShell.announce(`${finalSymbols.join(" ")}. No match, lost $${currentBet.toFixed(2)}.`);
       typewriterEffect(result, "Try Again!", 50, () => { allButtons.forEach((b) => (b.disabled = false)); checkGameOver(); });
     }
   });
@@ -278,12 +291,12 @@ function showHelp() {
     <h6>📝 Gameplay</h6>
     <ol>
       <li>Pick a bet with the buttons.</li>
-      <li>Spin with the button or press <strong>Space</strong>.</li>
+      <li>Spin with the button or press <kbd>Space</kbd>. Keys <kbd>1</kbd>–<kbd>5</kbd> pick a bet.</li>
       <li>Match symbols to win — see the table for payouts.</li>
     </ol>
     <h6>🔘 Buttons</h6>
     <ul>
-      <li><strong>Spin</strong> — spin the reels (also: Space)</li>
+      <li><strong>Spin</strong> — spin the reels (also: <kbd>Space</kbd>)</li>
       <li><strong>Cashier</strong> — free refill below $1, or trade hotel cash for chips</li>
       <li><strong>Help</strong> — this guide</li>
     </ul>
@@ -307,18 +320,17 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("reset-button").addEventListener("click", resetMoney);
   document.getElementById("help").addEventListener("click", showHelp);
 
-  document.addEventListener("keydown", (e) => {
-    if (e.code !== "Space" || e.repeat) return;
-    // Let Space press focused controls, and never spin behind an open dialog.
-    if (e.target.closest?.("button, a, input, select, textarea, [contenteditable]")) return;
-    if (document.querySelector(".shell-modal.open")) return;
-    e.preventDefault();
-    const spinBtn = document.querySelector(".spin-button");
-    if (!spinning && !spinBtn.disabled) spin();
-  });
+  CasinoShell.registerShortcuts([
+    { keys: [" "], label: "Spin", run: () => { if (!spinning && !document.querySelector(".spin-button").disabled) spin(); } },
+    { keys: ["1", "2", "3", "4", "5"], label: "Pick a bet (smallest to largest)", run: (e) => {
+      if (spinning) return;
+      const btn = document.querySelectorAll(".bet-buttons [data-bet]")[Number(e.key) - 1];
+      if (btn) setBet(Number(btn.dataset.bet));
+    } },
+  ]);
 
   if (!localStorage.getItem("slotToastShown")) {
-    CasinoShell.toast("💡 Press Space to spin. Theme & sound are in the header.");
+    CasinoShell.toast("💡 Press Space to spin, or ? for all keyboard shortcuts.");
     localStorage.setItem("slotToastShown", "true");
   }
 });

@@ -86,3 +86,28 @@ CasinoShell.awardXp(bet);   // 1 XP per $1 wagered, min 1; auto handles level-up
   shell auto-opens the claim modal once per session.
 - **Blackjack** is already migrated onto the shell and calls `awardXp` when a
   hand is dealt. Use it as the higher-complexity reference for chip betting.
+
+## Wording
+
+Use the same names everywhere so players always know where a link goes and
+what a number means:
+
+| Term | Means | Notes |
+|---|---|---|
+| **Casino Floor** | `casino.html`, the casino lobby | Nav pills shorten to "Casino" on narrow phones |
+| **Hotel Lobby** | `hotel/index.html`, the hotel dashboard | Return links on shift pages read "Back to Hotel Lobby" |
+| **chips** | the shared casino bankroll (`CasinoWallet`) | Gold coin; balances show a "chips" unit |
+| **hotel cash** | the hotel's money (`HotelState`) | Green, building icon; celebrate with `{ currency: 'hotel' }` |
+| **Cashier** | `CasinoShell.openCashier()` | Free refill under $1, or a hotel comp |
+| **shift** | a hotel mini-game run | "Run Again" when repeated in the same phase |
+
+## Accessibility helpers
+
+- `CasinoShell.announce(text)` — read a result to screen readers once. Use it
+  for anything shown with an animated or typewriter display.
+- `CasinoShell.reducedMotion()` — true when the player asked their OS for less
+  motion; skip long animations (the shell already hides confetti and shortens
+  CSS animations).
+- `CasinoShell.registerShortcuts([{ keys: ['h'], label: 'Hit', run }])` —
+  keyboard shortcuts, listed by pressing `?`. They're ignored while a dialog is
+  open or the player is typing, and Space/Enter still press a focused button.
