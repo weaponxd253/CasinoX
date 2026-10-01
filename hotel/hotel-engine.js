@@ -305,8 +305,10 @@ const HotelEngine = (() => {
     const satMult    = satisfactionMultiplier(state.satisfaction.current);
     const activeMult = (state.ticker.activeMultiplierExpiry > Date.now())
       ? state.ticker.activeMultiplier : 1.0;
+    const bridgeMult = (state.casinoBridge.multiplierExpiry > Date.now())
+      ? state.casinoBridge.activeMultiplier : 1.0;
     const entertainmentMult = 1 + (activeEntertainmentEffects(state).incomeBoost ?? 0);
-    const deptIpm = Math.round(deptTotal * satMult * activeMult * entertainmentMult);
+    const deptIpm = Math.round(deptTotal * satMult * activeMult * bridgeMult * entertainmentMult);
 
     // Guest spending income (1 min interval)
     const guestIpm = window.HotelGuests
@@ -389,7 +391,9 @@ const HotelEngine = (() => {
       lastManualAdvanceAt: Date.now(),
     };
 
-    const phaseMinutes = 6 * 60;
+    // A phase is 6 game hours, but real-time ticks already pay idle income,
+    // so Advance Time only pays a short settlement (full 6h in dev mode).
+    const phaseMinutes = HotelConfig.isDevMode?.() ? 6 * 60 : HotelConfig.ECONOMY.ADVANCE_PHASE_INCOME_MINUTES;
     const activeShows = activeEntertainmentBookings(state, before.day, before.phase);
     const income = calculatePhaseIncome(state, phaseMinutes);
     if (income > 0) HotelState.addHotelCash(income);

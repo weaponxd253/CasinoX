@@ -310,7 +310,9 @@ const RoomsGame = (() => {
     clearInterval(timer);
     shift.active = false;
 
-    const satBonus = Math.max(0, Math.min(9, Math.round(shift.satPoints / 3) - shift.complaints + (shift.staffEffect?.satisfactionBonus ?? 0)));
+    const rewardMult = HotelState.shiftRewardMultiplier?.('rooms') ?? 1;
+    shift.earned = Math.round(shift.earned * rewardMult);
+    const satBonus = Math.round(Math.max(0, Math.min(9, Math.round(shift.satPoints / 3) - shift.complaints + (shift.staffEffect?.satisfactionBonus ?? 0))) * rewardMult);
     HotelState.addHotelCash(shift.earned);
     HotelState.addSatisfactionBonus(satBonus);
     HotelState.applyStaffFatigue?.('rooms', shift.resolved ? 4 : 1);
@@ -320,6 +322,7 @@ const RoomsGame = (() => {
       title: 'Floor Ops complete',
       cash: shift.earned,
       satisfaction: satBonus,
+      rewardMult,
       primaryLabel: 'Resolved',
       primaryValue: shift.resolved,
       summary: `${shift.resolved} requests resolved, ${shift.complaints} complaints, ${shift.perfect} perfect dispatches.`,
@@ -340,6 +343,7 @@ const RoomsGame = (() => {
     updateAll();
     showResults(satBonus);
     log(`Shift complete. Hotel earned $${fmt(shift.earned)}. Satisfaction +${satBonus}.`, 'gold');
+    if (rewardMult < 1) log(`Repeat run this phase: ${Math.round(rewardMult * 100)}% rewards. Full rewards return next phase.`, 'bad');
     if (shift.earned > 0) CasinoShell.celebrate(shift.earned);
     CasinoShell.toast(`Floor Ops complete: +$${fmt(shift.earned)} hotel cash`);
   }

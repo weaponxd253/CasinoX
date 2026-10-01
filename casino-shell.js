@@ -370,7 +370,9 @@ const CasinoShell = (function () {
     while (div.firstChild) document.body.appendChild(div.firstChild);
 
     document.getElementById('shell-cashier').addEventListener('click', () => {
-      if (window.CasinoWallet) CasinoWallet.reset();
+      if (window.CasinoWallet && !CasinoWallet.topUp()) {
+        toast(`The Cashier refills your bankroll once it drops below $${CasinoWallet.TOPUP_BELOW}.`);
+      }
       document.getElementById('shell-modal').classList.remove('open');
     });
     const im = document.getElementById('shell-info-modal');
@@ -381,6 +383,16 @@ const CasinoShell = (function () {
     document.getElementById('shell-claim').addEventListener('click', () => dailyBonus.claim());
     bm.querySelector('.shell-bonus-close').addEventListener('click', () => bm.classList.remove('open'));
     bm.addEventListener('click', (e) => { if (e.target === bm) bm.classList.remove('open'); });
+  }
+
+  function renderDevBadge() {
+    if (!window.CasinoWallet?.devMode?.() || document.getElementById('casino-dev-badge')) return;
+    const badge = document.createElement('div');
+    badge.id = 'casino-dev-badge';
+    badge.className = 'casino-dev-badge';
+    badge.textContent = 'DEV MODE';
+    badge.title = 'Economy limits are off for testing. Visit any page with ?dev=0 to turn off.';
+    document.body.appendChild(badge);
   }
 
   function injectFooter() {
@@ -394,6 +406,7 @@ const CasinoShell = (function () {
   /* ───────── SHARED SETUP ───────── */
   function setup() {
     injectOverlays();
+    renderDevBadge();
     theme.apply(theme.get());
     wireThemeControls();
     sound._sync();

@@ -177,11 +177,13 @@ const RestaurantGame = (() => {
   }
 
   function finishService() {
+    const rewardMult = HotelState.shiftRewardMultiplier?.('restaurant') ?? 1;
+    service.earned = Math.round(service.earned * rewardMult);
     const cash = service.earned;
     const signatures = service.signatures;
     const served = service.served;
     const avgHarmony = served ? Math.round(service.harmonyTotal / served) : 0;
-    const satBonus = Math.max(0, Math.min(8, signatures * 2 + Math.round(avgHarmony / 35) - 1 + (service.staffEffect?.satisfactionBonus ?? 0)));
+    const satBonus = Math.round(Math.max(0, Math.min(8, signatures * 2 + Math.round(avgHarmony / 35) - 1 + (service.staffEffect?.satisfactionBonus ?? 0))) * rewardMult);
     HotelState.addHotelCash(cash);
     HotelState.addSatisfactionBonus(satBonus);
     HotelState.applyStaffFatigue?.('restaurant', served ? 4 : 1);
@@ -191,6 +193,7 @@ const RestaurantGame = (() => {
       title: 'Tasting Room complete',
       cash,
       satisfaction: satBonus,
+      rewardMult,
       primaryLabel: 'Tables',
       primaryValue: served,
       summary: `${served} tables served with ${signatures} signature flights.`,
@@ -215,6 +218,7 @@ const RestaurantGame = (() => {
     updateStats();
     showResults({ cash, served, signatures, satBonus, avgHarmony, bestTable: service.bestTable, weakTable: service.weakTable });
     log(`Service complete. Hotel earned $${fmt(cash)}. Satisfaction +${satBonus}.`, 'gold');
+    if (rewardMult < 1) log(`Repeat run this phase: ${Math.round(rewardMult * 100)}% rewards. Full rewards return next phase.`, 'bad');
     CasinoShell.celebrate(cash);
     CasinoShell.toast(`Tasting room complete: +$${fmt(cash)} hotel cash`);
   }

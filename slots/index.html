@@ -64,8 +64,8 @@
         <button class="button spin-button" aria-label="Spin the reels" title="Spin (or press Space)">
           <i class="fa-solid fa-arrows-rotate spin-icon"></i>
         </button>
-        <button id="reset-button" class="reset-button" aria-label="Cashier — reset balance to 100 dollars"
-          title="Cashier · reset to $100">
+        <button id="reset-button" class="reset-button" aria-label="Cashier — refills to 100 dollars when under 1 dollar"
+          title="Cashier · refills to $100 when under $1">
           <i class="fa-solid fa-circle-dollar-to-slot"></i>
         </button>
         <button id="help" class="help-button" aria-label="Open help guide" title="How to play">
@@ -89,60 +89,19 @@
 
     <!-- Winning combinations table -->
     <h2>Winning Combinations</h2>
+    <!-- Rows are built from the payout table in script.js -->
     <table class="winning-chart">
       <thead>
         <tr>
-          <th>Symbols</th>
-          <th>Full Match</th>
-          <th>Partial Match</th>
-          <th>Full Multiplier</th>
-          <th>Partial Multiplier</th>
-          <th>Example Winnings (Bet: $<span id="max-bet-display"></span>)</th>
+          <th>Symbol</th>
+          <th>3 of a kind</th>
+          <th>2 of a kind</th>
+          <th>At $<span id="max-bet-display"></span> bet</th>
         </tr>
       </thead>
-      <tbody>
-        <tr>
-          <td>🍒</td>
-          <td>🍒 🍒 🍒</td>
-          <td>🍒 🍒 🍋</td>
-          <td>x2</td>
-          <td>x1</td>
-          <td><span id="cherry-winnings"></span></td>
-        </tr>
-        <tr>
-          <td>🍋</td>
-          <td>🍋 🍋 🍋</td>
-          <td>🍋 🍋 🍒</td>
-          <td>x3</td>
-          <td>x1.5</td>
-          <td><span id="lemon-winnings"></span></td>
-        </tr>
-        <tr>
-          <td>🍉</td>
-          <td>🍉 🍉 🍉</td>
-          <td>🍉 🍉 🍇</td>
-          <td>x4</td>
-          <td>x2</td>
-          <td><span id="watermelon-winnings"></span></td>
-        </tr>
-        <tr>
-          <td>⭐</td>
-          <td>⭐ ⭐ ⭐</td>
-          <td>⭐ ⭐ 🍊</td>
-          <td>x5</td>
-          <td>x2.5</td>
-          <td><span id="star-winnings"></span></td>
-        </tr>
-        <tr>
-          <td>💰</td>
-          <td>💰 💰 💰</td>
-          <td>—</td>
-          <td>Jackpot x50</td>
-          <td>—</td>
-          <td><span id="jackpot-winnings"></span></td>
-        </tr>
-      </tbody>
+      <tbody id="paytable-body"></tbody>
     </table>
+    <p class="paytable-note">Three of a kind pays the full multiplier, two of a kind pays half. Returns about 95% of wagers over time.</p>
   </main>
 
   <script src="../wallet.js"></script>

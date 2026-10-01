@@ -195,10 +195,13 @@ const HotelBridge = (() => {
     const snap = {
       casinoLevel:  state.departments.casino?.level ?? 1,
       chipBalance:  window.CasinoWallet?.get() ?? 0,
-      playerLevel:  (() => {
+      // Same curve as the casino shell: level L needs 50 × L XP to clear.
+      playerLevel:  window.CasinoShell?.profile?.level ?? (() => {
         try {
-          const p = JSON.parse(localStorage.getItem('casinoProfile') ?? '{}');
-          return p.xp ? Math.floor(p.xp / 50) + 1 : 1;
+          let xp = Number(JSON.parse(localStorage.getItem('casinoProfile') ?? '{}').xp) || 0;
+          let level = 1;
+          while (xp >= 50 * level) { xp -= 50 * level; level++; }
+          return level;
         } catch { return 1; }
       })(),
       lastSnapshot: Date.now(),

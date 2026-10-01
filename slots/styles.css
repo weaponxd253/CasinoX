@@ -95,6 +95,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .history-amount { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; }
 .history-amount.win { color: var(--win); }
 .history-amount.loss { color: var(--loss); }
+.history-amount.push { color: var(--text-dim); }
 .history-item.history-win { border-color: rgba(111,207,151,0.4); }
 .history-item.history-loss { border-color: rgba(224,121,109,0.4); }
 
@@ -117,3 +118,5 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
   .digital-screen, .small-screen { width: 100%; font-size: 1rem; }
   .bet-buttons .front { padding: 9px 18px; font-size: 0.9rem; }
 }
+.winning-chart .jackpot-row td { color: var(--gold-light); font-weight: 700; }
+.paytable-note { text-align: center; color: var(--text-dim); font-size: 0.9rem; margin: 0 auto 16px; max-width: 90%; }

@@ -896,10 +896,13 @@ const HotelState = (() => {
     const cycleKey = shiftCycleKey();
     const active = shifts.active?.deptId === deptId ? shifts.active : null;
     const briefing = normalizeShiftBriefing(result.briefing) ?? normalizeShiftBriefing(active?.briefing) ?? getShiftBriefing(deptId);
+    const runInCycle = shiftRunsThisCycle(deptId) + 1;
     const entry = {
       id: `shift_result_${now}_${deptId}`,
       deptId,
       cycleKey,
+      runInCycle,
+      rewardMult: result.rewardMult ?? 1,
       completedAt: now,
       title: result.title ?? `${briefing?.title ?? deptLabel(deptId)} complete`,
       cash: Math.max(0, Math.round(Number(result.cash ?? 0))),
@@ -934,6 +937,21 @@ const HotelState = (() => {
     shifts.dismissedResultId = resultId;
     save();
     return true;
+  }
+
+  /* Runs of this shift already completed in the current phase. */
+  function shiftRunsThisCycle(deptId, state = _state) {
+    const prev = getShiftResult(deptId, state);
+    return prev ? (prev.runInCycle ?? 1) : 0;
+  }
+
+  /* Share of rewards the next run of this shift pays: full on the first run
+     each phase, reduced on repeats so replaying can't farm hotel cash.
+     Dev mode always pays in full. */
+  function shiftRewardMultiplier(deptId, state = _state) {
+    if (HotelConfig.isDevMode?.()) return 1;
+    const steps = HotelConfig.ECONOMY.SHIFT_REPEAT_REWARD;
+    return steps[Math.min(shiftRunsThisCycle(deptId, state), steps.length - 1)];
   }
 
   function getShiftResult(deptId, state = _state) {
@@ -2076,6 +2094,7 @@ const HotelState = (() => {
     setCalendar, addCalendarReport,
     recordShiftStart, recordShiftResult, dismissShiftResult,
     getShiftStatus, getShiftResult, getLatestShiftResult, getShiftBriefing, shiftCycleKey,
+    shiftRunsThisCycle, shiftRewardMultiplier,
     addGuestToRoster, removeGuestFromRoster, pruneExpiredFromRoster,
     getRoster, getRosterCount,
     applyCheckInBoost, consumeCheckInBoost, getCheckInBoost,

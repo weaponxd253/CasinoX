@@ -41,7 +41,7 @@
       <a class="pill-btn hotel-return-btn" href="hotel/index.html" aria-label="Return to Hotel Lobby">
         <i class="fa-solid fa-hotel"></i> Hotel Lobby
       </a>
-      <button class="pill-btn" id="cashier-btn" aria-label="Cashier — top up to $100">
+      <button class="pill-btn" id="cashier-btn" aria-label="Cashier — refills to $100 when under $1">
         <i class="fa-solid fa-coins"></i> Cashier
       </button>
       <button class="pill-btn" id="theme-toggle" aria-label="Toggle theme">
@@ -129,10 +129,9 @@
       });
 
       document.getElementById('cashier-btn').addEventListener('click', () => {
-        if (CasinoWallet.get() >= CasinoWallet.STARTING) {
-          if (!confirm('Reset your bankroll to $100?')) return;
+        if (!CasinoWallet.topUp()) {
+          CasinoShell.toast(`The Cashier refills your bankroll once it drops below $${CasinoWallet.TOPUP_BELOW}.`);
         }
-        CasinoWallet.reset();
       });
     })();
 

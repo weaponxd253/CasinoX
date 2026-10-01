@@ -191,21 +191,6 @@
   filter: saturate(0.4) brightness(0.85);
 }
 
-.hotel-dev-badge {
-  position: fixed;
-  left: 12px;
-  bottom: 12px;
-  z-index: 9999;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: #b3261e;
-  color: #fff;
-  font: 700 11px/1.4 system-ui, sans-serif;
-  letter-spacing: 0.08em;
-  pointer-events: none;
-  opacity: 0.85;
-}
-
 .advance-time-btn {
   min-height: 38px;
   display: inline-flex;
