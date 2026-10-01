@@ -16,18 +16,10 @@ const betValEl = document.getElementById('bet-val');
 function wallet() { return CasinoShell.wallet; }
 function renderBet() { betValEl.textContent = `$${bet.toFixed(2)}`; }
 
-// Hotel event helper — safe cross-page hotel state write
+// Hotel event helper — queues events for the hotel to apply
 function hotelEvent(type, data) {
-  try {
-    const raw = localStorage.getItem('hotelGameState');
-    if (!raw) return;
-    const state = JSON.parse(raw);
-    if (!state?.casinoBridge?.events) return;
-    const e = state.casinoBridge.events;
-    if (type === 'coin_flip_win')    e.coinFlipsWon++;
-    else if (type === 'chips_wagered') e.totalChipsWagered += (Number(data?.amount) || 0);
-    localStorage.setItem('hotelGameState', JSON.stringify(state));
-  } catch (_) { /* hotel not initialised */ }
+  // Queued for the hotel to apply — see hotel-events.js
+  window.HotelEvents?.push(type, data);
 }
 
 document.getElementById('bet-minus').addEventListener('click', () => {

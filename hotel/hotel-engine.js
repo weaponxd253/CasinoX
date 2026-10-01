@@ -189,6 +189,8 @@ const HotelEngine = (() => {
     const state  = HotelState.get();
     const now    = Date.now();
     const result = calculateIncome(state, now);
+    // Measure time away before updateTicker() moves lastTick to now.
+    const elapsed = now - (state.ticker.lastTick || now);
 
     if (result.amount > 0) {
       HotelState.addHotelCash(result.amount);
@@ -197,7 +199,6 @@ const HotelEngine = (() => {
 
     // Restore guest population from offline absence
     if (window.HotelGuests) {
-      const elapsed = now - (state.ticker.lastTick || now);
       const gResult = HotelGuests.restoreFromOffline(state, elapsed)
                    ?? HotelGuests.tick(state);
       applyEntertainmentTraffic(state, gResult, now);
