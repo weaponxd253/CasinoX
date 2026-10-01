@@ -63,9 +63,8 @@ the game.
   games should style off `[data-theme]` via the tokens above — no per-game theme
   code required.
 - **No Bootstrap needed** for shell chrome (modal/toast are built in).
-- The shell **supersedes `casino-theme.css`** for new games. Existing games now
-  use `casino-shell.css` plus their own local styles; `casino-theme.css` is
-  retained only for legacy cleanup review.
+- All casino pages use `casino-shell.css` plus their own local styles (the old
+  `casino-theme.css` has been removed).
 
 See `coinflip/` for a complete ~50-line reference game.
 

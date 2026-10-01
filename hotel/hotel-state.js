@@ -340,7 +340,20 @@ const HotelState = (() => {
   let _recoveredFromCorruptSave = false;
   function didRecoverFromCorruptSave() { return _recoveredFromCorruptSave; }
 
+  /* Mutators call save() constantly (a single live tick used to write the
+     whole state ~5 times). save() now only marks the state dirty and one
+     write happens at the end of the current task, before any navigation
+     or other tab can observe it. saveNow() writes immediately. */
+  let _savePending = false;
+
   function save() {
+    if (!_state || _savePending) return;
+    _savePending = true;
+    queueMicrotask(saveNow);
+  }
+
+  function saveNow() {
+    _savePending = false;
     if (!_state) return;
     _state.meta.lastSaved = Date.now();
     try {
@@ -348,6 +361,11 @@ const HotelState = (() => {
     } catch (e) {
       console.error('[HotelState] Save failed:', e);
     }
+  }
+
+  // Belt and braces: flush anything pending when the page is hidden.
+  if (typeof window !== 'undefined') {
+    window.addEventListener('pagehide', () => { if (_savePending) saveNow(); });
   }
 
   /* ── Init ────────────────────────────────────────────────── */
@@ -2078,7 +2096,7 @@ const HotelState = (() => {
   }
 
   return {
-    init, get, save, resetSave, createNewSave, didRecoverFromCorruptSave,
+    init, get, save, saveNow, resetSave, createNewSave, didRecoverFromCorruptSave,
     getDept, getCash, getReputation, getSatisfaction,
     getOnboarding, isOnboardingActive, isGuidedOnboardingActive,
     getGuidanceMode, setGuidanceMode, isExpertMode,

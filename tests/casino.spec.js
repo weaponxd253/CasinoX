@@ -481,6 +481,96 @@ test.describe('round 2 economy', () => {
   });
 });
 
+test.describe('earlier fixes and round 3', () => {
+  test('XP bar keeps its fill element and labels progress', async ({ page }) => {
+    await page.goto('/coinflip/index.html');
+    await expect(page.locator('#shell-xp-fill')).toHaveCount(1);
+    await expect(page.locator('#shell-xp-text')).toHaveAttribute('aria-label', /Level 1: \d+\/50 XP/);
+  });
+
+  test('Lucky Reels takes one bet even if spin is triggered twice', async ({ page }) => {
+    await page.goto('/slots/index.html');
+    const balance = await page.evaluate(() => {
+      CasinoWallet.set(100);
+      spin(); spin();
+      return CasinoWallet.get();
+    });
+    expect(balance).toBe(99.4);
+  });
+
+  test('Bar Shift settles each order once, however fast it is clicked', async ({ page }) => {
+    await page.goto('/hotel/index.html');
+    await page.evaluate(() => {
+      const s = HotelState.get();
+      s.departments.bar.unlocked = true;
+      s.departments.bar.level = 1;
+      HotelState.saveNow();
+    });
+    await page.goto('/hotel/bar/index.html');
+    await page.locator('#start-shift-btn').click();
+    // Math.random is pinned to 0.1, so the first order is always beer.
+    await expect(page.locator('#ticket-drink')).toContainText('Beer');
+    await page.evaluate(() => {
+      const btn = document.querySelector('.drink-btn[data-drink="beer"]');
+      btn.click(); btn.click(); btn.click();
+    });
+    await expect(page.locator('#served-count')).toHaveText('1');
+  });
+
+  test('Advance Time has a cooldown that dev mode skips', async ({ page }) => {
+    await page.goto('/hotel/index.html');
+    const btn = page.locator('#advance-time-btn');
+    await btn.click();
+    await expect(btn).toBeDisabled();
+    await expect(btn).toContainText('Next phase in');
+    expect(await page.evaluate(() => HotelState.get().calendar.phase)).toBe('afternoon');
+
+    await page.goto('/hotel/index.html?dev=1');
+    await expect(btn).toBeEnabled();
+    await btn.click();
+    await btn.click();
+    expect(await page.evaluate(() => HotelState.get().calendar.phase)).toBe('night');
+  });
+
+  test('mini-game satisfaction bonus survives recalculation', async ({ page }) => {
+    await page.goto('/hotel/index.html');
+    const [withBonus, afterRecalc] = await page.evaluate(() => {
+      HotelState.addSatisfactionBonus(6);
+      const a = HotelState.getSatisfaction();
+      HotelEngine.recalculateSatisfaction(HotelState.get());
+      return [a, HotelState.getSatisfaction()];
+    });
+    expect(afterRecalc).toBe(withBonus);
+  });
+
+  test('a live tick writes the hotel save once', async ({ page }) => {
+    await page.goto('/hotel/index.html');
+    const writes = await page.evaluate(async () => {
+      let n = 0;
+      const orig = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (key, value) {
+        if (key === 'hotelGameState') n++;
+        return orig.call(this, key, value);
+      };
+      HotelEngine.processLiveTick();
+      await Promise.resolve();
+      Storage.prototype.setItem = orig;
+      return n;
+    });
+    expect(writes).toBe(1);
+  });
+
+  test('dev tools panel opens from the badge and grants hotel cash', async ({ page }) => {
+    await page.goto('/hotel/index.html?dev=1');
+    const before = await page.evaluate(() => HotelState.getCash());
+    await page.locator('#casino-dev-badge').click();
+    await page.locator('#casino-dev-panel').getByRole('button', { name: '+$10,000 hotel cash' }).click();
+    await expect.poll(() => page.evaluate(() => HotelState.getCash())).toBeGreaterThanOrEqual(before + 10000);
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('hotelGameState')).currencies.hotelCash))
+      .toBeGreaterThanOrEqual(before + 10000);
+  });
+});
+
 test.describe('live game smoke paths', () => {
   for (const game of LIVE_GAMES) {
     test(`${game.name} can place a basic wager without freezing`, async ({ page }) => {
@@ -494,7 +584,7 @@ test.describe('live game smoke paths', () => {
 
 async function stubExternalDependencies(page) {
   // Instant tweens keep slot spins fast in tests.
-  await page.route('**/vendor/gsap-*.min.js', (route) => {
+  await page.route(/\/vendor\/gsap-[^/]*\.min\.js/, (route) => {
     route.fulfill({
       contentType: 'application/javascript',
       body: `
