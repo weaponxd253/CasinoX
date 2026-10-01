@@ -31,6 +31,8 @@ CasinoX/
 ├── casino-shell.js         ← Shared chrome + meta-game engine
 ├── casino-mobile.css       ← Full mobile layout pass (link last on every page)
 ├── wallet.js               ← Shared bankroll via localStorage
+├── hotel-events.js         ← Casino → hotel event queue (applied by the hotel)
+├── vendor/                 ← Local copies of third-party scripts (GSAP)
 │
 ├── casino-theme.css        ← Legacy stylesheet retained for older theme rules
 ├── package.json            ← Playwright test scripts

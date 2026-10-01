@@ -7,30 +7,21 @@
    ============================================================ */
 
 /* ── Hotel event helper ─────────────────────────────────────
-   Writes directly to the hotel's localStorage state so the
-   hotel knows about casino activity without needing hotel
-   scripts loaded on this page.                              */
+   Queues casino activity for the hotel (hotel-events.js) so
+   no hotel scripts are needed on this page.                 */
 function hotelEvent(type, data) {
-  try {
-    const raw = localStorage.getItem('hotelGameState');
-    if (!raw) return;
-    const state = JSON.parse(raw);
-    if (!state?.casinoBridge?.events) return;
-    const e = state.casinoBridge.events;
-    if (type === 'blackjack_win')   e.blackjackWins++;
-    else if (type === 'blackjack_loss') e.blackjackLosses++;
-    else if (type === 'chips_wagered')  e.totalChipsWagered += (Number(data?.amount) || 0);
-    localStorage.setItem('hotelGameState', JSON.stringify(state));
-  } catch (_) { /* hotel not initialised */ }
+  // Queued for the hotel to apply — see hotel-events.js
+  window.HotelEvents?.push(type, data);
 }
 
 /* ── State ────────────────────────────────────────────────── */
 let playerHand    = [];
 let dealerHand    = [];
-let deckId        = '';
+let deck          = [];
 let playerScore   = 0;
 let dealerScore   = 0;
 let gameActive    = false;
+let busy          = false;   // a card is mid-animation; ignore Hit/Stand
 let leaderboard   = [];
 let animationSpeed = 1;
 
@@ -106,8 +97,8 @@ function refreshButtons() {
   setDisabled('max-bet',     !betting || balance() < minBet() || currentBet >= balance());
   setDisabled('rebet',       !betting || lastBet <= 0 || balance() < minBet());
   setDisabled('deal-button', !betting || currentBet < minBet() || currentBet > balance());
-  setDisabled('hit-button',  !playing);
-  setDisabled('stand-button',!playing);
+  setDisabled('hit-button',  !playing || !gameActive || busy);
+  setDisabled('stand-button',!playing || !gameActive || busy);
   setDisabled('reset-button', playing);
 
   // Visual signal that a hand is mid-play (mobile CSS uses this)
@@ -138,86 +129,90 @@ async function deal() {
 
 async function startRound() {
   resetHands();
-  setResult('Shuffling deck…');
-  try {
-    const res  = await fetch('https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1');
-    const data = await res.json();
-    deckId = data.deck_id;
-    await dealInitialCards();
-    if (phase === 'playing') {
-      gameActive = true;
-      setDisabled('hit-button',  false);
-      setDisabled('stand-button',false);
-    }
-  } catch (e) {
-    console.error(e);
-    setResult('Could not connect. Returning your bet.');
-    w()?.add(currentBet);
-    enterBetting();
-  }
-}
+  deck = newShuffledDeck();
+  setResult('Dealing…');
 
-async function dealInitialCards() {
-  const res   = await fetch(`https://deckofcardsapi.com/api/deck/${deckId}/draw/?count=4`);
-  const data  = await res.json();
-  const cards = data.cards;
-
-  playerHand.push(cards[0], cards[2]);
-  dealerHand.push(cards[1], cards[3]);
+  playerHand.push(draw(), draw());
+  dealerHand.push(draw(), draw());
 
   await animateCardDealing(playerHand, document.getElementById('player-cards'));
-  await animateCardDealing(dealerHand, document.getElementById('dealer-cards'));
+  await animateCardDealing(dealerHand, document.getElementById('dealer-cards'), { hideIndex: 1 });
 
   playerScore = calcHand(playerHand);
   dealerScore = calcHand(dealerHand);
-  document.getElementById('player-score').textContent = `Score: ${playerScore}`;
-  document.getElementById('dealer-score').textContent = `Score: ${dealerScore}`;
-  updateTotalScores();
-  setResult('Your move…');
+  renderScores();
 
+  // Dealer peeks for Blackjack; either natural ends the hand at once.
   const pNat = playerScore === 21;
   const dNat = dealerScore === 21;
   if (pNat && dNat)  resolve('Push — both have Blackjack.',  'push');
   else if (pNat)     resolve('Blackjack! 3:2 payout.',       'blackjack');
   else if (dNat)     resolve('Dealer Blackjack.',            'lose');
+  else {
+    gameActive = true;
+    setResult('Your move…');
+    refreshButtons();
+  }
+}
+
+/* ── Deck ─────────────────────────────────────────────────── */
+const SUITS = [
+  { id: 'HEARTS',   symbol: '♥', red: true  },
+  { id: 'DIAMONDS', symbol: '♦', red: true  },
+  { id: 'CLUBS',    symbol: '♣', red: false },
+  { id: 'SPADES',   symbol: '♠', red: false },
+];
+const RANKS = ['ACE', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'JACK', 'QUEEN', 'KING'];
+const RANK_LABEL = { ACE: 'A', JACK: 'J', QUEEN: 'Q', KING: 'K' };
+
+/* Fresh single deck each hand, Fisher–Yates shuffled. */
+function newShuffledDeck() {
+  const cards = [];
+  SUITS.forEach(suit => RANKS.forEach(value => cards.push({ value, suit: suit.id, symbol: suit.symbol, red: suit.red })));
+  for (let i = cards.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [cards[i], cards[j]] = [cards[j], cards[i]];
+  }
+  return cards;
+}
+
+function draw() {
+  if (!deck.length) deck = newShuffledDeck();
+  return deck.pop();
 }
 
 /* ── Play ─────────────────────────────────────────────────── */
 async function playerHit() {
-  if (!gameActive || phase !== 'playing') return;
-  try {
-    const res  = await fetch(`https://deckofcardsapi.com/api/deck/${deckId}/draw/?count=1`);
-    const data = await res.json();
-    const card = data.cards[0];
-    playerHand.push(card);
-    await animateCardDealing([card], document.getElementById('player-cards'));
-    playerScore = calcHand(playerHand);
-    document.getElementById('player-score').textContent = `Score: ${playerScore}`;
-    updateTotalScores();
-    if (playerScore > 21) resolve('Bust! Dealer wins.', 'lose');
-    else if (playerScore === 21) playerStand();
-  } catch (e) { console.error(e); }
+  if (!gameActive || busy || phase !== 'playing') return;
+  busy = true;
+  refreshButtons();
+  const card = draw();
+  playerHand.push(card);
+  await animateCardDealing([card], document.getElementById('player-cards'));
+  playerScore = calcHand(playerHand);
+  renderScores();
+  busy = false;
+  if (playerScore > 21) resolve('Bust! Dealer wins.', 'lose');
+  else if (playerScore === 21) playerStand();
+  else refreshButtons();
 }
 
 async function playerStand() {
-  if (!gameActive || phase !== 'playing') return;
+  if (!gameActive || busy || phase !== 'playing') return;
   gameActive = false;
-  setDisabled('hit-button',   true);
-  setDisabled('stand-button', true);
+  refreshButtons();
   const dealerEl = document.getElementById('dealer-cards');
-  try {
-    while (dealerScore < 17) {
-      const res  = await fetch(`https://deckofcardsapi.com/api/deck/${deckId}/draw/?count=1`);
-      const data = await res.json();
-      const card = data.cards[0];
-      dealerHand.push(card);
-      await animateCardDealing([card], dealerEl);
-      dealerScore = calcHand(dealerHand);
-      document.getElementById('dealer-score').textContent = `Score: ${dealerScore}`;
-      updateTotalScores();
-    }
-    determineWinner();
-  } catch (e) { console.error(e); }
+  revealHoleCard();
+  renderScores();
+  await wait(400 / animationSpeed);
+  while (dealerScore < 17) {
+    const card = draw();
+    dealerHand.push(card);
+    await animateCardDealing([card], dealerEl);
+    dealerScore = calcHand(dealerHand);
+    renderScores();
+  }
+  determineWinner();
 }
 
 function determineWinner() {
@@ -232,6 +227,8 @@ function resolve(message, outcome) {
   if (phase === 'resolved') return;
   phase = 'resolved';
   gameActive = false;
+  revealHoleCard();
+  renderScores();
   setResult(message);
   setDisabled('hit-button',   true);
   setDisabled('stand-button', true);
@@ -275,6 +272,7 @@ function resolve(message, outcome) {
 function resetHands() {
   playerHand = []; dealerHand = [];
   playerScore = 0; dealerScore = 0;
+  busy = false;
   document.getElementById('player-cards').innerHTML = '';
   document.getElementById('dealer-cards').innerHTML = '';
   document.getElementById('player-score').textContent = 'Score: 0';
@@ -293,28 +291,80 @@ function resetTable() {
   enterBetting();
 }
 
-function animateCardDealing(hand, element) {
+function animateCardDealing(hand, element, { hideIndex = -1 } = {}) {
   return new Promise(resolve => {
     hand.forEach((card, i) => {
       setTimeout(() => {
-        const cardEl = document.createElement('div');
-        cardEl.classList.add('card');
-        const img = document.createElement('img');
-        img.src = card.image;
-        img.alt = `${card.value} of ${card.suit}`;
-        cardEl.appendChild(img);
+        const cardEl = createCardEl(card, i === hideIndex);
         element.appendChild(cardEl);
         requestAnimationFrame(() =>
           requestAnimationFrame(() => cardEl.classList.add('show'))
         );
-        // Shell synth card sound (two quick tones simulate a card flip)
-        CasinoShell.sound.tone(900, 'sine', 0.05, 0.18);
-        setTimeout(() => CasinoShell.sound.tone(700, 'sine', 0.04, 0.12), 55);
+        playCardSound();
         if (i === hand.length - 1) setTimeout(resolve, 400 / animationSpeed);
       }, i * (380 / animationSpeed));
     });
   });
 }
+
+function cardName(card) {
+  const value = card.value.charAt(0) + card.value.slice(1).toLowerCase();
+  const suit  = card.suit.charAt(0) + card.suit.slice(1).toLowerCase();
+  return `${value} of ${suit}`;
+}
+
+function paintCardFace(cardEl, card) {
+  const rank = RANK_LABEL[card.value] ?? card.value;
+  cardEl.classList.remove('face-down');
+  cardEl.classList.add(card.red ? 'red' : 'black');
+  cardEl.setAttribute('aria-label', cardName(card));
+  cardEl.innerHTML = `
+    <span class="card-corner top" aria-hidden="true">${rank}<br>${card.symbol}</span>
+    <span class="card-pip" aria-hidden="true">${card.symbol}</span>
+    <span class="card-corner bottom" aria-hidden="true">${rank}<br>${card.symbol}</span>`;
+}
+
+function createCardEl(card, faceDown = false) {
+  const cardEl = document.createElement('div');
+  cardEl.classList.add('card');
+  cardEl.setAttribute('role', 'img');
+  if (faceDown) {
+    cardEl.classList.add('face-down');
+    cardEl.setAttribute('aria-label', 'Face-down card');
+  } else {
+    paintCardFace(cardEl, card);
+  }
+  return cardEl;
+}
+
+/* Turn the dealer's hole card face up (no-op once revealed). */
+function revealHoleCard() {
+  const hole = document.querySelector('#dealer-cards .card.face-down');
+  if (!hole || !dealerHand[1]) return;
+  paintCardFace(hole, dealerHand[1]);
+  playCardSound();
+}
+
+function holeCardHidden() {
+  return !!document.querySelector('#dealer-cards .card.face-down');
+}
+
+/* Show only the dealer's up card total while the hole card is down. */
+function renderScores() {
+  const dealerShown = holeCardHidden() ? `${calcHand(dealerHand.slice(0, 1))} + ?` : dealerScore;
+  document.getElementById('player-score').textContent = `Score: ${playerScore}`;
+  document.getElementById('dealer-score').textContent = `Score: ${dealerShown}`;
+  document.getElementById('player-total').textContent = playerScore;
+  document.getElementById('dealer-total').textContent = dealerShown;
+}
+
+function playCardSound() {
+  // Shell synth card sound (two quick tones simulate a card flip)
+  CasinoShell.sound.tone(900, 'sine', 0.05, 0.18);
+  setTimeout(() => CasinoShell.sound.tone(700, 'sine', 0.04, 0.12), 55);
+}
+
+function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function calcHand(hand) {
   let value = 0, aces = 0;
@@ -333,11 +383,6 @@ function round(n)       { return Math.max(0, parseFloat(Number(n).toFixed(2))); 
 function updateSpeed(val) {
   animationSpeed = parseFloat(val);
   document.getElementById('speed-value').textContent = parseFloat(val).toFixed(1);
-}
-
-function updateTotalScores() {
-  document.getElementById('player-total').textContent = playerScore;
-  document.getElementById('dealer-total').textContent = dealerScore;
 }
 
 function highlightWinner() {

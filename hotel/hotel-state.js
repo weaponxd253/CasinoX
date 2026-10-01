@@ -8,6 +8,7 @@
 
 const HotelState = (() => {
   const STORAGE_KEY = 'hotelGameState';
+  const BACKUP_KEY  = 'hotelGameState.corruptBackup';
   const SCHEMA_VERSION = 9;
 
   let _state = null;
@@ -303,16 +304,41 @@ const HotelState = (() => {
 
   /* ── Persistence ─────────────────────────────────────────── */
   function load() {
+    let raw = null;
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return createNewSave();
       const parsed = JSON.parse(raw);
       return migrate(parsed);
     } catch (e) {
-      console.warn('[HotelState] Corrupt save — starting fresh.', e);
+      // Keep the unreadable save so it can be recovered by hand, rather
+      // than letting the fresh save overwrite it on the next write.
+      console.warn(`[HotelState] Corrupt save — backed up to "${BACKUP_KEY}" and starting fresh.`, e);
+      try { if (raw) localStorage.setItem(BACKUP_KEY, raw); } catch (_) { /* storage full */ }
+      _recoveredFromCorruptSave = true;
       return createNewSave();
     }
   }
+
+  /* Another tab (hotel page or a mini-game) saved: adopt its state so this
+     tab's next save builds on it instead of overwriting it. */
+  let _watchingOtherTabs = false;
+  function watchOtherTabs() {
+    if (typeof window === 'undefined' || _watchingOtherTabs) return;
+    _watchingOtherTabs = true;
+    window.addEventListener('storage', e => {
+      if (e.key !== STORAGE_KEY || !e.newValue) return;
+      try {
+        _state = migrate(JSON.parse(e.newValue));
+        window.dispatchEvent(new CustomEvent('hotel:state-synced'));
+      } catch (err) {
+        console.warn('[HotelState] Ignored unreadable save from another tab.', err);
+      }
+    });
+  }
+
+  let _recoveredFromCorruptSave = false;
+  function didRecoverFromCorruptSave() { return _recoveredFromCorruptSave; }
 
   function save() {
     if (!_state) return;
@@ -332,6 +358,7 @@ const HotelState = (() => {
     ensureMoraleHistory(_state);
     _state.staff.payrollPerDay = calculatePayrollPerDay(_state.staff.roster);
     save();
+    watchOtherTabs();
     return _state;
   }
 
@@ -2033,7 +2060,7 @@ const HotelState = (() => {
   }
 
   return {
-    init, get, save, resetSave, createNewSave,
+    init, get, save, resetSave, createNewSave, didRecoverFromCorruptSave,
     getDept, getCash, getReputation, getSatisfaction,
     getOnboarding, isOnboardingActive, isGuidedOnboardingActive,
     getGuidanceMode, setGuidanceMode, isExpertMode,

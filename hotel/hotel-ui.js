@@ -63,6 +63,17 @@ const HotelUI = (() => {
     HotelBridge.on('guest_income', ({ amount }) => {
       window.HotelRenderer?.flashIncome?.(amount);
     });
+
+    // Casino results queued while the hotel was closed (or in another tab)
+    if (HotelBridge.processQueuedEvents()) renderAll();
+    window.addEventListener('storage', e => {
+      if (e.key === window.HotelEvents?.KEY && e.newValue && HotelBridge.processQueuedEvents()) renderAll();
+    });
+    window.addEventListener('hotel:state-synced', () => renderAll());
+
+    if (HotelState.didRecoverFromCorruptSave?.()) {
+      CasinoShell.toast('Your hotel save could not be read, so a new hotel was started. The old save was backed up.', 8000);
+    }
   }
 
   /* ── Full render ─────────────────────────────────────────── */

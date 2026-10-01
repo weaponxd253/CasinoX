@@ -110,6 +110,57 @@ const HotelBridge = (() => {
     }
   }
 
+  /* ── Queued casino events (from HotelEvents) ────────────────
+     Casino pages queue running totals; apply them here in one
+     pass with a single save. Called on hotel boot and whenever
+     another tab adds to the queue.
+  ─────────────────────────────────────────────────────────── */
+  function processQueuedEvents() {
+    if (!window.HotelEvents || !HotelState.get()) return null;
+    const queue = HotelEvents.take();
+    if (HotelEvents.isEmpty(queue)) return null;
+
+    const ev = HotelState.get().casinoBridge.events;
+    const n = type => Math.max(0, Math.floor(Number(queue.counts[type]) || 0));
+    const summary = {
+      blackjackWins:   n('blackjack_win'),
+      blackjackLosses: n('blackjack_loss'),
+      slotsSpun:       n('slots_spun'),
+      coinFlipsWon:    n('coin_flip_win'),
+      jackpotsHit:     n('jackpot'),
+      chipsWagered:    Math.max(0, Number(queue.wagered) || 0),
+    };
+
+    const winsBefore = ev.blackjackWins ?? 0;
+    HotelState.updateCasinoBridge({
+      blackjackWins:     winsBefore + summary.blackjackWins,
+      blackjackLosses:   (ev.blackjackLosses ?? 0) + summary.blackjackLosses,
+      slotsSpun:         (ev.slotsSpun ?? 0) + summary.slotsSpun,
+      coinFlipsWon:      (ev.coinFlipsWon ?? 0) + summary.coinFlipsWon,
+      jackpotsHit:       (ev.jackpotsHit ?? 0) + summary.jackpotsHit,
+      totalChipsWagered: Math.round(((ev.totalChipsWagered ?? 0) + summary.chipsWagered) * 100) / 100,
+    });
+
+    if (summary.blackjackWins) HotelState.tickAchievementProgress('ten_blackjack_wins', summary.blackjackWins);
+
+    // One boost per sync — the strongest one earned wins.
+    if (summary.jackpotsHit) {
+      HotelState.tickAchievementProgress('jackpot_hit', summary.jackpotsHit);
+      HotelState.setHighRollerFlag();
+      _applyIncomeBoost(1.40, 30);
+      emit('jackpot', { amount: Math.max(0, ...queue.jackpots) });
+      emit('income_boost', { mult: 1.40, minutes: 30,
+        reason: 'Jackpot hit — word spreads fast!' });
+    } else if (Math.floor((winsBefore + summary.blackjackWins) / 5) > Math.floor(winsBefore / 5)) {
+      _applyIncomeBoost(1.20, 20);
+      emit('income_boost', { mult: 1.20, minutes: 20,
+        reason: 'Blackjack streak — guests are excited!' });
+    }
+
+    emit('casino_events_synced', summary);
+    return summary;
+  }
+
   /* ── Hotel → Casino ───────────────────────────────────────
      Hotel upgrades that affect casino behavior.
      Called by hotel-ui.js after an upgrade completes.
@@ -166,7 +217,7 @@ const HotelBridge = (() => {
     HotelState.save();
   }
 
-  return { on, emit, onCasinoEvent, applyHotelToCasino, syncCasinoSnapshot };
+  return { on, emit, onCasinoEvent, processQueuedEvents, applyHotelToCasino, syncCasinoSnapshot };
 })();
 
 if (typeof window !== 'undefined') window.HotelBridge = HotelBridge;

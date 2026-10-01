@@ -401,6 +401,42 @@ test.describe('betting gates', () => {
   });
 });
 
+test.describe('round 1 regressions', () => {
+  test('Blackjack keeps the dealer hole card hidden until the player stands', async ({ page }) => {
+    await page.goto('/blackjack/index.html');
+    await page.evaluate(() => {
+      CasinoWallet.set(100);
+      // draw() pops from the end: player 10♥ 8♠, dealer 9♣ + hole 7♦, then 6♣ busts the dealer.
+      const c = (value, suit, red) => ({ value, suit, symbol: '♠', red });
+      window.newShuffledDeck = () => [c('6', 'CLUBS'), c('7', 'DIAMONDS', true), c('9', 'CLUBS'), c('8', 'SPADES'), c('10', 'HEARTS', true)];
+    });
+    await page.locator('.chip-btn[data-value="1"]').click();
+    await tapCenter(page.locator('#deal-button'));
+
+    await expect(page.locator('#dealer-cards .card')).toHaveCount(2);
+    await expect(page.locator('#dealer-cards .card.face-down')).toHaveCount(1);
+    await expect(page.locator('#dealer-score')).toHaveText('Score: 9 + ?');
+    await expect(page.locator('#stand-button')).toBeEnabled();
+
+    await tapCenter(page.locator('#stand-button'));
+    await expect(page.locator('#result-message')).toHaveText('Dealer busts — you win!');
+    await expect(page.locator('#dealer-cards .card.face-down')).toHaveCount(0);
+    await expect(page.locator('#dealer-score')).toHaveText('Score: 22');
+    await expect.poll(() => page.evaluate(() => CasinoWallet.get())).toBe(101);
+  });
+
+  test('casino results are queued and applied when the hotel opens', async ({ page }) => {
+    await page.goto('/coinflip/index.html');
+    await page.evaluate(() => CasinoWallet.set(100));
+    await page.locator('#flip-heads').click();
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('hotelEventQueue'))?.wagered)).toBe(5);
+
+    await page.goto('/hotel/index.html');
+    await expect.poll(() => page.evaluate(() => HotelState.get().casinoBridge.events.totalChipsWagered)).toBe(5);
+    expect(await page.evaluate(() => localStorage.getItem('hotelEventQueue'))).toBeNull();
+  });
+});
+
 test.describe('live game smoke paths', () => {
   for (const game of LIVE_GAMES) {
     test(`${game.name} can place a basic wager without freezing`, async ({ page }) => {
@@ -413,7 +449,8 @@ test.describe('live game smoke paths', () => {
 });
 
 async function stubExternalDependencies(page) {
-  await page.route('https://cdnjs.cloudflare.com/ajax/libs/gsap/**', (route) => {
+  // Instant tweens keep slot spins fast in tests.
+  await page.route('**/vendor/gsap-*.min.js', (route) => {
     route.fulfill({
       contentType: 'application/javascript',
       body: `
@@ -431,36 +468,6 @@ async function stubExternalDependencies(page) {
       `
     });
   });
-
-  await page.route('https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1', (route) => {
-    route.fulfill({ json: { success: true, deck_id: 'test-deck' } });
-  });
-
-  await page.route('https://deckofcardsapi.com/api/deck/test-deck/draw/?count=4', (route) => {
-    route.fulfill({
-      json: {
-        success: true,
-        cards: [
-          card('10', 'HEARTS'),
-          card('9', 'CLUBS'),
-          card('8', 'SPADES'),
-          card('7', 'DIAMONDS')
-        ]
-      }
-    });
-  });
-
-  await page.route('https://deckofcardsapi.com/api/deck/test-deck/draw/?count=1', (route) => {
-    route.fulfill({ json: { success: true, cards: [card('6', 'CLUBS')] } });
-  });
-}
-
-function card(value, suit) {
-  return {
-    value,
-    suit,
-    image: `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="112"></svg>`
-  };
 }
 
 function escapeRegExp(value) {

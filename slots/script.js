@@ -15,20 +15,15 @@ let spinning = false;   // true from bet placed until the reels settle
 
 const wallet = () => (window.CasinoShell && CasinoShell.wallet) || window.CasinoWallet;
 
+// Animation is optional: if GSAP failed to load, reels settle without it
+// instead of hanging after the bet has been taken.
+const hasGsap = () => typeof window.gsap !== "undefined";
+
 // ─── Hotel event helper ────────────────────────────────────────────────────────
-// Writes directly to hotel localStorage — no hotel scripts needed on this page.
+// Queues events for the hotel — no hotel scripts needed on this page.
 function hotelEvent(type, data) {
-  try {
-    const raw = localStorage.getItem('hotelGameState');
-    if (!raw) return;
-    const state = JSON.parse(raw);
-    if (!state?.casinoBridge?.events) return;
-    const e = state.casinoBridge.events;
-    if (type === 'slots_spun')       e.slotsSpun++;
-    else if (type === 'jackpot')     e.jackpotsHit++;
-    else if (type === 'chips_wagered') e.totalChipsWagered += (Number(data?.amount) || 0);
-    localStorage.setItem('hotelGameState', JSON.stringify(state));
-  } catch (_) { /* hotel not initialised */ }
+  // Queued for the hotel to apply — see hotel-events.js
+  window.HotelEvents?.push(type, data);
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -118,6 +113,7 @@ function typewriterEffect(element, text, baseSpeed = 100, callback = null) {
 
 // ─── Win animation on reels ───────────────────────────────────────────────────
 function animateWinningReels(reelElements) {
+  if (!hasGsap()) return;
   reelElements.forEach((reel) => {
     const container = reel.querySelector(".icon-container");
     gsap.to(reel, { boxShadow: "0 0 20px 6px #ffd700", duration: 0.3, yoyo: true, repeat: 5, ease: "power1.inOut",
@@ -150,25 +146,28 @@ function spin() {
   typewriterEffect(result, "Spinning...", 100);
 
   allButtons.forEach((b) => (b.disabled = true));
-  gsap.to(spinButton, { scale: 1.1, duration: 0.4, yoyo: true, repeat: -1, ease: "power1.inOut" });
-  reelWrappers.forEach((r) => gsap.set(r, { boxShadow: "" }));
+  if (hasGsap()) {
+    gsap.to(spinButton, { scale: 1.1, duration: 0.4, yoyo: true, repeat: -1, ease: "power1.inOut" });
+    reelWrappers.forEach((r) => gsap.set(r, { boxShadow: "" }));
+  }
 
   const reelPromises = iconContainers.map((container, index) => {
     const randomSymbols = Array.from({ length: 20 }, getRandomSymbol);
     const finalSymbol = getRandomSymbol();
     const totalHeight = randomSymbols.length * 100;
     const finalPosition = currentYPositions[index] - totalHeight - 100;
-    container.innerHTML += randomSymbols.map((s) => `<div>${s}</div>`).join("") + `<div>${finalSymbol}</div>`;
     return new Promise((resolve) => {
+      const settle = () => {
+        container.innerHTML = `<div>${finalSymbol}</div>`;
+        container.style.transform = "translateY(0)";
+        currentYPositions[index] = 0;
+        CasinoShell.sound.tone([220, 262, 330][index], "sine", 0.15, 0.2); // reel-stop
+        resolve(finalSymbol);
+      };
+      if (!hasGsap()) { setTimeout(settle, 600 + index * 300); return; }
+      container.innerHTML += randomSymbols.map((s) => `<div>${s}</div>`).join("") + `<div>${finalSymbol}</div>`;
       gsap.fromTo(container, { y: currentYPositions[index] }, {
-        y: finalPosition, duration: 2 + index * 0.2, ease: "power2.inOut",
-        onComplete: () => {
-          container.innerHTML = `<div>${finalSymbol}</div>`;
-          container.style.transform = "translateY(0)";
-          currentYPositions[index] = 0;
-          CasinoShell.sound.tone([220, 262, 330][index], "sine", 0.15, 0.2); // reel-stop
-          resolve(finalSymbol);
-        }
+        y: finalPosition, duration: 2 + index * 0.2, ease: "power2.inOut", onComplete: settle
       });
     });
   });
@@ -180,8 +179,10 @@ function spin() {
 
   Promise.all(reelPromises).then((finalSymbols) => {
     spinning = false;
-    gsap.killTweensOf(spinButton);
-    gsap.to(spinButton, { scale: 1, duration: 0.2 });
+    if (hasGsap()) {
+      gsap.killTweensOf(spinButton);
+      gsap.to(spinButton, { scale: 1, duration: 0.2 });
+    }
 
     const winnings = calculateWinnings(finalSymbols, currentBet);
     const isJackpot = winnings === currentBet * 50;
@@ -245,11 +246,13 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("help").addEventListener("click", showHelp);
 
   document.addEventListener("keydown", (e) => {
-    if (e.code === "Space" && !e.repeat) {
-      e.preventDefault();
-      const spinBtn = document.querySelector(".spin-button");
-      if (!spinning && !spinBtn.disabled) spin();
-    }
+    if (e.code !== "Space" || e.repeat) return;
+    // Let Space press focused controls, and never spin behind an open dialog.
+    if (e.target.closest?.("button, a, input, select, textarea, [contenteditable]")) return;
+    if (document.querySelector(".shell-modal.open")) return;
+    e.preventDefault();
+    const spinBtn = document.querySelector(".spin-button");
+    if (!spinning && !spinBtn.disabled) spin();
   });
 
   if (!localStorage.getItem("slotToastShown")) {
