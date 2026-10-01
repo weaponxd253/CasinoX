@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roulette Royale — Casino X</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Cormorant+Garamond:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Shell first, game styles second, mobile last -->
+  <link rel="stylesheet" href="../casino-shell.css?v=2026.10.1-p3">
+  <link rel="stylesheet" href="styles.css?v=2026.10.1-p3">
+  <link rel="stylesheet" href="../casino-mobile.css?v=2026.10.1-p3">
+</head>
+
+<body>
+  <!-- The shell injects the header, modals and overlays automatically. -->
+
+  <main id="game" class="rt-stage">
+    <section class="rt-lock" id="rt-lock" hidden>
+      <h2>🎡 Roulette Royale is locked</h2>
+      <p id="rt-lock-detail">Upgrade your hotel to open this table.</p>
+      <a class="btn primary" href="../hotel/index.html">Go to the Hotel Lobby</a>
+    </section>
+
+    <div class="rt-layout" id="rt-layout">
+      <!-- Wheel + result -->
+      <section class="rt-wheel-panel" aria-label="Wheel">
+        <div class="rt-wheel-wrap">
+          <div class="rt-pointer" aria-hidden="true"></div>
+          <div class="rt-wheel" id="rt-wheel" aria-hidden="true"></div>
+          <div class="rt-hub" id="rt-hub" aria-hidden="true">?</div>
+        </div>
+        <div class="rt-result" id="rt-result">Place your chips, then spin.</div>
+        <div class="rt-history" aria-label="Recent numbers">
+          <span class="rt-history-label">Last numbers</span>
+          <ol id="rt-history"></ol>
+        </div>
+      </section>
+
+      <!-- Betting table -->
+      <section class="rt-table-panel" aria-label="Betting table">
+        <div class="rt-chips" role="group" aria-label="Chip value">
+          <span class="rt-chips-label">Chip</span>
+          <button type="button" class="rt-chip" data-chip="1">$1</button>
+          <button type="button" class="rt-chip" data-chip="5">$5</button>
+          <button type="button" class="rt-chip" data-chip="25">$25</button>
+          <button type="button" class="rt-chip" data-chip="100" hidden>$100</button>
+        </div>
+
+        <div class="rt-table" id="rt-table">
+          <button type="button" class="rt-spot rt-zero green" data-bet="n0">0</button>
+          <div class="rt-numbers" id="rt-numbers"><!-- 1–36 built by script.js --></div>
+          <div class="rt-columns">
+            <button type="button" class="rt-spot rt-outside" data-bet="col1">2:1</button>
+            <button type="button" class="rt-spot rt-outside" data-bet="col2">2:1</button>
+            <button type="button" class="rt-spot rt-outside" data-bet="col3">2:1</button>
+          </div>
+          <div class="rt-dozens">
+            <button type="button" class="rt-spot rt-outside" data-bet="dozen1">1st 12</button>
+            <button type="button" class="rt-spot rt-outside" data-bet="dozen2">2nd 12</button>
+            <button type="button" class="rt-spot rt-outside" data-bet="dozen3">3rd 12</button>
+          </div>
+          <div class="rt-even-money">
+            <button type="button" class="rt-spot rt-outside" data-bet="low">1–18</button>
+            <button type="button" class="rt-spot rt-outside" data-bet="even">Even</button>
+            <button type="button" class="rt-spot rt-outside red" data-bet="red">Red</button>
+            <button type="button" class="rt-spot rt-outside black" data-bet="black">Black</button>
+            <button type="button" class="rt-spot rt-outside" data-bet="odd">Odd</button>
+            <button type="button" class="rt-spot rt-outside" data-bet="high">19–36</button>
+          </div>
+        </div>
+
+        <div class="rt-actions">
+          <div class="rt-total"><span>Total bet</span><strong id="rt-total">$0.00</strong><small id="rt-limit"></small></div>
+          <button type="button" class="btn secondary" id="rt-clear">Clear</button>
+          <button type="button" class="btn secondary" id="rt-rebet">Rebet</button>
+          <button type="button" class="btn secondary" id="rt-help" aria-label="How to play">?</button>
+          <button type="button" class="btn primary rt-spin" id="rt-spin">Spin</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="../wallet.js?v=2026.10.1-p3"></script>
+  <script src="../casino-shell.js?v=2026.10.1-p3"></script>
+  <script src="../hotel-events.js?v=2026.10.1-p3"></script>
+  <script src="../hotel-perks.js?v=2026.10.1-p3"></script>
+  <script src="script.js?v=2026.10.1-p3"></script>
+</body>
+
+</html>

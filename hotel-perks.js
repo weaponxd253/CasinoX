@@ -18,6 +18,10 @@
        HotelPerks.dailyBonusExtra(n)  → extra chips on an n-chip daily bonus
        HotelPerks.compOffer()         → { cost, chips, available, hotelCash, reason }
        HotelPerks.takeComp()          → exchange hotel cash for chips (false if unavailable)
+       HotelPerks.highRoller()        → { active, minutesLeft } — high-stakes table
+       HotelPerks.xpMult()            → casino XP multiplier (1.5 during a high-roller visit)
+       HotelPerks.limitMult()         → table-limit multiplier (casino level × high roller)
+       HotelPerks.gameGate(id)        → unlock status of a gated casino game
        HotelPerks.list()              → active perks for display
        HotelPerks.renderStrip()       → "Hotel perks" strip under the page header
    ============================================================ */
@@ -26,6 +30,16 @@ const HotelPerks = (() => {
   const STATE_KEY = 'hotelGameState';
   const SLOTS_BASE_MAX_BET = 6;
   const COMP = { cost: 1000, chips: 250 };   // hotel cash → chips, before the chip bonus
+  const HIGH_ROLLER = { limitMult: 2, xpMult: 1.5 };
+
+  /* Casino games unlocked through hotel progress (Casino Floor level +
+     reputation). Dev mode (?dev=1) opens them all for testing. */
+  const GAME_GATES = {
+    roulette:    { label: 'Roulette Royale', casinoLevel: 2, rep: 5,  href: 'roulette/index.html' },
+    mines:       { label: 'Mines',           casinoLevel: 2, rep: 6 },
+    videoPoker:  { label: 'Video Poker',     casinoLevel: 3, rep: 10 },
+    texasHoldem: { label: "Texas Hold'em",   casinoLevel: 5, rep: 20 },
+  };
 
   function readState() {
     try { return JSON.parse(localStorage.getItem(STATE_KEY) || 'null'); }
@@ -42,21 +56,44 @@ const HotelPerks = (() => {
       chipBonus: Number(perks.chipBonus) || 0,
       barDailyBonus: Number(perks.dailyBonus) || 0,
       hotelCash: Number(state?.currencies?.hotelCash) || 0,
+      highRollerUntil: state?.guests?.highRollerPresent ? Number(state.guests.highRollerUntil) || 0 : 0,
     };
   }
 
+  /* A high roller in the hotel opens a high-stakes table until they leave. */
+  function highRoller() {
+    const until = get().highRollerUntil;
+    const active = until > Date.now();
+    return { active, minutesLeft: active ? Math.ceil((until - Date.now()) / 60_000) : 0 };
+  }
+
+  const limitMult = () => get().betMult * (highRoller().active ? HIGH_ROLLER.limitMult : 1);
+  const xpMult = () => (highRoller().active ? HIGH_ROLLER.xpMult : 1);
+
   function slotsMaxBet() {
-    return Math.round(SLOTS_BASE_MAX_BET * get().betMult * 100) / 100;
+    return Math.round(SLOTS_BASE_MAX_BET * limitMult() * 100) / 100;
   }
 
   function blackjackChips() {
-    const { betMult } = get();
-    return [1, 5, 10, 25, ...(betMult >= 2 ? [50] : []), ...(betMult >= 3 ? [100] : [])];
+    const mult = limitMult();
+    return [1, 5, 10, 25, ...(mult >= 2 ? [50] : []), ...(mult >= 3 ? [100] : [])];
   }
 
   function dailyBonusExtra(base) {
     const p = get();
     return Math.round((Number(base) || 0) * p.chipBonus / 100) + p.barDailyBonus;
+  }
+
+  function gameGate(id) {
+    const gate = GAME_GATES[id];
+    if (!gate) return null;
+    const state = readState();
+    const casinoLevel = state?.departments?.casino?.level ?? 1;
+    const rep = state?.currencies?.reputation ?? 1;
+    const casinoMet = casinoLevel >= gate.casinoLevel;
+    const repMet = rep >= gate.rep;
+    const dev = !!window.CasinoWallet?.devMode?.();
+    return { ...gate, casinoLevelNow: casinoLevel, repNow: rep, casinoMet, repMet, dev, unlocked: (casinoMet && repMet) || dev };
   }
 
   function compOffer() {
@@ -83,7 +120,9 @@ const HotelPerks = (() => {
     const p = get();
     if (!p.hasHotel) return [];
     const perks = [];
-    if (p.betMult > 1) perks.push({ icon: 'fa-arrow-up-wide-short', label: `Higher limits · slots up to $${slotsMaxBet()}` });
+    const hr = highRoller();
+    if (hr.active) perks.push({ icon: 'fa-gem', label: `High roller in the house: limits ×2, +50% XP · ${hr.minutesLeft} min left`, highlight: true });
+    if (limitMult() > 1) perks.push({ icon: 'fa-arrow-up-wide-short', label: `Higher limits · slots up to $${slotsMaxBet()}` });
     if (p.chipBonus > 0) perks.push({ icon: 'fa-coins', label: `+${p.chipBonus}% daily bonus & comps` });
     if (p.barDailyBonus > 0) perks.push({ icon: 'fa-martini-glass', label: `Bar: +$${p.barDailyBonus} daily bonus` });
     return perks;
@@ -101,14 +140,15 @@ const HotelPerks = (() => {
     strip.id = 'hotel-perk-strip';
     strip.className = 'hotel-perk-strip';
     strip.href = hotelHref;
+    strip.classList.toggle('high-roller', highRoller().active);
     strip.innerHTML = perks.length
       ? `<span class="perk-kicker"><i class="fa-solid fa-hotel" aria-hidden="true"></i> Hotel perks</span>${perks.map(perk =>
-          `<span class="perk-item"><i class="fa-solid ${perk.icon}" aria-hidden="true"></i> ${perk.label}</span>`).join('')}`
+          `<span class="perk-item ${perk.highlight ? 'perk-highlight' : ''}"><i class="fa-solid ${perk.icon}" aria-hidden="true"></i> ${perk.label}</span>`).join('')}`
       : `<span class="perk-kicker"><i class="fa-solid fa-hotel" aria-hidden="true"></i> Hotel perks</span><span class="perk-item">Upgrade the Casino Floor and Bar in your hotel for higher limits and bigger bonuses →</span>`;
     header.insertAdjacentElement('afterend', strip);
   }
 
-  return { get, slotsMaxBet, blackjackChips, dailyBonusExtra, compOffer, takeComp, list, renderStrip, COMP };
+  return { get, highRoller, xpMult, limitMult, gameGate, GAME_GATES, slotsMaxBet, blackjackChips, dailyBonusExtra, compOffer, takeComp, list, renderStrip, COMP };
 })();
 
 if (typeof window !== 'undefined') window.HotelPerks = HotelPerks;

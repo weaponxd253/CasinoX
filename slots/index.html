@@ -14,13 +14,13 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <!-- Shell first, game styles second -->
-  <link rel="stylesheet" href="../casino-shell.css?v=2026.10.1-p2">
-  <link rel="stylesheet" href="styles.css?v=2026.10.1-p2">
-  <link rel="stylesheet" href="../casino-mobile.css?v=2026.10.1-p2">
+  <link rel="stylesheet" href="../casino-shell.css?v=2026.10.1-p3">
+  <link rel="stylesheet" href="styles.css?v=2026.10.1-p3">
+  <link rel="stylesheet" href="../casino-mobile.css?v=2026.10.1-p3">
 
 
   <!-- Served locally so a CDN outage can't stall a paid spin -->
-  <script src="../vendor/gsap-3.9.1.min.js?v=2026.10.1-p2"></script>
+  <script src="../vendor/gsap-3.9.1.min.js?v=2026.10.1-p3"></script>
 </head>
 
 <body>
@@ -50,6 +50,14 @@
         <button class="pushable" type="button" data-bet="2.4" aria-label="Bet 2 dollars 40"><span class="front">$2.40</span></button>
         <button class="pushable" type="button" data-bet="3.6" aria-label="Bet 3 dollars 60"><span class="front">$3.60</span></button>
         <button class="pushable" type="button" data-bet="6" aria-label="Bet 6 dollars, maximum bet"><span class="front">$6.00<span class="bet-max-tag"> Max</span></span></button>
+      </div>
+
+      <div class="autospin-row" role="group" aria-label="Auto-spin">
+        <span class="autospin-label">Auto-spin</span>
+        <button type="button" class="autospin-btn" data-auto="10">10</button>
+        <button type="button" class="autospin-btn" data-auto="25">25</button>
+        <button type="button" class="autospin-btn" data-auto="50">50</button>
+        <button type="button" class="autospin-stop" id="autospin-stop" hidden>Stop</button>
       </div>
 
       <div id="bet-display" class="digital-screen small-screen">
@@ -100,11 +108,11 @@
     <p class="paytable-note">Three of a kind pays the full multiplier, two of a kind pays half. Returns about 95% of wagers over time.</p>
   </main>
 
-  <script src="../wallet.js?v=2026.10.1-p2"></script>
-  <script src="../casino-shell.js?v=2026.10.1-p2"></script>
-  <script src="../hotel-events.js?v=2026.10.1-p2"></script>
-  <script src="../hotel-perks.js?v=2026.10.1-p2"></script>
-  <script src="script.js?v=2026.10.1-p2"></script>
+  <script src="../wallet.js?v=2026.10.1-p3"></script>
+  <script src="../casino-shell.js?v=2026.10.1-p3"></script>
+  <script src="../hotel-events.js?v=2026.10.1-p3"></script>
+  <script src="../hotel-perks.js?v=2026.10.1-p3"></script>
+  <script src="script.js?v=2026.10.1-p3"></script>
 </body>
 
 </html>

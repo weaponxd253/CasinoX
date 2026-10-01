@@ -153,6 +153,21 @@
 .action-btn.danger:hover:not(:disabled)  { background: rgba(192,57,43,0.35); }
 .action-btn:disabled     { opacity: 0.35; cursor: not-allowed; transform: none; }
 .action-btn:disabled::after { display: none; }
+.action-btn[hidden] { display: none; }
+
+/* ── Split hands ── */
+.cards-container.is-split { gap: 18px; flex-wrap: wrap; justify-content: center; }
+.hand-group {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 8px; border: 1px dashed transparent; border-radius: 12px;
+  transition: border-color 0.2s, background 0.2s;
+}
+.hand-group .hand-cards { display: flex; gap: 4px; }
+.hand-group .card { width: 58px; height: 84px; }
+.hand-group .card-pip { font-size: 30px; }
+.hand-group.active { border-color: var(--gold); background: rgba(201,168,76,0.08); }
+.hand-group.busted { opacity: 0.6; }
+.hand-label { font-size: 12px; letter-spacing: 0.04em; color: var(--gold-light); }
 
 /* ── Bottom panels ────────────────────────────────────────── */
 .bottom-panel {

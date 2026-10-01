@@ -495,3 +495,7 @@ kbd {
   }
   #shell-confetti { display: none; }
 }
+
+.hotel-perk-strip.high-roller { border-color: #62d6ff; background: rgba(98, 214, 255, 0.08); }
+.hotel-perk-strip .perk-highlight { color: #9fe6ff; font-weight: 700; }
+.hotel-perk-strip .perk-highlight i { color: #62d6ff; }

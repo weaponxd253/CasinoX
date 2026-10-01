@@ -341,3 +341,7 @@ body.light .shell-progress .lvl { color: var(--gold-dark); }
   .game-card { padding: 28px 20px 22px; }
   .lobby-hero .hero-sub { font-size: 16px; }
 }
+
+/* Unlock progress on locked game cards */
+.unlock-bar { display: block; width: 100%; height: 5px; margin-top: 8px; border-radius: 5px; background: rgba(0,0,0,0.35); overflow: hidden; }
+.unlock-bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--gold-dark), var(--gold)); }

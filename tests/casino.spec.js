@@ -577,7 +577,7 @@ test.describe('earlier fixes and round 3', () => {
 test.describe('sprint 1 UX', () => {
   const PAGES = ['/casino.html', '/slots/index.html', '/blackjack/index.html', '/coinflip/index.html',
     '/hotel/index.html', '/hotel/bar/index.html', '/hotel/spa/index.html', '/hotel/rooms/index.html',
-    '/hotel/restaurant/index.html', '/hotel/checkin/index.html', '/hotel/entertainment/index.html'];
+    '/hotel/restaurant/index.html', '/hotel/checkin/index.html', '/hotel/entertainment/index.html', '/roulette/index.html?dev=1'];
 
   test('no page scrolls sideways', async ({ page }) => {
     for (const path of PAGES) {
@@ -807,6 +807,138 @@ test.describe('phase 2 polish', () => {
   });
 });
 
+test.describe('phase 3 gameplay', () => {
+  // Blackjack with a fixed deck: draw() pops from the end of the array.
+  async function blackjackWith(page, cards, bet = 10) {
+    await page.goto('/blackjack/index.html');
+    await page.evaluate((cards) => {
+      CasinoWallet.set(100);
+      localStorage.setItem('casinoProfile', JSON.stringify({ xp: 0 }));
+      const c = ([value, suit]) => ({ value, suit, symbol: '♠', red: suit === 'HEARTS' || suit === 'DIAMONDS' });
+      window.newShuffledDeck = () => cards.map(c);
+    }, cards);
+    await page.locator(`.chip-btn[data-value="${bet}"]`).click();
+    await tapCenter(page.locator('#deal-button'));
+  }
+  const balanceIs = (page, n) => expect.poll(() => page.evaluate(() => CasinoWallet.get())).toBe(n);
+
+  test('Blackjack: double down doubles the bet and takes one card', async ({ page }) => {
+    // Player 5+6, dealer 9 (hole 7); double draws 10 → 21; dealer hits 6 → busts
+    await blackjackWith(page, [['6','CLUBS'],['10','SPADES'],['7','DIAMONDS'],['9','CLUBS'],['6','HEARTS'],['5','SPADES']]);
+    await expect(page.locator('#double-button')).toBeEnabled();
+    await expect(page.locator('#split-button')).toBeDisabled();
+    await tapCenter(page.locator('#double-button'));
+    await expect(page.locator('#result-message')).toHaveText('Dealer busts — you win!');
+    await balanceIs(page, 120);
+  });
+
+  test('Blackjack: splitting a pair plays two hands', async ({ page }) => {
+    // 8+8 vs 10 (hole 7): hand 1 gets 3 then doubles to 21, hand 2 gets 10 and stands on 18
+    await blackjackWith(page, [['10','SPADES'],['10','HEARTS'],['3','CLUBS'],['7','DIAMONDS'],['10','CLUBS'],['8','HEARTS'],['8','SPADES']]);
+    await expect(page.locator('#split-button')).toBeEnabled();     // after the deal animation
+    await tapCenter(page.locator('#split-button'));
+    await expect(page.locator('#player-cards .hand-group')).toHaveCount(2);
+    await expect(page.locator('.hand-group.active .hand-label')).toContainText('Hand 1');
+    await expect(page.locator('#double-button')).toBeEnabled();
+    await tapCenter(page.locator('#double-button'));
+    await expect(page.locator('.hand-group.active .hand-label')).toContainText('Hand 2');
+    await expect(page.locator('#stand-button')).toBeEnabled();
+    await tapCenter(page.locator('#stand-button'));
+    await expect(page.locator('#result-message')).toHaveText('Hand 1 wins, Hand 2 wins.');
+    // 100 − 10 − 10 (split) − 10 (double) + 40 + 20 = 130
+    await balanceIs(page, 130);
+  });
+
+  test('Blackjack: insurance pays 2:1 against a dealer Blackjack', async ({ page }) => {
+    await blackjackWith(page, [['KING','DIAMONDS'],['ACE','SPADES'],['9','CLUBS'],['10','HEARTS']]);
+    await expect(page.locator('#insurance-yes')).toBeVisible();
+    await expect(page.locator('#insurance-yes')).toHaveText('Insure · $5.00');
+    await tapCenter(page.locator('#insurance-yes'));
+    await expect(page.locator('#result-message')).toHaveText('Dealer Blackjack. Insurance pays $10.00.');
+    await balanceIs(page, 100);    // lose $10, insurance returns $5 + $10
+  });
+
+  test('Coin flip: let it ride doubles the pot until you cash out', async ({ page }) => {
+    await page.goto('/coinflip/index.html');
+    await page.evaluate(() => { CasinoWallet.set(100); localStorage.setItem('casinoProfile', JSON.stringify({ xp: 0 })); });
+    await page.locator('#flip-heads').click();            // Math.random is pinned to 0.1 → heads
+    await expect(page.locator('#ride-pot')).toHaveText('$10.00');
+    await balanceIs(page, 95);
+    await page.locator('#flip-heads').click();
+    await expect(page.locator('#ride-pot')).toHaveText('$20.00');
+    await page.locator('#cash-out').click();
+    await balanceIs(page, 115);
+    await expect(page.locator('#ride-panel')).toBeHidden();
+  });
+
+  test('Lucky Reels: auto-spin runs and stops on its own', async ({ page }) => {
+    await page.goto('/slots/index.html');
+    await page.evaluate(() => {
+      CasinoWallet.set(100);
+      let n = 0;   // never a match: each reel's 21st symbol differs
+      window.getRandomSymbol = () => ['🍒', '🍋', '🍉'][Math.floor(n++ / 21) % 3];
+    });
+    await page.locator('.autospin-btn[data-auto="10"]').click();
+    await expect(page.locator('#autospin-stop')).toBeHidden({ timeout: 20000 });
+    await expect(page.locator('#history-list .history-item')).toHaveCount(10);
+    await balanceIs(page, 94);
+  });
+
+  test('a hotel high roller opens a high-stakes table', async ({ page }) => {
+    await page.goto('/hotel/index.html');
+    await page.evaluate(() => { HotelState.setHighRollerFlag(); HotelState.saveNow(); });
+    await page.goto('/slots/index.html');
+    await expect(page.locator('#hotel-perk-strip')).toContainText('High roller in the house');
+    await expect(page.locator('.bet-buttons [data-bet]').last()).toHaveAttribute('data-bet', '12');
+    expect(await page.evaluate(() => { const before = CasinoShell.profile.xp; CasinoShell.awardXp(10); return CasinoShell.profile.xp - before; })).toBe(15);
+  });
+
+  test('achievements unlock with a toast and are listed', async ({ page }) => {
+    await page.goto('/hotel/index.html');
+    await page.evaluate(() => {
+      HotelState.setGuidanceMode('expert');
+      HotelState.addHotelCash(5000);
+      HotelState.upgradeDept('casino');
+      HotelEngine.checkAchievements(HotelState.get());
+      HotelUI.renderAll();
+    });
+    await expect(page.locator('.shell-toast', { hasText: 'Room Service' })).toBeVisible();
+    await expect(page.locator('#hotel-achievements')).toContainText(`1/`);
+    await page.locator('.ach-view').click();
+    await expect(page.locator('.ach-list .ach-row.done')).toHaveCount(1);
+  });
+
+  test('Advance Time shows a phase report card', async ({ page }) => {
+    await page.goto('/hotel/index.html');
+    await page.evaluate(() => { HotelState.setGuidanceMode('expert'); HotelUI.renderAll(); });
+    await page.locator('#advance-time-btn').click();
+    await expect(page.locator('.phase-report')).toContainText('Morning report');
+    await expect(page.locator('.phase-report')).toContainText('Payroll');
+    await page.locator('.phase-report-dismiss').click();
+    await expect(page.locator('.phase-report')).toHaveCount(0);
+  });
+
+  test('Roulette is locked until the hotel qualifies, then pays out', async ({ page }) => {
+    await page.goto('/roulette/index.html');
+    await expect(page.locator('#rt-lock')).toBeVisible();
+
+    await page.goto('/hotel/index.html');
+    await page.evaluate(() => { const s = HotelState.get(); s.departments.casino.level = 2; s.currencies.reputation = 6; HotelState.saveNow(); });
+    await page.goto('/casino.html');
+    await expect(page.locator('a.game-card.live[data-game-id="roulette"]')).toHaveAttribute('href', 'roulette/index.html');
+
+    await page.goto('/roulette/index.html');
+    await page.evaluate(() => { CasinoWallet.set(100); localStorage.setItem('casinoProfile', JSON.stringify({ xp: 0 })); });
+    await page.locator('.rt-chip[data-chip="5"]').click();
+    for (const key of ['n17', 'red', 'odd']) await page.locator(`.rt-spot[data-bet="${key}"]`).click();
+    await expect(page.locator('#rt-total')).toHaveText('$15.00');
+    await page.evaluate(() => { Math.random = () => 17 / 37 + 0.001; });   // lands on 17 (black, odd)
+    await page.locator('#rt-spin').click();
+    await expect(page.locator('#rt-result')).toContainText('17 black', { timeout: 6000 });
+    await balanceIs(page, 100 - 15 + 180 + 10);
+  });
+});
+
 test.describe('live game smoke paths', () => {
   for (const game of LIVE_GAMES) {
     test(`${game.name} can place a basic wager without freezing`, async ({ page }) => {
@@ -845,6 +977,7 @@ function escapeRegExp(value) {
 }
 
 async function tapCenter(locator) {
+  await locator.scrollIntoViewIfNeeded();
   const box = await locator.boundingBox();
   if (!box) throw new Error('Cannot tap an element without a bounding box.');
   await locator.page().mouse.click(box.x + box.width / 2, box.y + box.height / 2);

@@ -86,6 +86,7 @@ const HotelUI = (() => {
     renderStats(state);
     renderHotelSnapshot(state);
     renderGoals(state);
+    renderAchievements(state);
     renderCalendar(state);
     renderCommandCenter(state);
     renderGuestRoster(state);
@@ -323,6 +324,59 @@ const HotelUI = (() => {
     return action ? `<button type="button" class="goal-go" data-command-action="${action}">Go</button>` : '';
   }
 
+  /* ── Achievements ────────────────────────────────────────── */
+  function renderAchievements(state = HotelState.get()) {
+    // Unlocks are announced wherever they happened (shift pages included)
+    HotelState.takeUnseenAchievements?.().forEach(entry =>
+      CasinoShell.toast(`🏆 Achievement unlocked: ${entry.icon} ${entry.label} (+${entry.repBonus} reputation)`, 6000));
+
+    const card = document.getElementById('hotel-achievements');
+    if (!card) return;
+    const onboarding = isPhaseOneOnboarding() || isGuidedOnboarding();
+    card.hidden = onboarding;
+    if (onboarding) return;
+    const catalog = HotelConfig.ACHIEVEMENT_CATALOG;
+    const unlocked = state.achievements?.unlocked ?? [];
+    const next = catalog
+      .filter(a => !unlocked.includes(a.id))
+      .map(a => ({ ...a, prog: state.achievements.progress?.[a.id] ?? { current: 0, required: a.required ?? 1 } }))
+      .sort((a, b) => (b.prog.current / b.prog.required) - (a.prog.current / a.prog.required))[0];
+    card.innerHTML = `
+      <div class="ach-head">
+        <span><i class="fa-solid fa-trophy" aria-hidden="true"></i> Achievements</span>
+        <strong>${unlocked.length}/${catalog.length}</strong>
+      </div>
+      <div class="ach-bar" role="progressbar" aria-label="Achievements unlocked" aria-valuemin="0" aria-valuemax="${catalog.length}" aria-valuenow="${unlocked.length}"><span style="width:${Math.round(unlocked.length / catalog.length * 100)}%"></span></div>
+      ${next ? `<p class="ach-next">Next: ${next.icon} <strong>${escapeHtml(next.label)}</strong> — ${escapeHtml(next.desc)} <em>${next.prog.current}/${next.prog.required}</em></p>` : '<p class="ach-next">Every achievement unlocked. 🏆</p>'}
+      <button type="button" class="ach-view">View all</button>
+    `;
+    card.querySelector('.ach-view').addEventListener('click', showAchievements);
+  }
+
+  function showAchievements() {
+    const state = HotelState.get();
+    const unlocked = state.achievements?.unlocked ?? [];
+    const rows = HotelConfig.ACHIEVEMENT_CATALOG.map(a => {
+      const done = unlocked.includes(a.id);
+      const prog = state.achievements.progress?.[a.id] ?? { current: 0, required: a.required ?? 1 };
+      const when = state.achievements.unlockedAt?.[a.id];
+      return `
+        <li class="ach-row ${done ? 'done' : ''}">
+          <span class="ach-icon" aria-hidden="true">${a.icon}</span>
+          <span class="ach-copy">
+            <strong>${escapeHtml(a.label)}</strong>
+            <small>${escapeHtml(a.desc)}</small>
+            ${done ? '' : `<span class="ach-row-bar"><span style="width:${Math.round(prog.current / prog.required * 100)}%"></span></span>`}
+          </span>
+          <span class="ach-reward">${done
+            ? `✓${when ? ` <small>${new Date(when).toLocaleDateString()}</small>` : ''}`
+            : `${prog.current}/${prog.required}`}<small>+${a.repBonus} rep</small></span>
+        </li>`;
+    }).join('');
+    CasinoShell.info(`🏆 Achievements · ${unlocked.length}/${HotelConfig.ACHIEVEMENT_CATALOG.length}`,
+      `<p class="ach-intro">Each achievement adds permanent reputation, which unlocks departments and casino games.</p><ul class="ach-list">${rows}</ul>`);
+  }
+
   function claimGoalsChest() {
     const reward = HotelGoals.claim();
     if (!reward) return;
@@ -374,6 +428,7 @@ const HotelUI = (() => {
       strip.classList.toggle('dashboard-focus-mode', !!focus && !shiftIsTheStep);
       strip.innerHTML = `
         ${renderShiftReturnBanner(state)}
+        ${renderPhaseReport(state)}
         ${renderGuideConfirmation()}
         ${onboardingDebugVisible ? renderOnboardingDebugPanel(state, unlocks) : ''}
         ${focus ? renderFocusCard(primary, state, { guided }) : ''}
@@ -400,6 +455,12 @@ const HotelUI = (() => {
             `).join('')}
           </div>` : ''}
       `;
+      strip.querySelector('[data-phase-report-dismiss]')?.addEventListener('click', e => {
+        e.preventDefault();
+        HotelState.get().calendar.dismissedReportId = e.currentTarget.dataset.phaseReportDismiss;
+        HotelState.save();
+        renderCommandCenter(HotelState.get());
+      });
       strip.querySelectorAll('[data-shift-result-dismiss]').forEach(btn => {
         btn.addEventListener('click', e => {
           e.preventDefault();
@@ -491,6 +552,53 @@ const HotelUI = (() => {
 
   function shiftRiskCopy(risk = 'medium') {
     return { high:'High risk', medium:'Medium risk', low:'Low risk' }[risk] ?? 'Medium risk';
+  }
+
+  /* Summary of the phase that just ended, shown after Advance Time until
+     dismissed (or 30 minutes pass). Replaces the old one-line toast. */
+  function renderPhaseReport(state = HotelState.get()) {
+    const report = state.calendar?.reports?.[0];
+    if (!report || report.id === state.calendar?.dismissedReportId) return '';
+    if (!report.createdAt || Date.now() - report.createdAt > 30 * 60 * 1000) return '';
+    const staff = report.staffReport ?? {};
+    const payroll = staff.payroll ?? 0;
+    const income = (report.income ?? 0) + (report.guestIncome ?? 0);
+    const net = income - (staff.paid === false ? 0 : payroll);
+    const metric = (label, value, cls = '') => `<span class="phase-metric ${cls}"><small>${label}</small><strong>${value}</strong></span>`;
+    const metrics = [
+      metric('Income', `+$${fmt(income)}`, 'hotel-cash-text'),
+      metric('Payroll', staff.paid === false ? `Missed $${fmt(payroll)}` : `−$${fmt(payroll)}`, staff.paid === false ? 'bad' : ''),
+      metric('Net', `${net >= 0 ? '+' : '−'}$${fmt(Math.abs(net))}`, net >= 0 ? 'good' : 'bad'),
+      metric('Guests', fmt(report.guestPopulation ?? 0)),
+      report.satisfaction != null ? metric('Satisfaction', `${report.satisfaction}%`) : '',
+      staff.moraleDelta != null ? metric('Staff', `Morale ${staff.moraleDelta >= 0 ? '+' : ''}${staff.moraleDelta} · ${staff.coverageScore ?? 0}% cover`, staff.moraleDelta < 0 ? 'bad' : '') : '',
+    ].join('');
+
+    const next = [];
+    const wait = HotelEngine.advanceCooldownRemaining?.() ?? 0;
+    next.push(wait > 0
+      ? `Next phase in <span data-advance-countdown>${formatCooldown(wait)}</span>.`
+      : 'Advance Time again whenever you’re ready.');
+    next.push(`Shift rewards are back to full for the ${escapeHtml(phaseLabel(report.nextPhase).toLowerCase())}.`);
+    if (state.goals && !isGuidedOnboarding() && !isPhaseOneOnboarding()) {
+      const done = state.goals.items.filter(g => g.done).length;
+      next.push(report.dayRolled ? `A new day: ${state.goals.items.length} fresh goals are waiting.` : `Today’s goals: ${done}/${state.goals.items.length} done.`);
+    }
+    if (staff.paid === false) next.push('Payroll was missed, so morale dropped — earn hotel cash before the next phase.');
+    if (staff.staffEvent?.title) next.push(`${escapeHtml(staff.staffEvent.title)}${staff.staffEvent.detail ? ` — ${escapeHtml(staff.staffEvent.detail)}` : ''}`);
+    if (report.shows?.length) next.push(`Shows: ${report.shows.map(escapeHtml).join(', ')}.`);
+
+    return `
+      <section class="phase-report" aria-label="Phase report">
+        <div class="phase-report-head">
+          <span>${escapeHtml(phaseLabel(report.nextPhase))} has begun · Day ${report.nextDay}</span>
+          <strong>${escapeHtml(phaseLabel(report.phase))} report</strong>
+          <button type="button" class="phase-report-dismiss" data-phase-report-dismiss="${escapeHtml(report.id)}" aria-label="Dismiss phase report">×</button>
+        </div>
+        <div class="phase-report-metrics">${metrics}</div>
+        <ul class="phase-report-next">${next.map(item => `<li>${item}</li>`).join('')}</ul>
+      </section>
+    `;
   }
 
   function renderShiftReturnBanner(state = HotelState.get()) {
@@ -830,7 +938,11 @@ const HotelUI = (() => {
     if (op.dept === 'rooms' && guestSummary) {
       return `${guestSummary.population}/${guestSummary.capacity} guests in house`;
     }
-    if (op.dept === 'casino') return 'Table games and reels are open';
+    if (op.dept === 'casino') {
+      const until = state.guests?.highRollerPresent ? state.guests.highRollerUntil : 0;
+      if (until > Date.now()) return `💎 High roller in the house — high-stakes table for ${Math.ceil((until - Date.now()) / 60_000)} min`;
+      return 'Table games and reels are open';
+    }
     if (op.dept === 'restaurant') return 'Dining room service shift';
     if (op.dept === 'bar') return 'Bar and lounge service shift';
     if (op.dept === 'entertainment') return 'Book and run the show lineup';
@@ -2870,7 +2982,7 @@ const HotelUI = (() => {
         });
       }
       renderAll();
-      CasinoShell.toast(calendarReportText(report));
+      CasinoShell.announce(`${calendarReportText(report)}. ${phaseLabel(report.nextPhase)} has begun.`);
     });
   }
 

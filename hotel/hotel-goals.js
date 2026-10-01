@@ -123,6 +123,7 @@ const HotelGoals = (() => {
     const goals = state.goals;
     if (!goals || goals.claimed || !allDone(goals)) return null;
     goals.claimed = true;
+    HotelState.tickAchievementProgress('first_chest', 1);
     HotelState.addHotelCash(goals.reward.cash);
     window.CasinoWallet?.add?.(goals.reward.chips);
     HotelState.save();

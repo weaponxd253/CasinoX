@@ -56,7 +56,9 @@ const CasinoShell = (function () {
 
   /* Award XP scaled to a wager (1 XP per $1, min 1). Handles level-ups + rewards. */
   function awardXp(wager) {
-    const pts = Math.max(1, Math.round(Number(wager) || 0));
+    // +50% while a hotel high roller has the high-stakes table open
+    const mult = window.HotelPerks?.xpMult?.() ?? 1;
+    const pts = Math.max(1, Math.round((Number(wager) || 0) * mult));
     const before = levelFromXp(profile.data.xp).level;
     profile.data.xp += pts;
     const after = levelFromXp(profile.data.xp).level;

@@ -10,11 +10,11 @@ A browser-based casino hub plus hotel-management sim with a shared bankroll, met
 
 | Game / Mode | Status | Min Bet | Notes |
 |---|---|---|---|
-| Lucky Reels | ✅ Live | $0.60 | Slots · 8 symbols · jackpot 50× |
-| Blackjack X | ✅ Live | $1 | 3:2 payout · dealer stands on 17 |
-| Coin Flip | ✅ Live | $1 | Double or nothing |
+| Lucky Reels | ✅ Live | $0.60 | Slots · 8 symbols · jackpot 50× · auto-spin |
+| Blackjack X | ✅ Live | $1 | 3:2 payout · dealer stands on 17 · double, split, insurance |
+| Coin Flip | ✅ Live | $1 | Double or nothing · let it ride (up to 32×) |
 | Hotel Manager | ✅ Live / in UX tuning | — | Idle hotel sim · staff, guests, operations, guided onboarding |
-| Roulette Royale | 🔒 Soon | — | |
+| Roulette Royale | 🔓 Unlock | $1 | European wheel · unlocks at Casino Floor Lv 2 + reputation 5 |
 | Texas Hold'em | 🔒 Soon | — | |
 
 ---
@@ -55,6 +55,11 @@ CasinoX/
 │   ├── styles.css          ← Blackjack-specific table styles
 │   ├── betting.css         ← Chip + wager UI
 │   └── script.js           ← Game logic + local deck + betting system
+│
+├── roulette/
+│   ├── index.html          ← On the shell ✓ (gated by hotel progress)
+│   ├── styles.css          ← Wheel + table
+│   └── script.js           ← European single-zero roulette
 │
 ├── coinflip/
 │   ├── index.html          ← On the shell ✓
@@ -320,7 +325,7 @@ See `coinflip/` for a complete working example in ~50 lines of JS.
 - [ ] Expand Hotel Manager reports, late-game goals, and prestige hooks
 - [ ] Persistent player profile page (lifetime stats, achievements)
 - [ ] Daily bonus timer (free-chip refill every N hours)
-- [ ] Roulette Royale (simplified red/black/number board, GSAP wheel spin)
+- [x] Roulette Royale (European wheel, unlocked through the hotel)
 - [ ] Mines (high-tension push-your-luck format)
 - [ ] Video Poker — Jacks or Better
 - [ ] PWA / installable (manifest + service worker)

@@ -14,6 +14,12 @@ const MAX_HISTORY = 10;
 let currentYPositions = [0, 0, 0];
 let currentBet = 0.6;
 let typeToken = 0;      // bumps on each typewriter call; older runs stop
+
+/* Auto-spin: a run of spins that stops on a big win (5× the bet or more:
+   three stars/bells, a 💰 pair), when the bankroll falls to half of where the run started,
+   when the bet is no longer affordable, or when the player stops it. */
+const AUTO_BIG_WIN_MULT = 5;
+let auto = null;        // { remaining, floor } while a run is going
 let spinning = false;   // true from bet placed until the reels settle
 
 const wallet = () => (window.CasinoShell && CasinoShell.wallet) || window.CasinoWallet;
@@ -274,13 +280,56 @@ function spin() {
         : net === 0 ? `Bet back — $${winnings.toFixed(2)} returned.`
         : `Partial match — $${winnings.toFixed(2)} back.`;
       CasinoShell.announce(`${finalSymbols.join(" ")}. ${label.replace(/[🎰🎉]/gu, "").trim()}`);
-      typewriterEffect(result, label, 80, () => { allButtons.forEach((b) => (b.disabled = false)); checkGameOver(); });
+      typewriterEffect(result, label, 80, () => { allButtons.forEach((b) => (b.disabled = false)); checkGameOver(); continueAuto(winnings); });
     } else {
       CasinoShell.sound.lose();
       CasinoShell.announce(`${finalSymbols.join(" ")}. No match, lost $${currentBet.toFixed(2)}.`);
-      typewriterEffect(result, "Try Again!", 50, () => { allButtons.forEach((b) => (b.disabled = false)); checkGameOver(); });
+      typewriterEffect(result, "Try Again!", 50, () => { allButtons.forEach((b) => (b.disabled = false)); checkGameOver(); continueAuto(0); });
     }
   });
+}
+
+// ─── Auto-spin ────────────────────────────────────────────────────────────────
+function startAuto(count) {
+  if (spinning || auto) return;
+  if (!wallet().canAfford(currentBet)) { CasinoShell.toast("Not enough chips for this bet."); return; }
+  auto = { remaining: count, floor: wallet().get() / 2 };
+  CasinoShell.announce(`Auto-spin: ${count} spins at $${currentBet.toFixed(2)}.`);
+  renderAuto();
+  autoSpinOnce();
+}
+
+function autoSpinOnce() {
+  if (!auto) return;
+  auto.remaining--;
+  renderAuto();
+  spin();
+}
+
+function stopAuto(reason = "Auto-spin stopped.") {
+  if (!auto) return;
+  auto = null;
+  renderAuto();
+  CasinoShell.toast(reason);
+  CasinoShell.announce(reason);
+}
+
+function continueAuto(winnings) {
+  if (!auto) return;
+  if (winnings >= currentBet * AUTO_BIG_WIN_MULT) return stopAuto(`Auto-spin stopped on a big win: $${winnings.toFixed(2)}!`);
+  if (wallet().get() < auto.floor) return stopAuto("Auto-spin stopped: bankroll is down by half.");
+  if (!wallet().canAfford(currentBet)) return stopAuto("Auto-spin stopped: not enough chips for this bet.");
+  if (auto.remaining <= 0) return stopAuto("Auto-spin finished.");
+  setTimeout(() => { if (auto && !spinning) autoSpinOnce(); }, CasinoShell.reducedMotion() ? 250 : 600);
+}
+
+function renderAuto() {
+  const running = !!auto;
+  document.querySelectorAll(".autospin-btn").forEach((btn) => { btn.hidden = running; });
+  const stop = document.getElementById("autospin-stop");
+  stop.hidden = !running;
+  if (running) stop.textContent = `Stop · ${auto.remaining} left`;
+  document.querySelector(".autospin-row").classList.toggle("running", running);
 }
 
 // ─── Help content ───────────────────────────────────────────────────────────
@@ -292,6 +341,7 @@ function showHelp() {
     <ol>
       <li>Pick a bet with the buttons.</li>
       <li>Spin with the button or press <kbd>Space</kbd>. Keys <kbd>1</kbd>–<kbd>5</kbd> pick a bet.</li>
+      <li>Auto-spin runs 10, 25 or 50 spins and stops on a big win, if your bankroll halves, or when you press Stop, <kbd>Space</kbd> or <kbd>Esc</kbd>.</li>
       <li>Match symbols to win — see the table for payouts.</li>
     </ol>
     <h6>🔘 Buttons</h6>
@@ -316,12 +366,21 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".bet-buttons [data-bet]").forEach((btn) =>
     btn.addEventListener("click", () => setBet(Number(btn.dataset.bet))));
   wallet().onChange(() => refreshBetButtons());
-  document.querySelector(".spin-button").addEventListener("click", spin);
+  document.querySelector(".spin-button").addEventListener("click", () => { if (auto) stopAuto(); else spin(); });
+  document.querySelectorAll(".autospin-btn").forEach((btn) =>
+    btn.addEventListener("click", () => startAuto(Number(btn.dataset.auto))));
+  document.getElementById("autospin-stop").addEventListener("click", () => stopAuto());
+  renderAuto();
   document.getElementById("reset-button").addEventListener("click", resetMoney);
   document.getElementById("help").addEventListener("click", showHelp);
 
   CasinoShell.registerShortcuts([
-    { keys: [" "], label: "Spin", run: () => { if (!spinning && !document.querySelector(".spin-button").disabled) spin(); } },
+    { keys: [" "], label: "Spin (stops auto-spin)", run: () => {
+      if (auto) { stopAuto(); return; }
+      if (!spinning && !document.querySelector(".spin-button").disabled) spin();
+    } },
+    { keys: ["Escape"], label: "Stop auto-spin", run: () => stopAuto() },
+    { keys: ["a"], label: "Auto-spin 10", run: () => startAuto(10) },
     { keys: ["1", "2", "3", "4", "5"], label: "Pick a bet (smallest to largest)", run: (e) => {
       if (spinning) return;
       const btn = document.querySelectorAll(".bet-buttons [data-bet]")[Number(e.key) - 1];
