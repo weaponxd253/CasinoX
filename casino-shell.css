@@ -1,5 +1,5 @@
 /* ============================================================
-   CASINO X — SHELL stylesheet  (supersedes casino-theme.css)
+   CASINO X — SHELL stylesheet
    ------------------------------------------------------------
    Self-contained: design tokens + unified theme + all shared
    chrome (header, modal, toast, confetti, game stage).
@@ -337,6 +337,8 @@ h1, h2, h3 {
   color: #fff;
   font: 700 11px/1.4 system-ui, sans-serif;
   letter-spacing: 0.08em;
-  pointer-events: none;
-  opacity: 0.85;
+  border: 0;
+  cursor: pointer;
+  opacity: 0.9;
 }
+.casino-dev-badge:hover, .casino-dev-badge:focus-visible { opacity: 1; }

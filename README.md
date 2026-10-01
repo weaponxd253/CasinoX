@@ -24,7 +24,8 @@ A browser-based casino hub plus hotel-management sim with a shared bankroll, met
 ```
 CasinoX/
 │
-├── index.html              ← Lobby (site entry point)
+├── index.html              ← Site entry point (redirects to hotel/index.html)
+├── casino.html             ← Casino lobby (game cards + unlock gates)
 ├── lobby.css               ← Lobby layout + light-theme overrides
 │
 ├── casino-shell.css        ← Shared design system (tokens, header, modals)
@@ -33,9 +34,10 @@ CasinoX/
 ├── wallet.js               ← Shared bankroll via localStorage
 ├── hotel-events.js         ← Casino → hotel event queue (applied by the hotel)
 ├── vendor/                 ← Local copies of third-party scripts (GSAP)
+├── dev-tools.js            ← Testing panel, loaded only in dev mode (?dev=1)
+├── scripts/bump-version.js ← Stamps one ?v= cache-busting version on all pages
 │
-├── casino-theme.css        ← Legacy stylesheet retained for older theme rules
-├── package.json            ← Playwright test scripts
+├── package.json            ← Playwright test + bump-version scripts
 ├── playwright.config.js    ← E2E test config
 ├── tests/                  ← Browser tests
 ├── SHELL-GUIDE.md          ← How to add a new game
@@ -51,9 +53,7 @@ CasinoX/
 │   ├── index.html          ← On the shell ✓
 │   ├── styles.css          ← Blackjack-specific table styles
 │   ├── betting.css         ← Chip + wager UI
-│   ├── script.js           ← Game logic + betting system + XP
-│   └── sounds/
-│       └── README.txt      ← Drop card-draw.mp3 · win.wav · lose.wav here
+│   └── script.js           ← Game logic + local deck + betting system
 │
 ├── coinflip/
 │   ├── index.html          ← On the shell ✓
@@ -95,7 +95,21 @@ npx http-server . -p 8000
 
 Then open `http://localhost:8000`.
 
-Blackjack pulls cards from `deckofcardsapi.com`, so it needs an internet connection to deal. Every other game works fully offline.
+Every game works offline. Blackjack deals from a local deck and Lucky Reels loads GSAP from `vendor/`; only the Google Fonts and Font Awesome stylesheets come from a CDN.
+
+### Dev mode
+
+Add `?dev=1` to any page URL to turn on dev mode (it persists until you visit a page with `?dev=0`). A red **DEV MODE** badge appears bottom-left; click it for the dev tools panel (chips, casino level, daily bonus, hotel cash, build/max all departments, reset the hotel save). Dev mode also skips the economy limits: no Advance Time cooldown, full 6-hour phase payouts, full rewards on repeat shifts, and the Cashier refills at any balance.
+
+### Releasing
+
+Browsers cache scripts by URL, so after changing any JS or CSS run:
+
+```bash
+npm run bump-version
+```
+
+It stamps one `?v=<date-time>` version on every local script and stylesheet in every HTML page, so players get the new files together instead of a mix of cached old and new ones.
 
 ### Testing
 
@@ -291,9 +305,6 @@ See `coinflip/` for a complete working example in ~50 lines of JS.
 
 **Blackjack is now on the shell.** It mounts `CasinoShell`, shares the same bankroll/header controls as the other live casino games, and awards XP when a hand is dealt. Its table and chip UI still keep their own game-specific styles.
 
-**`casino-theme.css` is legacy.** It remains in the repo for older theme/header rules, but the active casino pages use `casino-shell.css`, per-game styles, and `casino-mobile.css`. Future cleanup can confirm whether anything still references it and remove it if not.
-
-**Blackjack needs audio files.** The deck API call and card animations work; sounds don't play until you add `card-draw.mp3`, `win.wav`, and `lose.wav` to `blackjack/sounds/`. Shell-based games use synthesised Web Audio and need no files.
 
 **No backend.** Everything is `localStorage`. This means the bankroll is device-specific and can be edited by the user. Fine for the current scope; a backend + accounts would be needed for shared leaderboards, cross-device play, or anti-cheat.
 

@@ -5,7 +5,8 @@
   "scripts": {
     "test": "npm run test:e2e",
     "test:e2e": "playwright test",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "playwright test --headed",
+    "bump-version": "node scripts/bump-version.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.44.0"

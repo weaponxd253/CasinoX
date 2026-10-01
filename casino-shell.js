@@ -21,6 +21,8 @@
    ============================================================ */
 
 const CasinoShell = (function () {
+  // Where this script was served from — dev-tools.js sits beside it.
+  const SHELL_SRC = (typeof document !== 'undefined' && document.currentScript?.src) || '';
   const THEME_KEY = 'theme';
   const MUTE_KEY = 'casinoMuted';
   const PROFILE_KEY = 'casinoProfile';
@@ -385,14 +387,27 @@ const CasinoShell = (function () {
     bm.addEventListener('click', (e) => { if (e.target === bm) bm.classList.remove('open'); });
   }
 
+  /* Dev mode (?dev=1): a badge that opens the dev tools panel. The tools
+     script is only fetched in dev mode, so players never download it. */
   function renderDevBadge() {
     if (!window.CasinoWallet?.devMode?.() || document.getElementById('casino-dev-badge')) return;
-    const badge = document.createElement('div');
+    const badge = document.createElement('button');
+    badge.type = 'button';
     badge.id = 'casino-dev-badge';
     badge.className = 'casino-dev-badge';
     badge.textContent = 'DEV MODE';
-    badge.title = 'Economy limits are off for testing. Visit any page with ?dev=0 to turn off.';
+    badge.title = 'Economy limits are off for testing. Click for dev tools.';
+    badge.setAttribute('aria-expanded', 'false');
+    badge.addEventListener('click', () => window.CasinoDevTools?.toggle());
     document.body.appendChild(badge);
+
+    if (SHELL_SRC && !window.CasinoDevTools) {
+      const src = new URL('dev-tools.js', SHELL_SRC);
+      src.search = new URL(SHELL_SRC).search;   // same cache-busting version
+      const script = document.createElement('script');
+      script.src = src.toString();
+      document.head.appendChild(script);
+    }
   }
 
   function injectFooter() {
