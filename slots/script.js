@@ -11,6 +11,7 @@ const MAX_HISTORY = 10;
 let currentYPositions = [0, 0, 0];
 let currentBet = 0.6;
 let isTyping = false;
+let spinning = false;   // true from bet placed until the reels settle
 
 const wallet = () => (window.CasinoShell && CasinoShell.wallet) || window.CasinoWallet;
 
@@ -110,8 +111,8 @@ function typewriterEffect(element, text, baseSpeed = 100, callback = null) {
   (function type() {
     try {
       if (index < text.length) { element.textContent += text[index++]; setTimeout(type, dynamicSpeed); }
-      else { spinButton.disabled = false; isTyping = false; if (callback) callback(); }
-    } catch (err) { console.error("Typewriter error:", err); spinButton.disabled = false; isTyping = false; }
+      else { if (!spinning) spinButton.disabled = false; isTyping = false; if (callback) callback(); }
+    } catch (err) { console.error("Typewriter error:", err); if (!spinning) spinButton.disabled = false; isTyping = false; }
   })();
 }
 
@@ -135,11 +136,13 @@ function spin() {
   const allButtons = document.querySelectorAll("button");
   const w = wallet();
 
+  if (spinning) return;
   if (currentBet <= 0 || !w.canAfford(currentBet)) {
     typewriterEffect(result, "Invalid bet! Select a valid amount.");
     return;
   }
 
+  spinning = true;
   w.deduct(currentBet);
   CasinoShell.awardXp(currentBet);
   hotelEvent('slots_spun');
@@ -176,6 +179,7 @@ function spin() {
   });
 
   Promise.all(reelPromises).then((finalSymbols) => {
+    spinning = false;
     gsap.killTweensOf(spinButton);
     gsap.to(spinButton, { scale: 1, duration: 0.2 });
 
@@ -244,7 +248,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.code === "Space" && !e.repeat) {
       e.preventDefault();
       const spinBtn = document.querySelector(".spin-button");
-      if (!spinBtn.disabled) spin();
+      if (!spinning && !spinBtn.disabled) spin();
     }
   });
 

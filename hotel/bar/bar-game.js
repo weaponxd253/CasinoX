@@ -79,6 +79,7 @@ const BarGame = (() => {
     shift.order = DRINKS[Math.floor(Math.random() * DRINKS.length)];
     shift.orderStarted = Date.now();
     shift.guest = GUESTS[Math.floor(Math.random() * GUESTS.length)];
+    setDrinkButtons(true);
 
     document.getElementById('ticket-drink').textContent = `${shift.order.icon} ${shift.order.label}`;
     setOrderState('active');
@@ -91,20 +92,26 @@ const BarGame = (() => {
   function serve(drinkId) {
     if (!shift?.active || !shift.order) return;
 
+    // Take the ticket off the rail so extra clicks (or the patience timer)
+    // can't settle the same order again before the next guest arrives.
+    const order = shift.order;
+    shift.order = null;
+    setDrinkButtons(false);
+
     const elapsed = Date.now() - shift.orderStarted;
-    const patienceLeft = Math.max(0, 1 - elapsed / shift.order.patience);
-    const correct = drinkId === shift.order.id && patienceLeft > 0;
+    const patienceLeft = Math.max(0, 1 - elapsed / order.patience);
+    const correct = drinkId === order.id && patienceLeft > 0;
 
     if (correct) {
-      const speedBonus = Math.round(shift.order.tip * patienceLeft * 0.55);
+      const speedBonus = Math.round(order.tip * patienceLeft * 0.55);
       const streakBonus = Math.min(18, shift.streak * 4);
-      const earned = shift.order.tip + speedBonus + streakBonus + (shift.barLevel * 3);
+      const earned = order.tip + speedBonus + streakBonus + (shift.barLevel * 3);
       shift.tips += earned;
       shift.streak++;
       shift.served++;
       setCustomerMood('happy');
-      animateServe(shift.order.id, true);
-      log(`${shift.guest} enjoyed the ${shift.order.label}. +$${earned}`, 'good');
+      animateServe(order.id, true);
+      log(`${shift.guest} enjoyed the ${order.label}. +$${earned}`, 'good');
       CasinoShell.sound.win();
     } else {
       shift.streak = 0;
@@ -148,10 +155,8 @@ const BarGame = (() => {
     const satisfactionBonus = Math.max(0, Math.min(4, shift.streak + 2 - shift.misses));
     const served = shift.served;
     const misses = shift.misses;
-    const currentSat = HotelState.getSatisfaction();
-
     HotelState.addHotelCash(tips);
-    HotelState.setSatisfaction(currentSat + satisfactionBonus);
+    HotelState.addSatisfactionBonus(satisfactionBonus);
     HotelEngine.recalculateReputation(HotelState.get());
     HotelBridge.applyHotelToCasino(HotelState.get());
     HotelState.recordShiftResult?.('bar', {

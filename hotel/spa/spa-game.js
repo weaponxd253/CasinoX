@@ -270,7 +270,7 @@ const SpaRush = (() => {
 
     const satBonus = Math.max(0, Math.min(10, Math.round(session.satPoints / 2) - session.walkouts));
     HotelState.addHotelCash(session.earned);
-    HotelState.setSatisfaction(HotelState.getSatisfaction() + satBonus);
+    HotelState.addSatisfactionBonus(satBonus);
     HotelEngine.recalculateReputation(HotelState.get());
     HotelBridge.applyHotelToCasino(HotelState.get());
     HotelState.recordShiftResult?.('spa', {

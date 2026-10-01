@@ -540,6 +540,28 @@ const HotelState = (() => {
     save();
   }
 
+  /* Mini-game satisfaction bonus: a stacking modifier that wears off over
+     real time. recalculateSatisfaction() adds it on top of the department
+     baseline, so a shift's reward survives the next tick. */
+  function getSatisfactionBonus(now = Date.now()) {
+    const bonus = _state?.satisfaction?.shiftBonus;
+    if (!bonus || !(bonus.value > 0)) return 0;
+    const hours = Math.max(0, now - (bonus.updatedAt ?? now)) / 3_600_000;
+    return Math.max(0, bonus.value - hours * HotelConfig.ECONOMY.SHIFT_SAT_DECAY_PER_HOUR);
+  }
+
+  function addSatisfactionBonus(amount) {
+    const add = Math.max(0, Number(amount) || 0);
+    if (!add) return getSatisfactionBonus();
+    const now = Date.now();
+    const before = getSatisfactionBonus(now);
+    const value = Math.min(HotelConfig.ECONOMY.SHIFT_SAT_MAX, before + add);
+    _state.satisfaction.shiftBonus = { value, updatedAt: now };
+    // Reflect it right away; the engine keeps applying it from here on.
+    setSatisfaction(_state.satisfaction.current + Math.round(value - before));
+    return value;
+  }
+
   function upgradeDept(deptId) {
     const dept    = _state.departments[deptId];
     const catalog = HotelConfig.UPGRADE_CATALOG[deptId];
@@ -2019,6 +2041,7 @@ const HotelState = (() => {
     completeOnboarding, advanceGuidedOnboarding, setGuidedReport, dismissOnboarding,
     addHotelCash, spendHotelCash,
     setReputation, setSatisfaction, setSatisfactionComponents, setTrend,
+    getSatisfactionBonus, addSatisfactionBonus,
     upgradeDept, unlockDept, updateTicker,
     updateCasinoBridge, setHighRollerFlag, clearHighRollerFlag,
     setGuestData, setVipPresent,
