@@ -12,12 +12,12 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <!-- Shell first, lobby styles second, mobile last -->
-  <link rel="stylesheet" href="casino-shell.css?v=2026.10.1-r3">
-  <link rel="stylesheet" href="lobby.css?v=2026.10.1-r3">
-  <link rel="stylesheet" href="casino-mobile.css?v=2026.10.1-r3">
+  <link rel="stylesheet" href="casino-shell.css?v=2026.10.1-s1">
+  <link rel="stylesheet" href="lobby.css?v=2026.10.1-s1">
+  <link rel="stylesheet" href="casino-mobile.css?v=2026.10.1-s1">
 
-  <script src="wallet.js?v=2026.10.1-r3"></script>
-  <script src="casino-shell.js?v=2026.10.1-r3"></script>
+  <script src="wallet.js?v=2026.10.1-s1"></script>
+  <script src="casino-shell.js?v=2026.10.1-s1"></script>
 </head>
 
 <body>
@@ -39,13 +39,13 @@
         <i class="fa-solid fa-gift"></i>
       </button>
       <a class="pill-btn hotel-return-btn" href="hotel/index.html" aria-label="Return to Hotel Lobby">
-        <i class="fa-solid fa-hotel"></i> Hotel Lobby
+        <i class="fa-solid fa-hotel" aria-hidden="true"></i> <span class="pill-label">Hotel Lobby</span><span class="pill-label-short">Hotel</span>
       </a>
       <button class="pill-btn" id="cashier-btn" aria-label="Cashier — refills to $100 when under $1">
         <i class="fa-solid fa-coins"></i> Cashier
       </button>
       <button class="pill-btn" id="theme-toggle" aria-label="Toggle theme">
-        <i id="theme-icon" class="fa-solid fa-moon"></i> Theme
+        <i id="theme-icon" class="fa-solid fa-moon" aria-hidden="true"></i> <span class="pill-label">Theme</span>
       </button>
     </div>
   </header>
