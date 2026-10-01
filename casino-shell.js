@@ -271,8 +271,19 @@ const CasinoShell = (function () {
     const fill = document.getElementById('shell-xp-fill');
     const txt = document.getElementById('shell-xp-text');
     if (lvl) lvl.textContent = s.level;
-    if (fill) fill.style.width = `${Math.round((s.into / s.need) * 100)}%`;
-    if (txt) txt.textContent = `${s.into}/${s.need} XP`;
+    const pct = Math.round((s.into / s.need) * 100);
+    if (fill) fill.style.width = `${pct}%`;
+    // #shell-xp-text is the bar's track and holds the fill element, so label
+    // it with attributes rather than textContent (which would delete the fill).
+    if (txt) {
+      const label = `Level ${s.level}: ${s.into}/${s.need} XP`;
+      txt.title = label;
+      txt.setAttribute('role', 'progressbar');
+      txt.setAttribute('aria-label', label);
+      txt.setAttribute('aria-valuemin', '0');
+      txt.setAttribute('aria-valuemax', String(s.need));
+      txt.setAttribute('aria-valuenow', String(s.into));
+    }
     const bonus = document.getElementById('shell-bonus-btn');
     if (bonus) bonus.classList.toggle('ready', dailyBonus.available());
   }

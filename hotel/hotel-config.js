@@ -162,7 +162,24 @@ const ECONOMY = {
   INCOME_TICK_MS:      60_000,  // income calculated every 60s
   SAT_TICK_MS:         30_000,  // satisfaction recalculated every 30s
   SAT_BASE:            50,      // base satisfaction before dept bonuses
+  ADVANCE_COOLDOWN_MS: 10 * 60_000, // real time between manual Advance Time clicks
+  SHIFT_SAT_MAX:       20,      // cap on stacked mini-game satisfaction bonus
+  SHIFT_SAT_DECAY_PER_HOUR: 10, // bonus points that wear off per real hour
 };
+
+/* ── Dev mode ──
+   Visit any hotel page with ?dev=1 to turn on (persists in localStorage),
+   ?dev=0 to turn off. Skips real-time gates such as the Advance Time
+   cooldown so every system can be reached quickly while testing. */
+const DEV_MODE_KEY = 'hotelDevMode';
+function isDevMode() {
+  try {
+    const flag = new URLSearchParams(location.search).get('dev');
+    if (flag === '1') localStorage.setItem(DEV_MODE_KEY, '1');
+    else if (flag === '0') localStorage.removeItem(DEV_MODE_KEY);
+    return localStorage.getItem(DEV_MODE_KEY) === '1';
+  } catch (_) { return false; }
+}
 
 /* ── Guest types (Phase 2 — defined now, activated in Phase 2) ── */
 const GUEST_TYPES = {
@@ -298,5 +315,6 @@ if (typeof window !== 'undefined') {
     ROOM_TYPES, GUEST_ROOM_PREFS, GUEST_PARTY_SIZE,
     STAY_PREFERENCES, SPECIAL_REQUESTS,
     CASINO_GAME_UNLOCKS,
+    isDevMode,
   };
 }

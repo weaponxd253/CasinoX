@@ -312,7 +312,7 @@ const RoomsGame = (() => {
 
     const satBonus = Math.max(0, Math.min(9, Math.round(shift.satPoints / 3) - shift.complaints + (shift.staffEffect?.satisfactionBonus ?? 0)));
     HotelState.addHotelCash(shift.earned);
-    HotelState.setSatisfaction(HotelState.getSatisfaction() + satBonus);
+    HotelState.addSatisfactionBonus(satBonus);
     HotelState.applyStaffFatigue?.('rooms', shift.resolved ? 4 : 1);
     HotelEngine.recalculateReputation(HotelState.get());
     HotelBridge.applyHotelToCasino(HotelState.get());

@@ -27,6 +27,7 @@ const HotelUI = (() => {
     }
 
     window.HotelRenderer?.init?.();
+    renderDevBadge();
     renderAll();
     _startLiveTick();
     _wireUpgradeButtons();
@@ -2227,6 +2228,41 @@ const HotelUI = (() => {
     if (advanceBtn) {
       advanceBtn.classList.toggle('guide-target-control', currentGuidedStep(state) === 'advance_time');
     }
+    renderAdvanceButton(state);
+  }
+
+  function renderAdvanceButton(state = HotelState.get()) {
+    const btn = document.getElementById('advance-time-btn');
+    if (!btn) return;
+    const waitMs = HotelEngine.advanceCooldownRemaining(state);
+    const cooling = waitMs > 0;
+    btn.disabled = cooling;
+    btn.setAttribute('aria-disabled', cooling ? 'true' : 'false');
+    const text = cooling ? `Next phase in ${formatCooldown(waitMs)}` : 'Advance Time';
+    if (btn.dataset.label !== text) {
+      btn.dataset.label = text;
+      btn.innerHTML = `<i class="fa-solid ${cooling ? 'fa-hourglass-half' : 'fa-forward-step'}"></i> ${text}`;
+    }
+    btn.title = HotelConfig.isDevMode?.()
+      ? 'Dev mode: Advance Time cooldown disabled (?dev=0 to turn off)'
+      : cooling ? 'Each phase takes real time to play out.' : 'Advance to the next phase of the day';
+  }
+
+  function formatCooldown(ms) {
+    const total = Math.ceil(ms / 1000);
+    const m = Math.floor(total / 60);
+    const sec = String(total % 60).padStart(2, '0');
+    return `${m}:${sec}`;
+  }
+
+  function renderDevBadge() {
+    if (!HotelConfig.isDevMode?.() || document.getElementById('hotel-dev-badge')) return;
+    const badge = document.createElement('div');
+    badge.id = 'hotel-dev-badge';
+    badge.className = 'hotel-dev-badge';
+    badge.textContent = 'DEV MODE';
+    badge.title = 'Real-time gates are skipped. Visit with ?dev=0 to turn off.';
+    document.body.appendChild(badge);
   }
 
   /* ── Satisfaction meter ──────────────────────────────────── */
@@ -2717,6 +2753,12 @@ const HotelUI = (() => {
 
   function _wireCalendarControls() {
     document.getElementById('advance-time-btn')?.addEventListener('click', () => {
+      const waitMs = HotelEngine.advanceCooldownRemaining();
+      if (waitMs > 0) {
+        CasinoShell.toast(`The next phase opens in ${formatCooldown(waitMs)}.`);
+        renderAdvanceButton();
+        return;
+      }
       const stateBefore = HotelState.get();
       const satBefore = stateBefore.satisfaction?.current ?? 0;
       const shortBefore = countShortCoverage(stateBefore);
@@ -3085,6 +3127,9 @@ const HotelUI = (() => {
         _floatIncomeNumber(result.amount);
       }
     }, HotelConfig.ECONOMY.INCOME_TICK_MS);
+
+    // Advance Time countdown
+    setInterval(() => renderAdvanceButton(), 1_000);
 
     // Faster display update every 5s (so cash number ticks visibly)
     setInterval(() => {

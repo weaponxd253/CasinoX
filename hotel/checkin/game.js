@@ -378,11 +378,7 @@ const CheckInGame = (() => {
 
     // Apply rewards to hotel state
     if (cashBonus > 0) HotelState.addHotelCash(cashBonus);
-    if (satBoost  > 0) {
-      const state = HotelState.get();
-      const newSat = Math.min(100, state.satisfaction.current + satBoost);
-      HotelState.setSatisfaction(newSat);
-    }
+    if (satBoost  > 0) HotelState.addSatisfactionBonus(satBoost);
 
     if (checkedIn.length > 0 && typeof HotelState.applyCheckInBoost === 'function') {
       HotelState.applyCheckInBoost(checkedIn.length);

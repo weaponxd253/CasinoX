@@ -103,6 +103,7 @@ const HotelEngine = (() => {
     const noSecurity       = !state.departments.security?.unlocked    ? -4 : 0;
 
     const entertainmentEffects = activeEntertainmentEffects(state);
+    const shiftBonus       = Math.round(HotelState.getSatisfactionBonus?.() ?? 0);
 
     const raw = HotelConfig.ECONOMY.SAT_BASE
       + roomComfort
@@ -110,6 +111,7 @@ const HotelEngine = (() => {
       + entertainBonus
       + spaBonus
       + (entertainmentEffects.satisfactionBoost ?? 0)
+      + shiftBonus
       - overcrowd
       + noMaintenance
       + noSecurity;
@@ -126,6 +128,7 @@ const HotelEngine = (() => {
     HotelState.setSatisfactionComponents({
       roomComfort, foodQuality, entertainBonus, spaBonus,
       activeShowBonus: entertainmentEffects.satisfactionBoost ?? 0,
+      shiftBonus,
       overcrowdingPenalty: -overcrowd,
       maintenancePenalty:  noMaintenance,
       securityPenalty:     noSecurity,
@@ -382,6 +385,7 @@ const HotelEngine = (() => {
       weekday: dayRolled ? (before.weekday + 1) % WEEKDAYS.length : before.weekday,
       phase: CALENDAR_PHASES[nextPhaseIndex],
       lastAdvancedAt: Date.now(),
+      lastManualAdvanceAt: Date.now(),
     };
 
     const phaseMinutes = 6 * 60;
@@ -420,6 +424,13 @@ const HotelEngine = (() => {
     };
     HotelState.addCalendarReport(report);
     return report;
+  }
+
+  /** ms until Advance Time may be used again (0 = ready). Dev mode skips it. */
+  function advanceCooldownRemaining(state = HotelState.get(), now = Date.now()) {
+    if (HotelConfig.isDevMode?.()) return 0;
+    const last = state.calendar?.lastManualAdvanceAt ?? 0;
+    return Math.max(0, last + HotelConfig.ECONOMY.ADVANCE_COOLDOWN_MS - now);
   }
 
   function calculatePhaseIncome(state, minutes) {
@@ -470,7 +481,7 @@ const HotelEngine = (() => {
     checkAchievements, checkDeptUnlocks,
     currentIpm, nextUpgradeCost, nextUpgradeStats,
     activeEntertainmentEffects,
-    advanceCalendarPhase, activeEntertainmentBookings,
+    advanceCalendarPhase, advanceCooldownRemaining, activeEntertainmentBookings,
     calendarDayKey, CALENDAR_PHASES, WEEKDAYS,
   };
 })();

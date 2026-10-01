@@ -107,6 +107,7 @@ const RestaurantGame = (() => {
       finishService();
       return;
     }
+    service.firing = false;
     service.table = TABLES[Math.floor(Math.random() * TABLES.length)];
     service.selected = [];
     service.lastHarmony = 0;
@@ -118,7 +119,7 @@ const RestaurantGame = (() => {
   }
 
   function addDish(dishId) {
-    if (!service?.active || service.selected.length >= MAX_COURSES) return;
+    if (!service?.active || service.firing || service.selected.length >= MAX_COURSES) return;
     const dish = DISHES.find(d => d.id === dishId);
     if (!dish || service.selected.some(d => d.id === dishId)) return;
     service.selected.push(dish);
@@ -128,7 +129,7 @@ const RestaurantGame = (() => {
   }
 
   function clearFlight() {
-    if (!service?.active) return;
+    if (!service?.active || service.firing) return;
     service.selected = [];
     renderFlight();
     renderDishes();
@@ -136,7 +137,11 @@ const RestaurantGame = (() => {
   }
 
   function fireFlight() {
-    if (!service?.active || service.selected.length !== MAX_COURSES) return;
+    if (!service?.active || service.firing || service.selected.length !== MAX_COURSES) return;
+    // Lock until the next table is seated so a double-click can't score twice.
+    service.firing = true;
+    const fireBtn = $('fire-course-btn');
+    if (fireBtn) fireBtn.disabled = true;
     const score = scoreFlight(service.selected, service.table);
     score.harmony = Math.min(100, score.harmony + Math.round((service.staffEffect?.qualityBonus ?? 0) * 4));
     score.signature = score.signature || (score.harmony >= 88 && score.matchedTraits.length >= 3);
@@ -177,10 +182,8 @@ const RestaurantGame = (() => {
     const served = service.served;
     const avgHarmony = served ? Math.round(service.harmonyTotal / served) : 0;
     const satBonus = Math.max(0, Math.min(8, signatures * 2 + Math.round(avgHarmony / 35) - 1 + (service.staffEffect?.satisfactionBonus ?? 0)));
-    const currentSat = HotelState.getSatisfaction();
-
     HotelState.addHotelCash(cash);
-    HotelState.setSatisfaction(currentSat + satBonus);
+    HotelState.addSatisfactionBonus(satBonus);
     HotelState.applyStaffFatigue?.('restaurant', served ? 4 : 1);
     HotelEngine.recalculateReputation(HotelState.get());
     HotelBridge.applyHotelToCasino(HotelState.get());
@@ -342,11 +345,11 @@ const RestaurantGame = (() => {
     $('harmony-score').textContent = score.harmony;
     $('harmony-fill').style.width = `${score.harmony}%`;
     $('harmony-fill').className = score.harmony >= 82 ? 'high' : score.harmony >= 58 ? 'mid' : 'low';
-    $('fire-course-btn').disabled = !ready;
+    $('fire-course-btn').disabled = !ready || !!service?.firing;
     $('fire-course-btn').innerHTML = ready
       ? '<i class="fa-solid fa-bell-concierge"></i> Fire Flight'
       : `<i class="fa-solid fa-utensils"></i> ${selected.length ? `Choose ${MAX_COURSES - selected.length} More` : 'Choose 3 Dishes'}`;
-    $('clear-flight-btn').disabled = !service?.active || selected.length === 0;
+    $('clear-flight-btn').disabled = !service?.active || !!service.firing || selected.length === 0;
     updateNextStep();
     if (ready) {
       renderFlightFeedback(score, 'preview');
