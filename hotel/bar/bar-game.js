@@ -151,8 +151,10 @@ const BarGame = (() => {
 
   function finishShift() {
     clearInterval(timer);
-    const tips = shift.tips;
-    const satisfactionBonus = Math.max(0, Math.min(4, shift.streak + 2 - shift.misses));
+    const rewardMult = HotelState.shiftRewardMultiplier?.('bar') ?? 1;
+    const tips = Math.round(shift.tips * rewardMult);
+    shift.tips = tips;
+    const satisfactionBonus = Math.round(Math.max(0, Math.min(4, shift.streak + 2 - shift.misses)) * rewardMult);
     const served = shift.served;
     const misses = shift.misses;
     HotelState.addHotelCash(tips);
@@ -163,6 +165,7 @@ const BarGame = (() => {
       title: 'Bar Shift complete',
       cash: tips,
       satisfaction: satisfactionBonus,
+      rewardMult,
       primaryLabel: 'Served',
       primaryValue: served,
       summary: `${served} guests served, ${misses} misses, $${tips} in tips.`,
@@ -189,6 +192,7 @@ const BarGame = (() => {
     showResults({ tips, served, misses, satisfactionBonus });
 
     log(`Shift complete. Hotel earned $${tips}. Satisfaction +${satisfactionBonus}.`, 'gold');
+    if (rewardMult < 1) log(`Repeat run this phase: ${Math.round(rewardMult * 100)}% rewards. Full rewards return next phase.`, 'bad');
     CasinoShell.celebrate(tips);
     CasinoShell.toast(`Bar shift complete: +$${tips} hotel cash`);
   }

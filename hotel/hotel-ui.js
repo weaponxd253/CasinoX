@@ -27,7 +27,6 @@ const HotelUI = (() => {
     }
 
     window.HotelRenderer?.init?.();
-    renderDevBadge();
     renderAll();
     _startLiveTick();
     _wireUpgradeButtons();
@@ -2264,16 +2263,6 @@ const HotelUI = (() => {
     const m = Math.floor(total / 60);
     const sec = String(total % 60).padStart(2, '0');
     return `${m}:${sec}`;
-  }
-
-  function renderDevBadge() {
-    if (!HotelConfig.isDevMode?.() || document.getElementById('hotel-dev-badge')) return;
-    const badge = document.createElement('div');
-    badge.id = 'hotel-dev-badge';
-    badge.className = 'hotel-dev-badge';
-    badge.textContent = 'DEV MODE';
-    badge.title = 'Real-time gates are skipped. Visit with ?dev=0 to turn off.';
-    document.body.appendChild(badge);
   }
 
   /* ── Satisfaction meter ──────────────────────────────────── */

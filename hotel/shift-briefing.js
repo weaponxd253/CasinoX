@@ -38,6 +38,10 @@ const HotelShiftBriefing = (() => {
     if (!deptId || !window.HotelState?.recordShiftStart) return null;
     const briefing = briefingFor(deptId);
     mount(deptId);
+    const rewardMult = HotelState.shiftRewardMultiplier?.(deptId) ?? 1;
+    if (rewardMult < 1 && deptId !== 'entertainment') {
+      window.CasinoShell?.toast?.(`Repeat run this phase: ${Math.round(rewardMult * 100)}% rewards. Full rewards return next phase.`, 6000);
+    }
     return HotelState.recordShiftStart(deptId, {
       title: title ?? briefing.title,
       briefing,

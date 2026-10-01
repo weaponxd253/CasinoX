@@ -268,7 +268,9 @@ const SpaRush = (() => {
     clearInterval(tickTimer);
     session.active = false;
 
-    const satBonus = Math.max(0, Math.min(10, Math.round(session.satPoints / 2) - session.walkouts));
+    const rewardMult = HotelState.shiftRewardMultiplier?.('spa') ?? 1;
+    session.earned = Math.round(session.earned * rewardMult);
+    const satBonus = Math.round(Math.max(0, Math.min(10, Math.round(session.satPoints / 2) - session.walkouts)) * rewardMult);
     HotelState.addHotelCash(session.earned);
     HotelState.addSatisfactionBonus(satBonus);
     HotelEngine.recalculateReputation(HotelState.get());
@@ -277,6 +279,7 @@ const SpaRush = (() => {
       title: 'Spa Rush complete',
       cash: session.earned,
       satisfaction: satBonus,
+      rewardMult,
       primaryLabel: 'Treated',
       primaryValue: session.treated,
       summary: `${session.treated} guests treated, ${session.walkouts} walkouts.`,
@@ -304,6 +307,7 @@ const SpaRush = (() => {
     updateAll();
     showResults(satBonus);
     log(`Session complete. Hotel earned $${fmt(session.earned)}. Satisfaction +${satBonus}.`, 'gold');
+    if (rewardMult < 1) log(`Repeat run this phase: ${Math.round(rewardMult * 100)}% rewards. Full rewards return next phase.`, 'bad');
     if (session.earned > 0) CasinoShell.celebrate(session.earned);
     CasinoShell.toast(`Spa Rush complete: +$${fmt(session.earned)} hotel cash`);
   }

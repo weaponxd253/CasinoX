@@ -3,14 +3,17 @@
    dialog all come from the shell now. This file is just the slot. */
 
 const symbols = ["🍒", "🍋", "🍉", "⭐", "🍇", "🔔", "🍊", "💰"];
-const multipliers = { "🍒": 2, "🍋": 3, "🍉": 4, "⭐": 5, "💰": 10 };
+// Three of a kind pays the multiplier, two of a kind pays half of it.
+// 💰💰💰 is the 50× jackpot. These values return ~95.4% of wagers.
+const multipliers = { "🍒": 2, "🍋": 3, "🍊": 3, "🍉": 4, "🍇": 4, "⭐": 5, "🔔": 8, "💰": 10 };
+const JACKPOT_MULT = 50;
 
 const BETS = [0.6, 1.2, 2.4, 3.6, 6];
 const MAX_HISTORY = 10;
 
 let currentYPositions = [0, 0, 0];
 let currentBet = 0.6;
-let isTyping = false;
+let typeToken = 0;      // bumps on each typewriter call; older runs stop
 let spinning = false;   // true from bet placed until the reels settle
 
 const wallet = () => (window.CasinoShell && CasinoShell.wallet) || window.CasinoWallet;
@@ -43,7 +46,7 @@ function setBet(amount) {
 
 function calculateWinnings(syms, betAmount) {
   const unique = Array.from(new Set(syms));
-  if (unique.length === 1 && unique[0] === "💰") return betAmount * 50;
+  if (unique.length === 1 && unique[0] === "💰") return betAmount * JACKPOT_MULT;
   if (unique.length === 1) return betAmount * (multipliers[syms[0]] || 1);
   if (unique.length === 2) {
     const repeated = syms.find((s) => syms.filter((x) => x === s).length === 2);
@@ -55,11 +58,17 @@ function calculateWinnings(syms, betAmount) {
 function updateWinningExamples(bet) {
   if (typeof bet !== "number" || isNaN(bet)) return;
   document.getElementById("max-bet-display").textContent = bet.toFixed(2);
-  document.getElementById("cherry-winnings").textContent     = `$${(bet * 2).toFixed(2)} (full), $${(bet * 1).toFixed(2)} (partial)`;
-  document.getElementById("lemon-winnings").textContent      = `$${(bet * 3).toFixed(2)} (full), $${(bet * 1.5).toFixed(2)} (partial)`;
-  document.getElementById("watermelon-winnings").textContent = `$${(bet * 4).toFixed(2)} (full), $${(bet * 2).toFixed(2)} (partial)`;
-  document.getElementById("star-winnings").textContent       = `$${(bet * 5).toFixed(2)} (full), $${(bet * 2.5).toFixed(2)} (partial)`;
-  document.getElementById("jackpot-winnings").textContent    = `$${(bet * 50).toFixed(2)} (jackpot)`;
+  const rows = Object.entries(multipliers).sort((a, b) => a[1] - b[1]);
+  document.getElementById("paytable-body").innerHTML = rows.map(([sym, mult]) => {
+    const full = sym === "💰" ? JACKPOT_MULT : mult;
+    const half = mult / 2;
+    return `<tr${sym === "💰" ? ' class="jackpot-row"' : ""}>
+      <td>${sym}</td>
+      <td>×${full}${sym === "💰" ? " Jackpot" : ""}</td>
+      <td>×${half}${half === 1 ? " (bet back)" : half < 1 ? " (part back)" : ""}</td>
+      <td>$${(bet * full).toFixed(2)} / $${(bet * half).toFixed(2)}</td>
+    </tr>`;
+  }).join("");
 }
 
 // ─── Spin history ─────────────────────────────────────────────────────────────
@@ -68,15 +77,16 @@ function addHistoryEntry(syms, winnings, bet) {
   const empty = list.querySelector(".history-empty");
   if (empty) empty.remove();
 
-  const isWin = winnings > 0;
+  // Show the net result: a payout smaller than the bet is still a loss.
+  const net = Math.round((winnings - bet) * 100) / 100;
+  const tone = net > 0 ? "win" : net === 0 ? "push" : "loss";
+  const amount = net > 0 ? `+$${net.toFixed(2)}` : net === 0 ? "±$0.00" : `−$${Math.abs(net).toFixed(2)}`;
   const li = document.createElement("li");
-  li.className = `history-item ${isWin ? "history-win" : "history-loss"}`;
+  li.className = `history-item history-${tone}`;
   li.innerHTML = `
     <span class="history-symbols">${syms.join(" ")}</span>
     <span class="history-result">
-      ${isWin
-        ? `<span class="history-amount win">+$${winnings.toFixed(2)}</span>`
-        : `<span class="history-amount loss">−$${bet.toFixed(2)}</span>`}
+      <span class="history-amount ${tone}">${amount}</span>
     </span>`;
   list.insertBefore(li, list.firstChild);
   while (list.children.length > MAX_HISTORY) list.removeChild(list.lastChild);
@@ -90,14 +100,18 @@ function checkGameOver() {
 }
 
 function resetMoney() {
-  wallet().reset();
+  if (!wallet().topUp()) {
+    CasinoShell.toast(`The Cashier refills your bankroll once it drops below $${wallet().TOPUP_BELOW}.`);
+    return;
+  }
   document.querySelectorAll(".bet-buttons .pushable").forEach((b) => (b.disabled = false));
 }
 
 // ─── Typewriter ───────────────────────────────────────────────────────────────
 function typewriterEffect(element, text, baseSpeed = 100, callback = null) {
-  if (isTyping) return;
-  isTyping = true;
+  // A newer message replaces one still typing (it used to be dropped,
+  // along with its callback that re-enables the buttons).
+  const token = ++typeToken;
   const spinButton = document.querySelector(".spin-button");
   element.textContent = "";
   let index = 0;
@@ -105,9 +119,10 @@ function typewriterEffect(element, text, baseSpeed = 100, callback = null) {
   spinButton.disabled = true;
   (function type() {
     try {
+      if (token !== typeToken) return;
       if (index < text.length) { element.textContent += text[index++]; setTimeout(type, dynamicSpeed); }
-      else { if (!spinning) spinButton.disabled = false; isTyping = false; if (callback) callback(); }
-    } catch (err) { console.error("Typewriter error:", err); if (!spinning) spinButton.disabled = false; isTyping = false; }
+      else { if (!spinning) spinButton.disabled = false; if (callback) callback(); }
+    } catch (err) { console.error("Typewriter error:", err); if (!spinning) spinButton.disabled = false; }
   })();
 }
 
@@ -185,12 +200,15 @@ function spin() {
     }
 
     const winnings = calculateWinnings(finalSymbols, currentBet);
-    const isJackpot = winnings === currentBet * 50;
+    const isJackpot = winnings === currentBet * JACKPOT_MULT;
+    const net = Math.round((winnings - currentBet) * 100) / 100;
     addHistoryEntry(finalSymbols, winnings, currentBet);
 
     if (winnings > 0) {
       w.add(winnings);
-      isJackpot ? CasinoShell.sound.jackpot() : CasinoShell.sound.win();
+      if (isJackpot) CasinoShell.sound.jackpot();
+      else if (net > 0) CasinoShell.sound.win();
+      else if (net < 0) CasinoShell.sound.lose();
       if (isJackpot) hotelEvent('jackpot', { amount: winnings });
 
       const unique = Array.from(new Set(finalSymbols));
@@ -203,7 +221,10 @@ function spin() {
 
       if (winnings > currentBet) CasinoShell.celebrate(winnings - currentBet); // confetti on net win
 
-      const label = isJackpot ? `🎰 JACKPOT $${winnings.toFixed(2)}! 🎰` : `🎉 You Win $${winnings.toFixed(2)}! 🎉`;
+      const label = isJackpot ? `🎰 JACKPOT $${winnings.toFixed(2)}! 🎰`
+        : net > 0  ? `🎉 You Win $${winnings.toFixed(2)}! 🎉`
+        : net === 0 ? `Bet back — $${winnings.toFixed(2)} returned.`
+        : `Partial match — $${winnings.toFixed(2)} back.`;
       typewriterEffect(result, label, 80, () => { allButtons.forEach((b) => (b.disabled = false)); checkGameOver(); });
     } else {
       CasinoShell.sound.lose();
@@ -226,7 +247,7 @@ function showHelp() {
     <h6>🔘 Buttons</h6>
     <ul>
       <li><strong>Spin</strong> — spin the reels (also: Space)</li>
-      <li><strong>Cashier</strong> — reset your bankroll to $100</li>
+      <li><strong>Cashier</strong> — refills your bankroll to $100 once it drops below $1</li>
       <li><strong>Help</strong> — this guide</li>
     </ul>
     <h6>💡 Tip</h6>

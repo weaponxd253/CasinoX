@@ -369,9 +369,10 @@ const CheckInGame = (() => {
     // Reward calculation
     const baseCashBonus = checkedIn.reduce((s, r) =>
       s + Math.round((r.room?.label?.startsWith('Presidential') ? 350 : r.income * 0.25)), 0);
-    const cashBonus   = Math.round(baseCashBonus * (staffEffect?.incomeMult ?? 1));
+    const rewardMult  = HotelState.shiftRewardMultiplier?.('lobby') ?? 1;
+    const cashBonus   = Math.round(baseCashBonus * (staffEffect?.incomeMult ?? 1) * rewardMult);
     const matchRate   = checkedIn.length > 0 ? perfect.length / checkedIn.length : 0;
-    const satBoost    = Math.round(matchRate * 18) + (checkedIn.length ? (staffEffect?.satisfactionBonus ?? 0) : 0);
+    const satBoost    = Math.round((Math.round(matchRate * 18) + (checkedIn.length ? (staffEffect?.satisfactionBonus ?? 0) : 0)) * rewardMult);
     const total        = results.length;
     const pct          = total > 0 ? Math.round((checkedIn.length / total) * 100) : 0;
     const grade        = pct >= 90 ? '★★★ Exceptional!' : pct >= 70 ? '★★ Good Work' : pct >= 50 ? '★ Decent' : 'Keep Practising';
@@ -391,6 +392,7 @@ const CheckInGame = (() => {
       title: 'Check-In Rush complete',
       cash: cashBonus,
       satisfaction: satBoost,
+      rewardMult,
       primaryLabel: 'Checked In',
       primaryValue: checkedIn.length,
       summary: `${checkedIn.length} guests checked in, ${perfect.length} perfect matches, ${missed.length} walked out.`,
@@ -433,6 +435,12 @@ const CheckInGame = (() => {
         <i class="fa-solid fa-face-smile"></i>
         <span>Satisfaction Boost</span>
         <strong>+${satBoost}%</strong>
+      </div>` : ''}
+      ${rewardMult < 1 ? `
+      <div class="reward-row">
+        <i class="fa-solid fa-rotate-right"></i>
+        <span>Repeat run this phase</span>
+        <strong>${Math.round(rewardMult * 100)}% rewards</strong>
       </div>` : ''}
       ${staffEffect?.assignedCount ? `
       <div class="reward-row">

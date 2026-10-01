@@ -437,6 +437,50 @@ test.describe('round 1 regressions', () => {
   });
 });
 
+test.describe('round 2 economy', () => {
+  test('Cashier only refills a busted bankroll', async ({ page }) => {
+    await page.goto('/casino.html');
+    await page.evaluate(() => CasinoWallet.set(50));
+    await page.locator('#cashier-btn').click();
+    await expect(page.locator('.shell-toast').last()).toContainText('drops below $1');
+    expect(await page.evaluate(() => CasinoWallet.get())).toBe(50);
+
+    await page.evaluate(() => CasinoWallet.set(0.4));
+    await page.locator('#cashier-btn').click();
+    await expect.poll(() => page.evaluate(() => CasinoWallet.get())).toBe(100);
+  });
+
+  test('repeat shifts in one phase pay reduced rewards until the next phase', async ({ page }) => {
+    await page.goto('/hotel/index.html');
+    const mults = await page.evaluate(() => {
+      const out = [HotelState.shiftRewardMultiplier('bar')];
+      for (let i = 0; i < 3; i++) {
+        HotelState.recordShiftResult('bar', { cash: 10 });
+        out.push(HotelState.shiftRewardMultiplier('bar'));
+      }
+      HotelEngine.advanceCalendarPhase();
+      out.push(HotelState.shiftRewardMultiplier('bar'));
+      return out;
+    });
+    expect(mults).toEqual([1, 0.5, 0.25, 0.25, 1]);
+  });
+
+  test('Lucky Reels reports a bet-back pair as a push, not a win', async ({ page }) => {
+    await page.goto('/slots/index.html');
+    await page.evaluate(() => {
+      CasinoWallet.set(100);
+      // Each reel draws 20 filler symbols then its final one (every 21st call).
+      const finals = ['🍒', '🍒', '🍉'];
+      let n = 0;
+      window.getRandomSymbol = () => { const i = n++; return i % 21 === 20 ? finals[Math.floor(i / 21)] : '🍋'; };
+    });
+    await tapCenter(page.locator('.spin-button'));
+    await expect(page.locator('#history-list .history-amount').first()).toHaveText('±$0.00');
+    await expect(page.locator('#result')).toHaveText('Bet back — $0.60 returned.');
+    expect(await page.evaluate(() => CasinoWallet.get())).toBe(100);
+  });
+});
+
 test.describe('live game smoke paths', () => {
   for (const game of LIVE_GAMES) {
     test(`${game.name} can place a basic wager without freezing`, async ({ page }) => {
