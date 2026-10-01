@@ -193,7 +193,7 @@ const BarGame = (() => {
 
     log(`Shift complete. Hotel earned $${tips}. Satisfaction +${satisfactionBonus}.`, 'gold');
     if (rewardMult < 1) log(`Repeat run this phase: ${Math.round(rewardMult * 100)}% rewards. Full rewards return next phase.`, 'bad');
-    CasinoShell.celebrate(tips);
+    CasinoShell.celebrate(tips, { currency: 'hotel' });
     CasinoShell.toast(`Bar shift complete: +$${tips} hotel cash`);
   }
 

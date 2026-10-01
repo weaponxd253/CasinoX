@@ -308,7 +308,7 @@ const SpaRush = (() => {
     showResults(satBonus);
     log(`Session complete. Hotel earned $${fmt(session.earned)}. Satisfaction +${satBonus}.`, 'gold');
     if (rewardMult < 1) log(`Repeat run this phase: ${Math.round(rewardMult * 100)}% rewards. Full rewards return next phase.`, 'bad');
-    if (session.earned > 0) CasinoShell.celebrate(session.earned);
+    if (session.earned > 0) CasinoShell.celebrate(session.earned, { currency: 'hotel' });
     CasinoShell.toast(`Spa Rush complete: +$${fmt(session.earned)} hotel cash`);
   }
 

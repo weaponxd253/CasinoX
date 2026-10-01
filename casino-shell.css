@@ -351,3 +351,92 @@ h1, h2, h3 {
   opacity: 0.9;
 }
 .casino-dev-badge:hover, .casino-dev-badge:focus-visible { opacity: 1; }
+
+/* ── Currencies ──────────────────────────────────────────────
+   Chips: gold coin, "chips" unit. Hotel cash: green, building
+   icon. Shared tokens so every page tells them apart. */
+:root {
+  --hotel-cash: #6fcf97;
+  --hotel-cash-glow: rgba(111, 207, 151, 0.55);
+}
+[data-theme="light"] { --hotel-cash: #1f7a42; --hotel-cash-glow: rgba(31, 122, 66, 0.35); }
+
+.balance-unit {
+  margin-left: 4px;
+  font-size: 0.68em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+#shell-bigwin { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+#shell-bigwin .bigwin-unit {
+  margin-top: 6px;
+  font-family: var(--font-body);
+  font-size: 0.24em;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+#shell-bigwin.hotel-cash {
+  color: var(--hotel-cash);
+  text-shadow: 0 4px 30px var(--hotel-cash-glow);
+}
+
+/* ── Cashier dialog ── */
+.shell-cashier-balance { margin-bottom: 14px; }
+.cashier-options { display: grid; gap: 10px; text-align: left; margin-bottom: 14px; }
+.cashier-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.18);
+}
+.cashier-option[hidden] { display: none; }
+.cashier-option strong { display: block; color: var(--gold-light); font-family: var(--font-display); }
+.cashier-option[data-cashier="comp"] strong { color: var(--hotel-cash); }
+.cashier-note { display: block; margin-top: 3px; font-size: 13px; color: var(--text-dim); }
+.cashier-option .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+@media (max-width: 480px) {
+  .cashier-option { grid-template-columns: 1fr; }
+}
+
+/* ── Hotel perks strip (casino pages) ── */
+.hotel-perk-strip {
+  width: 100%;
+  max-width: var(--maxw);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin: -10px auto 18px;
+  padding: 8px 14px;
+  border: 1px solid rgba(111, 207, 151, 0.35);
+  border-radius: 10px;
+  background: rgba(111, 207, 151, 0.08);
+  color: var(--text);
+  font-size: 13px;
+  text-decoration: none;
+}
+.hotel-perk-strip:hover { border-color: var(--hotel-cash); }
+.hotel-perk-strip .perk-kicker {
+  color: var(--hotel-cash);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.hotel-perk-strip .perk-item i { color: var(--hotel-cash); margin-right: 3px; }
+@media (max-width: 768px) {
+  .hotel-perk-strip { width: calc(100% - 32px); margin: -6px auto 14px; }
+}
+
+/* Hotel cash readouts on hotel shift pages */
+.bar-hotel-cash strong, .tasting-cash strong, .ops-hotel-cash strong,
+.spa-hotel-cash strong, .ent-hotel-cash strong { color: var(--hotel-cash); }
+.bar-hotel-cash i, .tasting-cash i, .ops-hotel-cash i,
+.spa-hotel-cash i, .ent-hotel-cash i { color: var(--hotel-cash); }

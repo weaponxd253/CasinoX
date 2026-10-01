@@ -33,6 +33,7 @@ CasinoX/
 ├── casino-mobile.css       ← Full mobile layout pass (link last on every page)
 ├── wallet.js               ← Shared bankroll via localStorage
 ├── hotel-events.js         ← Casino → hotel event queue (applied by the hotel)
+├── hotel-perks.js          ← Hotel → casino perks (limits, bonuses, comps), read-only
 ├── vendor/                 ← Local copies of third-party scripts (GSAP)
 ├── dev-tools.js            ← Testing panel, loaded only in dev mode (?dev=1)
 ├── scripts/bump-version.js ← Stamps one ?v= cache-busting version on all pages
@@ -70,6 +71,7 @@ CasinoX/
     ├── hotel-bridge.js     ← Casino-to-hotel sync hooks
     ├── hotel-guests.js     ← Guest simulation helpers
     ├── hotel-guest-pool.js ← Guest profile pool
+    ├── hotel-goals.js      ← Three daily goals + reward chest
     ├── checkin/            ← Check-In Rush operation
     ├── rooms/              ← Rooms operation
     ├── restaurant/         ← Restaurant operation

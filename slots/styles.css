@@ -126,3 +126,4 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 }
 .winning-chart .jackpot-row td { color: var(--gold-light); font-weight: 700; }
 .paytable-note { text-align: center; color: var(--text-dim); font-size: 0.9rem; margin: 0 auto 16px; max-width: 90%; }
+.bet-buttons .pushable.high-limit .front { box-shadow: inset 0 0 0 2px var(--hotel-cash, #6fcf97); }

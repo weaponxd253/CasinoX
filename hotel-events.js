@@ -14,6 +14,7 @@
        HotelEvents.push(type, data)  → queue one casino event
            types: slots_spun · jackpot {amount} · coin_flip_win
                   blackjack_win · blackjack_loss · chips_wagered {amount}
+                  comp_chips {cost}  (hotel cash the hotel should debit)
        HotelEvents.take()            → read and clear the queue
        HotelEvents.isEmpty(queue)    → nothing to apply?
    ============================================================ */
@@ -22,7 +23,7 @@ const HotelEvents = (() => {
   const KEY = 'hotelEventQueue';
   const MAX_JACKPOTS = 20;
 
-  function empty() { return { counts: {}, wagered: 0, jackpots: [] }; }
+  function empty() { return { counts: {}, wagered: 0, jackpots: [], compCost: 0 }; }
 
   function read() {
     try {
@@ -32,6 +33,7 @@ const HotelEvents = (() => {
         counts: q.counts && typeof q.counts === 'object' ? { ...q.counts } : {},
         wagered: Number(q.wagered) || 0,
         jackpots: Array.isArray(q.jackpots) ? q.jackpots : [],
+        compCost: Number(q.compCost) || 0,
       };
     } catch (_) { return empty(); }
   }
@@ -43,6 +45,8 @@ const HotelEvents = (() => {
       const q = read();
       if (type === 'chips_wagered') {
         q.wagered = Math.round((q.wagered + (Number(data.amount) || 0)) * 100) / 100;
+      } else if (type === 'comp_chips') {
+        q.compCost += Math.max(0, Number(data.cost) || 0);
       } else {
         q.counts[type] = (q.counts[type] || 0) + 1;
         if (type === 'jackpot') q.jackpots = [...q.jackpots, Number(data.amount) || 0].slice(-MAX_JACKPOTS);
@@ -58,7 +62,7 @@ const HotelEvents = (() => {
   }
 
   function isEmpty(q) {
-    return !q.wagered && !Object.values(q.counts).some(n => n > 0);
+    return !q.wagered && !q.compCost && !Object.values(q.counts).some(n => n > 0);
   }
 
   return { KEY, push, take, peek: read, isEmpty };

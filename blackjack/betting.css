@@ -78,6 +78,9 @@
 .chip-5  { background: radial-gradient(circle at 50% 40%, #e0584b, #b1241a); }
 .chip-10 { background: radial-gradient(circle at 50% 40%, #3f7fd0, #1f4f97); }
 .chip-25 { background: radial-gradient(circle at 50% 40%, #46b06a, #1f7a42); }
+.chip-50  { background: radial-gradient(circle at 50% 40%, #e3a63a, #b06d12); }
+.chip-100 { background: radial-gradient(circle at 50% 40%, #2a2a2a, #050505); border-color: var(--gold); color: var(--gold-light); }
+.chip-btn[hidden] { display: none; }
 
 /* ── Bet readout ── */
 .bet-readout {

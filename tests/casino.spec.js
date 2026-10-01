@@ -442,11 +442,14 @@ test.describe('round 2 economy', () => {
     await page.goto('/casino.html');
     await page.evaluate(() => CasinoWallet.set(50));
     await page.locator('#cashier-btn').click();
-    await expect(page.locator('.shell-toast').last()).toContainText('drops below $1');
+    await expect(page.locator('#shell-cashier-refill')).toBeDisabled();
+    await expect(page.locator('[data-cashier="refill"] .cashier-note')).toContainText('drops below $1');
+    await page.keyboard.press('Escape');
     expect(await page.evaluate(() => CasinoWallet.get())).toBe(50);
 
     await page.evaluate(() => CasinoWallet.set(0.4));
     await page.locator('#cashier-btn').click();
+    await page.locator('#shell-cashier-refill').click();
     await expect.poll(() => page.evaluate(() => CasinoWallet.get())).toBe(100);
   });
 
@@ -644,6 +647,105 @@ test.describe('sprint 1 UX', () => {
     const card = page.locator('.shift-card', { hasText: 'Check-In Rush' });
     await expect(card.locator('.shift-card-cta')).toHaveText('Run Again · 50%');
     await expect(card.locator('.shift-repeat-note')).toContainText('Next run pays 50%');
+  });
+});
+
+test.describe('sprint 2 casino-hotel loop', () => {
+  // Casino Floor level 3 (bet ×2, +10% chip bonus), Bar level 3 (+$100 daily bonus)
+  async function upgradedHotel(page, extraCash = 5000) {
+    await page.goto('/hotel/index.html');
+    await page.evaluate((cash) => {
+      const s = HotelState.get();
+      s.departments.casino.level = 3;
+      s.departments.bar.unlocked = true;
+      s.departments.bar.level = 3;
+      HotelState.addHotelCash(cash);
+      HotelBridge.applyHotelToCasino(s);
+      HotelState.saveNow();
+    }, extraCash);
+  }
+
+  test('hotel upgrades raise casino limits and show a perks strip', async ({ page }) => {
+    await upgradedHotel(page);
+    await page.goto('/slots/index.html');
+    await expect(page.locator('#hotel-perk-strip')).toContainText('slots up to $12');
+    await expect(page.locator('.bet-buttons [data-bet]').last()).toHaveAttribute('data-bet', '12');
+    await page.goto('/blackjack/index.html');
+    await expect(page.locator('.chip-btn[data-value="50"]')).toBeVisible();
+    await expect(page.locator('.chip-btn[data-value="100"]')).toBeHidden();
+  });
+
+  test('daily bonus includes hotel perks', async ({ page }) => {
+    await upgradedHotel(page);
+    await page.goto('/coinflip/index.html');
+    await page.evaluate(() => CasinoShell.dailyBonus.open());
+    // $50 day-one bonus + 10% chip bonus + $100 from the bar
+    await expect(page.locator('#shell-claim')).toHaveText('Claim $155');
+  });
+
+  test('Cashier trades hotel cash for chips and the hotel is charged', async ({ page }) => {
+    await upgradedHotel(page);
+    const cashBefore = await page.evaluate(() => HotelState.getCash());
+    await page.goto('/casino.html');
+    await page.evaluate(() => CasinoWallet.set(50));
+    await page.locator('#cashier-btn').click();
+    await expect(page.locator('#shell-cashier-refill')).toBeDisabled();
+    await expect(page.locator('#shell-cashier-comp')).toHaveText('275 chips for $1,000');
+    await page.locator('#shell-cashier-comp').click();
+    await expect.poll(() => page.evaluate(() => CasinoWallet.get())).toBe(325);
+
+    await page.goto('/hotel/index.html');
+    await expect.poll(() => page.evaluate(() => HotelState.getCash())).toBeLessThanOrEqual(cashBefore - 1000 + 50);
+    expect(await page.evaluate(() => localStorage.getItem('hotelEventQueue'))).toBeNull();
+  });
+
+  test('hotel cash celebrations look different from chip wins', async ({ page }) => {
+    await page.goto('/hotel/bar/index.html');
+    await page.evaluate(() => CasinoShell.celebrate(120, { currency: 'hotel' }));
+    await expect(page.locator('#shell-bigwin')).toHaveClass(/hotel-cash/);
+    await expect(page.locator('#shell-bigwin')).toContainText('hotel cash');
+    await page.evaluate(() => CasinoShell.celebrate(5));
+    await expect(page.locator('#shell-bigwin')).not.toHaveClass(/hotel-cash/);
+    await expect(page.locator('#shell-bigwin')).toContainText('chips');
+  });
+
+  test('daily goals track progress and pay out a chest', async ({ page }) => {
+    await page.goto('/hotel/index.html');
+    await page.evaluate(() => { HotelState.setGuidanceMode('expert'); HotelUI.renderAll(); });
+    await expect(page.locator('#hotel-goals .goal')).toHaveCount(3);
+    await expect(page.locator('#hotel-goals .goals-claim')).toBeDisabled();
+
+    // Complete every goal by moving the counters each one watches.
+    await page.evaluate(() => {
+      const s = HotelState.get();
+      for (const goal of s.goals.items) {
+        if (goal.id === 'run_shifts' || goal.id === 'dept_shift') {
+          for (let i = 0; i < goal.target; i++) HotelState.recordShiftResult(goal.dept ?? 'lobby', { cash: 1 });
+        } else if (goal.id === 'bj_wins') s.casinoBridge.events.blackjackWins += goal.target;
+        else if (goal.id === 'spins') s.casinoBridge.events.slotsSpun += goal.target;
+        else if (goal.id === 'wagered') s.casinoBridge.events.totalChipsWagered += goal.target;
+        else if (goal.id === 'satisfaction') s.satisfaction.current = goal.target;
+        else if (goal.id === 'earn_cash') HotelState.addHotelCash(goal.target);
+        else if (goal.id === 'upgrade') s.stats.upgradeCount += 1;
+      }
+      CasinoWallet.set(10);
+      HotelUI.renderAll();
+    });
+    await expect(page.locator('#hotel-goals .goal.done')).toHaveCount(3);
+    const cashBefore = await page.evaluate(() => HotelState.getCash());
+    const reward = await page.evaluate(() => HotelState.get().goals.reward);
+    await page.locator('#hotel-goals .goals-claim').click();
+    await expect(page.locator('#hotel-goals')).toContainText('Chest opened');
+    expect(await page.evaluate(() => HotelState.getCash())).toBeGreaterThanOrEqual(cashBefore + reward.cash);
+    expect(await page.evaluate(() => CasinoWallet.get())).toBe(10 + reward.chips);
+  });
+
+  test('a new in-game day brings new goals', async ({ page }) => {
+    await page.goto('/hotel/index.html?dev=1');
+    await page.evaluate(() => { HotelState.setGuidanceMode('expert'); HotelUI.renderAll(); });
+    await expect(page.locator('#hotel-goals')).toContainText('Day 1');
+    for (let i = 0; i < 4; i++) await page.locator('#advance-time-btn').click();
+    await expect(page.locator('#hotel-goals')).toContainText('Day 2');
   });
 });
 

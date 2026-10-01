@@ -12,12 +12,14 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <!-- Shell first, lobby styles second, mobile last -->
-  <link rel="stylesheet" href="casino-shell.css?v=2026.10.1-s1">
-  <link rel="stylesheet" href="lobby.css?v=2026.10.1-s1">
-  <link rel="stylesheet" href="casino-mobile.css?v=2026.10.1-s1">
+  <link rel="stylesheet" href="casino-shell.css?v=2026.10.1-s2">
+  <link rel="stylesheet" href="lobby.css?v=2026.10.1-s2">
+  <link rel="stylesheet" href="casino-mobile.css?v=2026.10.1-s2">
 
-  <script src="wallet.js?v=2026.10.1-s1"></script>
-  <script src="casino-shell.js?v=2026.10.1-s1"></script>
+  <script src="wallet.js?v=2026.10.1-s2"></script>
+  <script src="hotel-events.js?v=2026.10.1-s2"></script>
+  <script src="hotel-perks.js?v=2026.10.1-s2"></script>
+  <script src="casino-shell.js?v=2026.10.1-s2"></script>
 </head>
 
 <body>
@@ -28,8 +30,8 @@
       <span class="logo-sub">Royale Collection</span>
     </div>
     <div class="header-controls">
-      <div class="balance-pill" id="balance-pill" title="Your bankroll, shared across every game">
-        <span class="chip"></span> $<span id="lobby-balance">100.00</span>
+      <div class="balance-pill" id="balance-pill" title="Casino chips — one bankroll for every game">
+        <span class="chip" aria-hidden="true"></span> $<span id="lobby-balance">100.00</span><span class="balance-unit">chips</span>
       </div>
       <div class="shell-progress" title="Level & XP">
         <span class="lvl">Lv <span id="shell-level">1</span></span>
@@ -41,7 +43,7 @@
       <a class="pill-btn hotel-return-btn" href="hotel/index.html" aria-label="Return to Hotel Lobby">
         <i class="fa-solid fa-hotel" aria-hidden="true"></i> <span class="pill-label">Hotel Lobby</span><span class="pill-label-short">Hotel</span>
       </a>
-      <button class="pill-btn" id="cashier-btn" aria-label="Cashier — refills to $100 when under $1">
+      <button class="pill-btn" id="cashier-btn" aria-label="Cashier — refills and hotel comps">
         <i class="fa-solid fa-coins"></i> Cashier
       </button>
       <button class="pill-btn" id="theme-toggle" aria-label="Toggle theme">
@@ -115,6 +117,7 @@
   <script>
     // ── Shell: applies saved theme and wires meta-game controls/overlays. ──
     CasinoShell.standalone({ lobbyHref: 'casino.html' });
+    HotelPerks.renderStrip({ teaser: true, hotelHref: 'hotel/index.html' });
 
     // ── Shared bankroll display ──
     (function () {
@@ -128,11 +131,7 @@
         pill.classList.add('bump');
       });
 
-      document.getElementById('cashier-btn').addEventListener('click', () => {
-        if (!CasinoWallet.topUp()) {
-          CasinoShell.toast(`The Cashier refills your bankroll once it drops below $${CasinoWallet.TOPUP_BELOW}.`);
-        }
-      });
+      document.getElementById('cashier-btn').addEventListener('click', () => CasinoShell.openCashier());
     })();
 
     // ── Casino unlock system ──────────────────────────────────────────────

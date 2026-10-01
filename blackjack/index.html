@@ -10,10 +10,10 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <!-- Shell first, game styles second, mobile last -->
-  <link rel="stylesheet" href="../casino-shell.css?v=2026.10.1-s1">
-  <link rel="stylesheet" href="styles.css?v=2026.10.1-s1">
-  <link rel="stylesheet" href="betting.css?v=2026.10.1-s1">
-  <link rel="stylesheet" href="../casino-mobile.css?v=2026.10.1-s1">
+  <link rel="stylesheet" href="../casino-shell.css?v=2026.10.1-s2">
+  <link rel="stylesheet" href="styles.css?v=2026.10.1-s2">
+  <link rel="stylesheet" href="betting.css?v=2026.10.1-s2">
+  <link rel="stylesheet" href="../casino-mobile.css?v=2026.10.1-s2">
 </head>
 <body>
   <!-- Shell injects the header. Game content starts here. -->
@@ -54,6 +54,9 @@
       <button class="chip-btn chip-5"  data-value="5"  aria-label="Bet $5">$5</button>
       <button class="chip-btn chip-10" data-value="10" aria-label="Bet $10">$10</button>
       <button class="chip-btn chip-25" data-value="25" aria-label="Bet $25">$25</button>
+      <!-- High-limit chips appear with the hotel's Casino Floor upgrades -->
+      <button class="chip-btn chip-50"  data-value="50"  aria-label="Bet $50"  hidden>$50</button>
+      <button class="chip-btn chip-100" data-value="100" aria-label="Bet $100" hidden>$100</button>
     </div>
     <div class="bet-readout">
       <span class="bet-label">Bet</span>
@@ -93,9 +96,10 @@
     </ul>
   </div>
 
-  <script src="../wallet.js?v=2026.10.1-s1"></script>
-<script src="../casino-shell.js?v=2026.10.1-s1"></script>
-  <script src="../hotel-events.js?v=2026.10.1-s1"></script>
-  <script src="script.js?v=2026.10.1-s1"></script>
+  <script src="../wallet.js?v=2026.10.1-s2"></script>
+<script src="../casino-shell.js?v=2026.10.1-s2"></script>
+  <script src="../hotel-events.js?v=2026.10.1-s2"></script>
+  <script src="../hotel-perks.js?v=2026.10.1-s2"></script>
+  <script src="script.js?v=2026.10.1-s2"></script>
 </body>
 </html>

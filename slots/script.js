@@ -127,12 +127,21 @@ function checkGameOver() {
 }
 
 function resetMoney() {
-  if (!wallet().topUp()) {
-    CasinoShell.toast(`The Cashier refills your bankroll once it drops below $${wallet().TOPUP_BELOW}.`);
-    return;
-  }
-  document.querySelectorAll(".bet-buttons .pushable").forEach((b) => (b.disabled = false));
-  refreshBetButtons();
+  CasinoShell.openCashier();
+}
+
+/* The top bet grows with the hotel's Casino Floor ($6 × its bet multiplier). */
+function applyHotelLimits() {
+  const maxBet = window.HotelPerks?.slotsMaxBet?.() ?? BETS[BETS.length - 1];
+  if (maxBet <= BETS[BETS.length - 1]) return;
+  BETS[BETS.length - 1] = maxBet;
+  const btn = document.querySelector(".bet-buttons [data-bet]:last-child");
+  if (!btn) return;
+  btn.dataset.bet = String(maxBet);
+  btn.setAttribute("aria-label", `Bet ${maxBet} dollars, hotel high-limit maximum`);
+  btn.title = "High limit unlocked by your hotel's Casino Floor";
+  btn.querySelector(".front").innerHTML = `$${maxBet.toFixed(2)}<span class="bet-max-tag"> Max</span>`;
+  btn.classList.add("high-limit");
 }
 
 // ─── Typewriter ───────────────────────────────────────────────────────────────
@@ -275,7 +284,7 @@ function showHelp() {
     <h6>🔘 Buttons</h6>
     <ul>
       <li><strong>Spin</strong> — spin the reels (also: Space)</li>
-      <li><strong>Cashier</strong> — refills your bankroll to $100 once it drops below $1</li>
+      <li><strong>Cashier</strong> — free refill below $1, or trade hotel cash for chips</li>
       <li><strong>Help</strong> — this guide</li>
     </ul>
     <h6>💡 Tip</h6>
@@ -287,6 +296,7 @@ document.addEventListener("DOMContentLoaded", () => {
   CasinoShell.mount({ name: "Lucky Reels", subtitle: "Casino Edition" });
 
   initializeReels();
+  applyHotelLimits();
   updateWinningExamples(currentBet);   // starts at 60¢; no toast if unaffordable
   refreshBetButtons();
 

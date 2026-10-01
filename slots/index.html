@@ -14,13 +14,13 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <!-- Shell first, game styles second -->
-  <link rel="stylesheet" href="../casino-shell.css?v=2026.10.1-s1">
-  <link rel="stylesheet" href="styles.css?v=2026.10.1-s1">
-  <link rel="stylesheet" href="../casino-mobile.css?v=2026.10.1-s1">
+  <link rel="stylesheet" href="../casino-shell.css?v=2026.10.1-s2">
+  <link rel="stylesheet" href="styles.css?v=2026.10.1-s2">
+  <link rel="stylesheet" href="../casino-mobile.css?v=2026.10.1-s2">
 
 
   <!-- Served locally so a CDN outage can't stall a paid spin -->
-  <script src="../vendor/gsap-3.9.1.min.js?v=2026.10.1-s1"></script>
+  <script src="../vendor/gsap-3.9.1.min.js?v=2026.10.1-s2"></script>
 </head>
 
 <body>
@@ -60,8 +60,8 @@
         <button class="button spin-button" aria-label="Spin the reels" title="Spin (or press Space)">
           <i class="fa-solid fa-arrows-rotate spin-icon"></i>
         </button>
-        <button id="reset-button" class="reset-button" aria-label="Cashier — refills to 100 dollars when under 1 dollar"
-          title="Cashier · refills to $100 when under $1">
+        <button id="reset-button" class="reset-button" aria-label="Cashier — refills and hotel comps"
+          title="Cashier · refills and hotel comps">
           <i class="fa-solid fa-circle-dollar-to-slot"></i>
         </button>
         <button id="help" class="help-button" aria-label="Open help guide" title="How to play">
@@ -100,10 +100,11 @@
     <p class="paytable-note">Three of a kind pays the full multiplier, two of a kind pays half. Returns about 95% of wagers over time.</p>
   </main>
 
-  <script src="../wallet.js?v=2026.10.1-s1"></script>
-  <script src="../casino-shell.js?v=2026.10.1-s1"></script>
-  <script src="../hotel-events.js?v=2026.10.1-s1"></script>
-  <script src="script.js?v=2026.10.1-s1"></script>
+  <script src="../wallet.js?v=2026.10.1-s2"></script>
+  <script src="../casino-shell.js?v=2026.10.1-s2"></script>
+  <script src="../hotel-events.js?v=2026.10.1-s2"></script>
+  <script src="../hotel-perks.js?v=2026.10.1-s2"></script>
+  <script src="script.js?v=2026.10.1-s2"></script>
 </body>
 
 </html>

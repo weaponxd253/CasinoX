@@ -219,7 +219,7 @@ const RestaurantGame = (() => {
     showResults({ cash, served, signatures, satBonus, avgHarmony, bestTable: service.bestTable, weakTable: service.weakTable });
     log(`Service complete. Hotel earned $${fmt(cash)}. Satisfaction +${satBonus}.`, 'gold');
     if (rewardMult < 1) log(`Repeat run this phase: ${Math.round(rewardMult * 100)}% rewards. Full rewards return next phase.`, 'bad');
-    CasinoShell.celebrate(cash);
+    CasinoShell.celebrate(cash, { currency: 'hotel' });
     CasinoShell.toast(`Tasting room complete: +$${fmt(cash)} hotel cash`);
   }
 

@@ -39,14 +39,15 @@ const HotelUI = (() => {
     _wireStaffControls();
     _wireOnboardingDebug();
     HotelBridge.syncCasinoSnapshot();
+    HotelBridge.applyHotelToCasino(HotelState.get());   // keep casino perks current for older saves
 
     // Subscribe to bridge events for visual feedback
     HotelBridge.on('income_boost', ({ mult, minutes, reason }) => {
       CasinoShell.toast(`⚡ ${reason} Income ${mult}× for ${minutes} min!`);
       renderIncomeDisplay();
     });
-    HotelBridge.on('comp_chips', ({ chips }) => {
-      CasinoShell.toast(`🎰 Hotel comped you ${chips} chips!`);
+    HotelBridge.on('comp_debit', ({ amount }) => {
+      CasinoShell.toast(`Casino comps: −$${fmt(amount)} hotel cash`);
     });
     HotelBridge.on('dept_unlocked', ({ deptId }) => {
       const meta = HotelConfig.DEPT_META[deptId];
@@ -84,6 +85,7 @@ const HotelUI = (() => {
     renderIncomeDisplay();
     renderStats(state);
     renderHotelSnapshot(state);
+    renderGoals(state);
     renderCalendar(state);
     renderCommandCenter(state);
     renderGuestRoster(state);
@@ -254,6 +256,79 @@ const HotelUI = (() => {
     setEl('snapshot-guest-cap', `/${guestSummary?.capacity ?? 0}`);
     setEl('snapshot-staff-gaps', gaps);
     setEl('snapshot-next-unlock', nextUnlockLabel(state));
+  }
+
+  /* ── Daily goals ─────────────────────────────────────────── */
+  function renderGoals(state = HotelState.get()) {
+    const card = document.getElementById('hotel-goals');
+    if (!card || !window.HotelGoals) return;
+    const onboarding = isPhaseOneOnboarding() || isGuidedOnboarding();
+    card.hidden = onboarding;          // goals start once the guide is done
+    if (onboarding) return;
+
+    HotelGoals.update(state).forEach(goal => CasinoShell.toast(`Goal complete: ${goal.label}`));
+    const goals = state.goals;
+    const doneCount = goals.items.filter(goal => goal.done).length;
+    const ready = doneCount === goals.items.length && !goals.claimed;
+    card.classList.toggle('chest-ready', ready);
+    card.innerHTML = `
+      <div class="goals-head">
+        <span><i class="fa-solid fa-bullseye" aria-hidden="true"></i> Today's Goals</span>
+        <strong>Day ${goals.day} · ${doneCount}/${goals.items.length}</strong>
+      </div>
+      <ul class="goals-list">${goals.items.map(renderGoalRow).join('')}</ul>
+      <div class="goals-chest">
+        <span class="chest-reward">
+          <i class="fa-solid fa-gift" aria-hidden="true"></i>
+          <span class="hotel-cash-text">+$${fmt(goals.reward.cash)} hotel cash</span> · +${goals.reward.chips} chips
+        </span>
+        ${goals.claimed
+          ? `<em>Chest opened · new goals on day ${goals.day + 1}</em>`
+          : `<button type="button" class="goals-claim" ${ready ? '' : 'disabled'}>${ready ? 'Open chest' : 'Finish all 3 to open'}</button>`}
+      </div>
+      ${goals.items.some(goal => goal.kind === 'casino' && !goal.done)
+        ? '<small class="goals-note">Casino goals update when you come back from the casino.</small>' : ''}
+    `;
+    card.querySelector('.goals-claim')?.addEventListener('click', claimGoalsChest);
+    wireCommandActions(card);
+  }
+
+  function renderGoalRow(goal) {
+    const pct = Math.round((goal.progress / goal.target) * 100);
+    const progressText = goal.id === 'satisfaction' ? `${goal.progress}%`
+      : goal.id === 'earn_cash' || goal.id === 'wagered' ? `$${fmtShort(goal.progress)}`
+      : `${goal.progress}/${goal.target}`;
+    const icon = goal.done ? 'fa-circle-check'
+      : { hotel: 'fa-clipboard-list', casino: 'fa-dice', manage: 'fa-chart-line' }[goal.kind] ?? 'fa-circle';
+    return `
+      <li class="goal goal-${goal.kind} ${goal.done ? 'done' : ''}">
+        <i class="fa-solid ${icon}" aria-hidden="true"></i>
+        <span class="goal-copy">
+          <span>${escapeHtml(goal.label)}</span>
+          <span class="goal-bar" role="progressbar" aria-label="${escapeHtml(goal.label)}" aria-valuemin="0" aria-valuemax="${goal.target}" aria-valuenow="${goal.progress}"><span style="width:${pct}%"></span></span>
+        </span>
+        <strong>${progressText}</strong>
+        ${goal.done ? '' : goalActionHtml(goal)}
+      </li>
+    `;
+  }
+
+  function goalActionHtml(goal) {
+    if (goal.id === 'dept_shift') {
+      const op = operationCatalog().find(item => item.dept === goal.dept);
+      return op ? `<a class="goal-go" href="${op.href}">Go</a>` : '';
+    }
+    if (goal.kind === 'casino') return `<a class="goal-go" href="${goal.href}">Play</a>`;
+    const action = { run_shifts: 'operations', upgrade: 'departments', satisfaction: 'staff' }[goal.id];
+    return action ? `<button type="button" class="goal-go" data-command-action="${action}">Go</button>` : '';
+  }
+
+  function claimGoalsChest() {
+    const reward = HotelGoals.claim();
+    if (!reward) return;
+    CasinoShell.celebrate(reward.cash, { currency: 'hotel' });
+    CasinoShell.toast(`Chest opened: +$${fmt(reward.cash)} hotel cash and +${reward.chips} chips`);
+    renderAll();
   }
 
   function nextUnlockLabel(state = HotelState.get()) {

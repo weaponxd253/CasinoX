@@ -944,6 +944,10 @@ const HotelState = (() => {
     shifts.history = shifts.history.slice(0, 20);
     shifts.completions[cycleKey] = shifts.completions[cycleKey] ?? {};
     shifts.completions[cycleKey][deptId] = entry;
+    // Lifetime counters (daily goals measure progress against these)
+    _state.stats.shiftsCompleted = (_state.stats.shiftsCompleted ?? 0) + 1;
+    _state.stats.shiftsByDept = _state.stats.shiftsByDept ?? {};
+    _state.stats.shiftsByDept[deptId] = (_state.stats.shiftsByDept[deptId] ?? 0) + 1;
     if (shifts.active?.deptId === deptId) shifts.active = null;
     save();
     return entry;

@@ -43,9 +43,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Refresh buttons whenever wallet changes (shell handles balance display)
   if (window.CasinoWallet) CasinoWallet.onChange(() => refreshButtons());
 
-  document.querySelectorAll('.chip-btn').forEach(btn =>
-    btn.addEventListener('click', () => addChip(parseInt(btn.dataset.value, 10)))
-  );
+  // High-limit chips unlocked by the hotel's Casino Floor
+  const chipValues = window.HotelPerks?.blackjackChips?.() ?? CHIPS;
+  document.querySelectorAll('.chip-btn').forEach(btn => {
+    btn.hidden = !chipValues.includes(parseInt(btn.dataset.value, 10));
+    btn.addEventListener('click', () => addChip(parseInt(btn.dataset.value, 10)));
+  });
   document.getElementById('clear-bet').addEventListener('click', clearBet);
   document.getElementById('max-bet').addEventListener('click',   maxBet);
   document.getElementById('rebet').addEventListener('click',    rebet);
