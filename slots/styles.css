@@ -126,3 +126,17 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 }
 .winning-chart .jackpot-row td { color: var(--gold-light); font-weight: 700; }
 .paytable-note { text-align: center; color: var(--text-dim); font-size: 0.9rem; margin: 0 auto 16px; max-width: 90%; }
+.bet-buttons .pushable.high-limit .front { box-shadow: inset 0 0 0 2px var(--hotel-cash, #6fcf97); }
+
+/* ── Auto-spin ── */
+.autospin-row { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; margin: 4px 0 8px; }
+.autospin-label { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-dim); }
+.autospin-btn, .autospin-stop {
+  min-height: 34px; min-width: 46px; padding: 0 12px;
+  border: 1px solid var(--border); border-radius: 999px;
+  background: rgba(0,0,0,0.2); color: var(--gold-light);
+  font-family: var(--font-display); font-weight: 700; cursor: pointer;
+}
+.autospin-btn:hover { border-color: var(--gold); }
+.autospin-btn[hidden], .autospin-stop[hidden] { display: none; }
+.autospin-stop { border-color: var(--loss); color: #ffb4ab; background: rgba(192,57,43,0.18); }

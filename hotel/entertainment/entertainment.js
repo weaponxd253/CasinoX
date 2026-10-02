@@ -134,11 +134,11 @@ const EntertainmentBooker = (() => {
 
     CasinoShell.sound.win();
     CasinoShell.toast(`${act.label} booked.`);
-    bookingConfirmation = `${act.label} booked. Return to Hotel to see the schedule impact.`;
+    bookingConfirmation = `${act.label} booked. Head back to the Hotel Lobby to see the schedule impact.`;
     syncHotelCash();
     selectedSlot = firstOpenSlot() ?? selectedSlot;
     renderAll();
-    setReturnLink('Return to Hotel', 'fa-building');
+    setReturnLink('Back to Hotel Lobby', 'fa-building');
   }
 
   function renderAll() {

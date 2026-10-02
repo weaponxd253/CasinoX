@@ -14,13 +14,13 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <!-- Shell first, game styles second -->
-  <link rel="stylesheet" href="../casino-shell.css?v=2026.10.1-s1">
-  <link rel="stylesheet" href="styles.css?v=2026.10.1-s1">
-  <link rel="stylesheet" href="../casino-mobile.css?v=2026.10.1-s1">
+  <link rel="stylesheet" href="../casino-shell.css?v=2026.10.1-p3">
+  <link rel="stylesheet" href="styles.css?v=2026.10.1-p3">
+  <link rel="stylesheet" href="../casino-mobile.css?v=2026.10.1-p3">
 
 
   <!-- Served locally so a CDN outage can't stall a paid spin -->
-  <script src="../vendor/gsap-3.9.1.min.js?v=2026.10.1-s1"></script>
+  <script src="../vendor/gsap-3.9.1.min.js?v=2026.10.1-p3"></script>
 </head>
 
 <body>
@@ -52,6 +52,14 @@
         <button class="pushable" type="button" data-bet="6" aria-label="Bet 6 dollars, maximum bet"><span class="front">$6.00<span class="bet-max-tag"> Max</span></span></button>
       </div>
 
+      <div class="autospin-row" role="group" aria-label="Auto-spin">
+        <span class="autospin-label">Auto-spin</span>
+        <button type="button" class="autospin-btn" data-auto="10">10</button>
+        <button type="button" class="autospin-btn" data-auto="25">25</button>
+        <button type="button" class="autospin-btn" data-auto="50">50</button>
+        <button type="button" class="autospin-stop" id="autospin-stop" hidden>Stop</button>
+      </div>
+
       <div id="bet-display" class="digital-screen small-screen">
         🎲 Current Bet: $<span id="current-bet">0.60</span>
       </div>
@@ -60,8 +68,8 @@
         <button class="button spin-button" aria-label="Spin the reels" title="Spin (or press Space)">
           <i class="fa-solid fa-arrows-rotate spin-icon"></i>
         </button>
-        <button id="reset-button" class="reset-button" aria-label="Cashier — refills to 100 dollars when under 1 dollar"
-          title="Cashier · refills to $100 when under $1">
+        <button id="reset-button" class="reset-button" aria-label="Cashier — refills and hotel comps"
+          title="Cashier · refills and hotel comps">
           <i class="fa-solid fa-circle-dollar-to-slot"></i>
         </button>
         <button id="help" class="help-button" aria-label="Open help guide" title="How to play">
@@ -100,10 +108,11 @@
     <p class="paytable-note">Three of a kind pays the full multiplier, two of a kind pays half. Returns about 95% of wagers over time.</p>
   </main>
 
-  <script src="../wallet.js?v=2026.10.1-s1"></script>
-  <script src="../casino-shell.js?v=2026.10.1-s1"></script>
-  <script src="../hotel-events.js?v=2026.10.1-s1"></script>
-  <script src="script.js?v=2026.10.1-s1"></script>
+  <script src="../wallet.js?v=2026.10.1-p3"></script>
+  <script src="../casino-shell.js?v=2026.10.1-p3"></script>
+  <script src="../hotel-events.js?v=2026.10.1-p3"></script>
+  <script src="../hotel-perks.js?v=2026.10.1-p3"></script>
+  <script src="script.js?v=2026.10.1-p3"></script>
 </body>
 
 </html>

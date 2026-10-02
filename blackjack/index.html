@@ -10,17 +10,18 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <!-- Shell first, game styles second, mobile last -->
-  <link rel="stylesheet" href="../casino-shell.css?v=2026.10.1-s1">
-  <link rel="stylesheet" href="styles.css?v=2026.10.1-s1">
-  <link rel="stylesheet" href="betting.css?v=2026.10.1-s1">
-  <link rel="stylesheet" href="../casino-mobile.css?v=2026.10.1-s1">
+  <link rel="stylesheet" href="../casino-shell.css?v=2026.10.1-p3">
+  <link rel="stylesheet" href="styles.css?v=2026.10.1-p3">
+  <link rel="stylesheet" href="betting.css?v=2026.10.1-p3">
+  <link rel="stylesheet" href="../casino-mobile.css?v=2026.10.1-p3">
 </head>
 <body>
   <!-- Shell injects the header. Game content starts here. -->
 
   <p class="instruction-strip">
     Stack chips below to place a bet, then Deal.
-    Hit for another card — Stand to let the dealer play. Blackjack pays 3:2.
+    Hit for another card — Stand to let the dealer play. Double on any two cards,
+    split pairs, and insure when the dealer shows an Ace. Blackjack pays 3:2.
   </p>
 
   <!-- Speed control — moved out of header, lives near the table -->
@@ -54,6 +55,9 @@
       <button class="chip-btn chip-5"  data-value="5"  aria-label="Bet $5">$5</button>
       <button class="chip-btn chip-10" data-value="10" aria-label="Bet $10">$10</button>
       <button class="chip-btn chip-25" data-value="25" aria-label="Bet $25">$25</button>
+      <!-- High-limit chips appear with the hotel's Casino Floor upgrades -->
+      <button class="chip-btn chip-50"  data-value="50"  aria-label="Bet $50"  hidden>$50</button>
+      <button class="chip-btn chip-100" data-value="100" aria-label="Bet $100" hidden>$100</button>
     </div>
     <div class="bet-readout">
       <span class="bet-label">Bet</span>
@@ -70,6 +74,10 @@
     <button class="action-btn primary"   onclick="deal()"        id="deal-button">Deal</button>
     <button class="action-btn secondary" onclick="playerHit()"   id="hit-button"   disabled>Hit</button>
     <button class="action-btn secondary" onclick="playerStand()" id="stand-button" disabled>Stand</button>
+    <button class="action-btn secondary" id="double-button" disabled title="Double your bet, take one card, then stand">Double</button>
+    <button class="action-btn secondary" id="split-button" disabled title="Split a pair into two hands">Split</button>
+    <button class="action-btn primary"   id="insurance-yes" hidden>Insure</button>
+    <button class="action-btn secondary" id="insurance-no" hidden>No insurance</button>
     <button class="action-btn danger"    onclick="resetTable()"  id="reset-button">Clear Table</button>
   </div>
 
@@ -93,9 +101,10 @@
     </ul>
   </div>
 
-  <script src="../wallet.js?v=2026.10.1-s1"></script>
-<script src="../casino-shell.js?v=2026.10.1-s1"></script>
-  <script src="../hotel-events.js?v=2026.10.1-s1"></script>
-  <script src="script.js?v=2026.10.1-s1"></script>
+  <script src="../wallet.js?v=2026.10.1-p3"></script>
+<script src="../casino-shell.js?v=2026.10.1-p3"></script>
+  <script src="../hotel-events.js?v=2026.10.1-p3"></script>
+  <script src="../hotel-perks.js?v=2026.10.1-p3"></script>
+  <script src="script.js?v=2026.10.1-p3"></script>
 </body>
 </html>

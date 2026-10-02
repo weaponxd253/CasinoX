@@ -89,18 +89,6 @@ const HotelBridge = (() => {
         break;
       }
 
-      case 'all_chips_lost': {
-        // Hotel gesture: offer comp chips drawn from hotel cash
-        const compChips = 50;
-        if (HotelState.getCash() >= 200) {
-          HotelState.spendHotelCash(200);  // $200 hotel cash → 50 comp chips
-          if (window.CasinoWallet) CasinoWallet.add(compChips);
-          emit('comp_chips', { chips: compChips });
-        }
-        emit('casino_event', { type, data });
-        break;
-      }
-
       case 'level_up': {
         // Casino XP level up → small hotel reputation boost
         emit('casino_level_up', { level: data.level });
@@ -129,7 +117,16 @@ const HotelBridge = (() => {
       coinFlipsWon:    n('coin_flip_win'),
       jackpotsHit:     n('jackpot'),
       chipsWagered:    Math.max(0, Number(queue.wagered) || 0),
+      compCost:        0,
     };
+
+    // Comps taken in the casino: debit what the hotel can still cover.
+    const compDebit = Math.min(Math.max(0, Number(queue.compCost) || 0), HotelState.getCash());
+    if (compDebit > 0) {
+      HotelState.spendHotelCash(compDebit);
+      summary.compCost = compDebit;
+      emit('comp_debit', { amount: compDebit });
+    }
 
     const winsBefore = ev.blackjackWins ?? 0;
     HotelState.updateCasinoBridge({
@@ -177,12 +174,11 @@ const HotelBridge = (() => {
     // Bar → daily bonus boost
     const dailyBonus = barLevel >= 3 ? 100 : 0;
 
-    // Store effects in sessionStorage so casino pages can read them
-    // without needing to load the full hotel state
-    const effects = { betMult, chipBonus, dailyBonus };
-    try {
-      sessionStorage.setItem('hotelCasinoEffects', JSON.stringify(effects));
-    } catch (e) { /* storage unavailable */ }
+    // Saved with the hotel so casino pages can read it (hotel-perks.js)
+    // without loading the hotel scripts.
+    const effects = { casinoLevel, betMult, chipBonus, dailyBonus };
+    state.casinoBridge.perks = { ...effects, updatedAt: Date.now() };
+    HotelState.save();
 
     emit('hotel_effects_updated', effects);
     return effects;

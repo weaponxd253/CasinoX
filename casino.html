@@ -12,12 +12,14 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <!-- Shell first, lobby styles second, mobile last -->
-  <link rel="stylesheet" href="casino-shell.css?v=2026.10.1-s1">
-  <link rel="stylesheet" href="lobby.css?v=2026.10.1-s1">
-  <link rel="stylesheet" href="casino-mobile.css?v=2026.10.1-s1">
+  <link rel="stylesheet" href="casino-shell.css?v=2026.10.1-p3">
+  <link rel="stylesheet" href="lobby.css?v=2026.10.1-p3">
+  <link rel="stylesheet" href="casino-mobile.css?v=2026.10.1-p3">
 
-  <script src="wallet.js?v=2026.10.1-s1"></script>
-  <script src="casino-shell.js?v=2026.10.1-s1"></script>
+  <script src="wallet.js?v=2026.10.1-p3"></script>
+  <script src="hotel-events.js?v=2026.10.1-p3"></script>
+  <script src="hotel-perks.js?v=2026.10.1-p3"></script>
+  <script src="casino-shell.js?v=2026.10.1-p3"></script>
 </head>
 
 <body>
@@ -28,8 +30,8 @@
       <span class="logo-sub">Royale Collection</span>
     </div>
     <div class="header-controls">
-      <div class="balance-pill" id="balance-pill" title="Your bankroll, shared across every game">
-        <span class="chip"></span> $<span id="lobby-balance">100.00</span>
+      <div class="balance-pill" id="balance-pill" title="Casino chips — one bankroll for every game">
+        <span class="chip" aria-hidden="true"></span> $<span id="lobby-balance">100.00</span><span class="balance-unit">chips</span>
       </div>
       <div class="shell-progress" title="Level & XP">
         <span class="lvl">Lv <span id="shell-level">1</span></span>
@@ -38,10 +40,10 @@
       <button class="shell-pill shell-icon-btn shell-bonus" id="shell-bonus-btn" aria-label="Daily bonus" title="Daily bonus">
         <i class="fa-solid fa-gift"></i>
       </button>
-      <a class="pill-btn hotel-return-btn" href="hotel/index.html" aria-label="Return to Hotel Lobby">
+      <a class="pill-btn hotel-return-btn" href="hotel/index.html" aria-label="Hotel Lobby">
         <i class="fa-solid fa-hotel" aria-hidden="true"></i> <span class="pill-label">Hotel Lobby</span><span class="pill-label-short">Hotel</span>
       </a>
-      <button class="pill-btn" id="cashier-btn" aria-label="Cashier — refills to $100 when under $1">
+      <button class="pill-btn" id="cashier-btn" aria-label="Cashier — refills and hotel comps">
         <i class="fa-solid fa-coins"></i> Cashier
       </button>
       <button class="pill-btn" id="theme-toggle" aria-label="Toggle theme">
@@ -114,7 +116,8 @@
 
   <script>
     // ── Shell: applies saved theme and wires meta-game controls/overlays. ──
-    CasinoShell.standalone({ lobbyHref: 'casino.html' });
+    CasinoShell.standalone({ lobbyHref: 'casino.html', autoBonus: true });
+    HotelPerks.renderStrip({ teaser: true, hotelHref: 'hotel/index.html' });
 
     // ── Shared bankroll display ──
     (function () {
@@ -128,57 +131,46 @@
         pill.classList.add('bump');
       });
 
-      document.getElementById('cashier-btn').addEventListener('click', () => {
-        if (!CasinoWallet.topUp()) {
-          CasinoShell.toast(`The Cashier refills your bankroll once it drops below $${CasinoWallet.TOPUP_BELOW}.`);
-        }
-      });
+      document.getElementById('cashier-btn').addEventListener('click', () => CasinoShell.openCashier());
     })();
 
     // ── Casino unlock system ──────────────────────────────────────────────
-    // Read hotel state directly — no hotel scripts needed on this page.
+    // Gates live in hotel-perks.js (Casino Floor level + reputation).
     (function () {
-      function getHotelProgress() {
-        try {
-          const state = JSON.parse(localStorage.getItem('hotelGameState') || 'null');
-          return {
-            casinoLevel: state?.departments?.casino?.level ?? 1,
-            reputation:  state?.currencies?.reputation ?? 1,
-          };
-        } catch (_) { return { casinoLevel: 1, reputation: 1 }; }
-      }
-
-      const { casinoLevel, reputation } = getHotelProgress();
-
       document.querySelectorAll('.game-card.locked').forEach(card => {
-        const gameId = card.dataset.gameId;
-        if (!gameId) return;
-        const gates = {
-          roulette:    { casinoLevel: 2, repRequired: 5  },
-          mines:       { casinoLevel: 2, repRequired: 6  },
-          videoPoker:  { casinoLevel: 3, repRequired: 10 },
-          texasHoldem: { casinoLevel: 5, repRequired: 20 },
-        };
-        const gate = gates[gameId];
+        const gate = HotelPerks.gameGate(card.dataset.gameId);
         if (!gate) return;
-
         const metaEl = card.querySelector('.game-meta');
         const btnEl  = card.querySelector('.enter-btn');
         const ribbon = card.querySelector('.ribbon');
-        const casinoMet = casinoLevel >= gate.casinoLevel;
-        const repMet    = reputation  >= gate.repRequired;
 
-        if (casinoMet && repMet) {
-          if (ribbon) ribbon.textContent = 'Soon';
-          if (metaEl) metaEl.textContent = 'Game coming soon';
-        } else {
-          if (ribbon) ribbon.textContent = 'Locked';
-          const needs = [];
-          if (!casinoMet) needs.push(`Casino Floor Lv ${gate.casinoLevel}`);
-          if (!repMet)    needs.push(`Reputation ${gate.repRequired}`);
-          if (metaEl) metaEl.textContent = `Requires: ${needs.join(' · ')}`;
-          if (btnEl)  btnEl.textContent  = `${casinoLevel}/${gate.casinoLevel} ↑`;
+        if (gate.unlocked && gate.href) {
+          // Playable: turn the card into a real link
+          const link = document.createElement('a');
+          link.className = 'game-card live';
+          link.href = gate.href;
+          link.dataset.gameId = card.dataset.gameId;
+          link.innerHTML = card.innerHTML;
+          card.replaceWith(link);
+          link.querySelector('.ribbon').textContent = gate.dev && !(gate.casinoMet && gate.repMet) ? 'Dev' : 'New';
+          link.querySelector('.game-meta').textContent = 'Table · European wheel';
+          link.querySelector('.enter-btn').textContent = 'Play';
+          return;
         }
+        if (gate.unlocked) {
+          if (ribbon) ribbon.textContent = 'Soon';
+          if (metaEl) metaEl.textContent = 'Unlocked · game coming soon';
+          return;
+        }
+        if (ribbon) ribbon.textContent = 'Locked';
+        const casinoPct = Math.min(1, gate.casinoLevelNow / gate.casinoLevel);
+        const repPct = Math.min(1, gate.repNow / gate.rep);
+        const pct = Math.round(((casinoPct + repPct) / 2) * 100);
+        if (metaEl) {
+          metaEl.innerHTML = `Casino Floor Lv ${Math.min(gate.casinoLevelNow, gate.casinoLevel)}/${gate.casinoLevel} · Reputation ${Math.min(gate.repNow, gate.rep)}/${gate.rep}`
+            + `<span class="unlock-bar" role="progressbar" aria-label="Unlock progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span style="width:${pct}%"></span></span>`;
+        }
+        if (btnEl) btnEl.textContent = 'Locked';
       });
     })();
   </script>

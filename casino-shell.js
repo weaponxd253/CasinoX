@@ -56,7 +56,9 @@ const CasinoShell = (function () {
 
   /* Award XP scaled to a wager (1 XP per $1, min 1). Handles level-ups + rewards. */
   function awardXp(wager) {
-    const pts = Math.max(1, Math.round(Number(wager) || 0));
+    // +50% while a hotel high roller has the high-stakes table open
+    const mult = window.HotelPerks?.xpMult?.() ?? 1;
+    const pts = Math.max(1, Math.round((Number(wager) || 0) * mult));
     const before = levelFromXp(profile.data.xp).level;
     profile.data.xp += pts;
     const after = levelFromXp(profile.data.xp).level;
@@ -82,8 +84,10 @@ const CasinoShell = (function () {
     const pendingStreak = claimedToday
       ? profile.data.streak
       : (profile.data.lastClaim === yest ? profile.data.streak + 1 : 1);
-    const reward = BONUS_TABLE[Math.min(pendingStreak, BONUS_TABLE.length) - 1];
-    return { today, yest, claimedToday, pendingStreak, reward };
+    const base = BONUS_TABLE[Math.min(pendingStreak, BONUS_TABLE.length) - 1];
+    // Hotel perks (Casino Floor chip bonus, Bar Sky Lounge) add to the base.
+    const extra = window.HotelPerks?.dailyBonusExtra?.(base) ?? 0;
+    return { today, yest, claimedToday, pendingStreak, base, extra, reward: base + extra };
   }
 
   const dailyBonus = {
@@ -126,7 +130,9 @@ const CasinoShell = (function () {
       claim.disabled = true;
       claim.textContent = 'Claimed today ✓';
     } else {
-      sub.textContent = `Day ${activeDay} of your streak — claim $${s.reward}!`;
+      sub.textContent = s.extra > 0
+        ? `Day ${activeDay} of your streak — $${s.base} + $${s.extra} from your hotel perks!`
+        : `Day ${activeDay} of your streak — claim $${s.reward}!`;
       claim.disabled = false;
       claim.textContent = `Claim $${s.reward}`;
     }
@@ -242,6 +248,82 @@ const CasinoShell = (function () {
     });
   }
 
+  /* ───────── MOTION + ANNOUNCEMENTS ───────── */
+  // Honour the OS "reduce motion" setting: no confetti, instant reels/text.
+  function reducedMotion() {
+    try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+    catch (_) { return false; }
+  }
+
+  /* Read a result to screen readers once (a live region that games write
+     to instead of their animated, character-by-character displays). */
+  function announce(text) {
+    const region = document.getElementById('shell-announcer');
+    if (!region || !text) return;
+    region.textContent = '';
+    setTimeout(() => { region.textContent = text; }, 30);
+  }
+
+  /* ───────── KEYBOARD SHORTCUTS ─────────
+     Games register shortcuts; "?" lists them. Keys are ignored while a
+     dialog is open or the player is typing, and Space/Enter still press a
+     focused button instead of triggering a shortcut. */
+  const shortcuts = [];
+
+  function registerShortcuts(list) {
+    shortcuts.push(...list);
+    renderShortcutHint();
+  }
+
+  function shortcutLabel(key) {
+    return { ' ': 'Space', ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓' }[key] ?? key.toUpperCase();
+  }
+
+  // ['1','2','3','4','5'] → "1–5"; anything else → "H / ←"
+  function shortcutKeysHtml(keys) {
+    const digits = keys.every(k => /^\d$/.test(k)) && keys.length > 2
+      && keys.every((k, i) => i === 0 || Number(k) === Number(keys[i - 1]) + 1);
+    if (digits) return `<kbd>${keys[0]}</kbd>–<kbd>${keys[keys.length - 1]}</kbd>`;
+    return keys.map(k => `<kbd>${shortcutLabel(k)}</kbd>`).join(' / ');
+  }
+
+  function showShortcuts() {
+    if (!shortcuts.length) return;
+    info('Keyboard shortcuts', `
+      <ul class="shell-shortcut-list">
+        ${shortcuts.map(s => `<li>${shortcutKeysHtml(s.keys)} <span>${s.label}</span></li>`).join('')}
+        <li><kbd>?</kbd> <span>Show this list</span></li>
+        <li><kbd>Esc</kbd> <span>Close a dialog</span></li>
+      </ul>`);
+  }
+
+  function renderShortcutHint() {
+    if (document.getElementById('shell-shortcut-hint') || !document.querySelector('.shell-footer')) return;
+    const hint = document.createElement('button');
+    hint.type = 'button';
+    hint.id = 'shell-shortcut-hint';
+    hint.className = 'shell-shortcut-hint';
+    hint.innerHTML = '<kbd>?</kbd> Keyboard shortcuts';
+    hint.addEventListener('click', showShortcuts);
+    document.querySelector('.shell-footer').before(hint);
+  }
+
+  function wireShortcutKeys() {
+    document.addEventListener('keydown', (e) => {
+      if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (topModal()) return;
+      const target = e.target;
+      if (target.closest?.('input, select, textarea, [contenteditable]')) return;
+      if ((e.key === ' ' || e.key === 'Enter') && target.closest?.('button, a')) return;
+      if (e.key === '?') { e.preventDefault(); showShortcuts(); return; }
+      const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      const match = shortcuts.find(s => s.keys.includes(key));
+      if (!match || e.repeat) return;
+      e.preventDefault();
+      match.run(e);
+    });
+  }
+
   /* ───────── TOAST ───────── */
   function toast(msg, ms = 4000) {
     const wrap = document.getElementById('shell-toasts');
@@ -254,20 +336,30 @@ const CasinoShell = (function () {
   }
 
   /* ───────── CELEBRATION ───────── */
-  function celebrate(amount) {
+  /* celebrate(amount)                       → casino chips (gold, jackpot sound)
+     celebrate(amount, { currency: 'hotel' }) → hotel cash (green, building icon,
+                                                 softer chime) so shift earnings
+                                                 never look like chip winnings */
+  function celebrate(amount, { currency = 'chips' } = {}) {
+    const hotel = currency === 'hotel';
     if (amount > 0) {
       const big = document.getElementById('shell-bigwin');
-      if (big) { big.textContent = `+$${Number(amount).toFixed(2)}`; big.classList.remove('show'); void big.offsetWidth; big.classList.add('show'); }
+      if (big) {
+        big.classList.toggle('hotel-cash', hotel);
+        big.innerHTML = hotel
+          ? `<span class="bigwin-amount">+$${Math.round(amount).toLocaleString()}</span><span class="bigwin-unit"><i class="fa-solid fa-building" aria-hidden="true"></i> hotel cash</span>`
+          : `<span class="bigwin-amount">+$${Number(amount).toFixed(2)}</span><span class="bigwin-unit">chips</span>`;
+        big.classList.remove('show'); void big.offsetWidth; big.classList.add('show');
+      }
     }
-    sound.jackpot();
-    confettiBurst();
+    if (hotel) sound.win(); else sound.jackpot();
+    if (!reducedMotion()) confettiBurst(hotel ? ['#6fcf97', '#a8e6c3', '#f5ead5', '#c9a84c'] : undefined);
   }
-  function confettiBurst() {
+  function confettiBurst(colors = ['#c9a84c', '#e8cb80', '#f5ead5', '#6fcf97']) {
     const canvas = document.getElementById('shell-confetti');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     canvas.width = innerWidth; canvas.height = innerHeight;
-    const colors = ['#c9a84c', '#e8cb80', '#f5ead5', '#6fcf97'];
     const pieces = Array.from({ length: 140 }, () => ({
       x: innerWidth / 2 + (Math.random() - 0.5) * 120, y: innerHeight / 3,
       vx: (Math.random() - 0.5) * 12, vy: Math.random() * -14 - 4,
@@ -294,7 +386,55 @@ const CasinoShell = (function () {
     if (!modal) return;
     modal.querySelector('.shell-modal-box h3').textContent = opts.title || '💸 Out of Chips';
     modal.querySelector('.shell-modal-box p').textContent = opts.message || "You've run out of funds. Visit the Cashier to keep playing.";
+    const comp = window.HotelPerks?.compOffer?.();
+    const compBtn = document.getElementById('shell-oos-comp');
+    if (compBtn) {
+      compBtn.hidden = !comp?.available;
+      if (comp?.available) compBtn.textContent = `Hotel comp · ${comp.chips} chips`;
+    }
     openModal(modal);
+  }
+
+  /* ───────── CASHIER ─────────
+     Free refill when the bankroll is busted, or exchange hotel cash for
+     chips at any time (comps — see hotel-perks.js). */
+  function renderCashier() {
+    const m = document.getElementById('shell-cashier-modal');
+    if (!m || !window.CasinoWallet) return;
+    const w = CasinoWallet;
+    m.querySelector('.shell-cashier-balance').textContent = `Bankroll: $${w.get().toFixed(2)} in chips`;
+
+    const refill = document.getElementById('shell-cashier-refill');
+    const canRefill = w.canTopUp();
+    refill.disabled = !canRefill;
+    m.querySelector('[data-cashier="refill"] .cashier-note').textContent = canRefill
+      ? `Brings your bankroll back to $${w.STARTING}.`
+      : `Available once your bankroll drops below $${w.TOPUP_BELOW}.`;
+
+    const compRow = m.querySelector('[data-cashier="comp"]');
+    const offer = window.HotelPerks?.compOffer?.();
+    compRow.hidden = !offer;
+    if (offer) {
+      const btn = document.getElementById('shell-cashier-comp');
+      btn.disabled = !offer.available;
+      btn.textContent = `${offer.chips} chips for $${offer.cost.toLocaleString()}`;
+      compRow.querySelector('.cashier-note').textContent = offer.available
+        ? `Paid from hotel cash ($${Math.floor(offer.hotelCash).toLocaleString()} available).`
+        : offer.reason;
+    }
+  }
+
+  function openCashier() {
+    renderCashier();
+    openModal(document.getElementById('shell-cashier-modal'));
+  }
+
+  function takeComp() {
+    const taken = window.HotelPerks?.takeComp?.();
+    if (!taken) { renderCashier(); return false; }
+    toast(`+${taken.chips} chips · $${taken.cost.toLocaleString()} charged to your hotel`);
+    celebrate(taken.chips);
+    return taken;
   }
 
   /* ───────── INFO / RULES ───────── */
@@ -368,8 +508,8 @@ const CasinoShell = (function () {
         <span class="sub">${cfg.subtitle || 'Casino Edition'}</span>
       </div>
       <div class="shell-controls">
-        <div class="shell-balance" id="shell-balance" title="Shared bankroll">
-          <span class="chip"></span> $<span id="shell-balance-amt">0.00</span>
+        <div class="shell-balance" id="shell-balance" title="Casino chips — one bankroll for every game">
+          <span class="chip" aria-hidden="true"></span> $<span id="shell-balance-amt">0.00</span><span class="balance-unit">chips</span>
         </div>
         ${progressHTML()}
         <a class="shell-pill" href="${lobby}" aria-label="${lobbyLabel}"><i class="fa-solid fa-dice" aria-hidden="true"></i> <span class="pill-label" aria-hidden="true">${lobbyLabel}</span><span class="pill-label-short" aria-hidden="true">${shortLabel(lobbyLabel)}</span></a>
@@ -387,6 +527,7 @@ const CasinoShell = (function () {
     const lobbyLabel = cfg.lobbyLabel || (hotelOperation ? 'Hotel Lobby' : 'Casino Floor');
     const html = `
       <div id="shell-toasts" role="status" aria-live="polite"></div>
+      <div id="shell-announcer" class="shell-sr-only" aria-live="polite" aria-atomic="true"></div>
       <canvas id="shell-confetti"></canvas>
       <div id="shell-bigwin"></div>
       <div class="shell-modal" id="shell-modal">
@@ -394,6 +535,7 @@ const CasinoShell = (function () {
           <h3 id="shell-modal-title">💸 Out of Chips</h3><p id="shell-modal-desc">You've run out of funds.</p>
           <div class="shell-modal-actions">
             <button class="btn primary" id="shell-cashier">Cashier · $100</button>
+            <button class="btn secondary" id="shell-oos-comp" hidden>Hotel comp</button>
             <a class="btn secondary" href="${lobby}">${lobbyLabel}</a>
             <button class="btn secondary shell-modal-close">Close</button>
           </div>
@@ -404,6 +546,23 @@ const CasinoShell = (function () {
           <h3 class="shell-info-title" id="shell-info-title"></h3>
           <div class="shell-info-body"></div>
           <div class="shell-modal-actions"><button class="btn secondary shell-info-close">Close</button></div>
+        </div>
+      </div>
+      <div class="shell-modal" id="shell-cashier-modal">
+        <div class="shell-modal-box cashier" role="dialog" aria-modal="true" aria-labelledby="shell-cashier-title" tabindex="-1">
+          <h3 id="shell-cashier-title">🏦 Cashier</h3>
+          <p class="shell-cashier-balance"></p>
+          <div class="cashier-options">
+            <div class="cashier-option" data-cashier="refill">
+              <div><strong>Free refill</strong><span class="cashier-note"></span></div>
+              <button class="btn primary" id="shell-cashier-refill">Refill to $100</button>
+            </div>
+            <div class="cashier-option" data-cashier="comp">
+              <div><strong><i class="fa-solid fa-building" aria-hidden="true"></i> Hotel comp</strong><span class="cashier-note"></span></div>
+              <button class="btn secondary" id="shell-cashier-comp">Comp</button>
+            </div>
+          </div>
+          <div class="shell-modal-actions"><button class="btn secondary shell-cashier-close">Close</button></div>
         </div>
       </div>
       <div class="shell-modal" id="shell-bonus-modal">
@@ -429,6 +588,20 @@ const CasinoShell = (function () {
     });
     const om = document.getElementById('shell-modal');
     om.querySelector('.shell-modal-close').addEventListener('click', () => closeModal(om));
+    document.getElementById('shell-oos-comp').addEventListener('click', () => {
+      if (takeComp()) closeModal(om);
+    });
+
+    const cm = document.getElementById('shell-cashier-modal');
+    document.getElementById('shell-cashier-refill').addEventListener('click', () => {
+      if (window.CasinoWallet?.topUp()) { toast(`Bankroll refilled to $${CasinoWallet.STARTING}.`); closeModal(cm); }
+      else renderCashier();
+    });
+    document.getElementById('shell-cashier-comp').addEventListener('click', () => {
+      if (takeComp()) closeModal(cm);
+    });
+    cm.querySelector('.shell-cashier-close').addEventListener('click', () => closeModal(cm));
+    cm.addEventListener('click', (e) => { if (e.target === cm) closeModal(cm); });
     const im = document.getElementById('shell-info-modal');
     im.querySelector('.shell-info-close').addEventListener('click', () => closeModal(im));
     im.addEventListener('click', (e) => { if (e.target === im) closeModal(im); });
@@ -438,6 +611,7 @@ const CasinoShell = (function () {
     bm.querySelector('.shell-bonus-close').addEventListener('click', () => closeModal(bm));
     bm.addEventListener('click', (e) => { if (e.target === bm) closeModal(bm); });
     wireModalKeys();
+    wireShortcutKeys();
   }
 
   /* Dev mode (?dev=1): a badge that opens the dev tools panel. The tools
@@ -493,19 +667,32 @@ const CasinoShell = (function () {
     maybePromptBonus();
   }
 
+  /* The gift button pulses whenever a bonus is waiting; the dialog only
+     opens by itself on pages that opt in (the casino lobby), once per
+     session, so it never interrupts a game or the hotel guide. */
   function maybePromptBonus() {
-    if (!dailyBonus.available()) return;
+    if (!cfg.autoBonus || !dailyBonus.available()) return;
     if (sessionStorage.getItem('shellBonusPrompted')) return;
     sessionStorage.setItem('shellBonusPrompted', '1');
     setTimeout(() => dailyBonus.open(), 650);
   }
 
   /* ───────── ENTRY POINTS ───────── */
-  function mount(config) { cfg = config || {}; injectHeader(); setup(); injectFooter(); return CasinoShell; }
+  function mount(config) {
+    cfg = config || {};
+    injectHeader();
+    setup();
+    injectFooter();
+    // Casino games show what the hotel unlocks for them (not on hotel shifts)
+    const hotelOperation = String(cfg.lobbyHref || '../casino.html').includes('../..');
+    if (!hotelOperation) window.HotelPerks?.renderStrip?.({ hotelHref: cfg.hotelHref || '../hotel/index.html' });
+    return CasinoShell;
+  }
   function standalone(config) { cfg = config || {}; setup(); return CasinoShell; }
 
   return {
-    mount, standalone, theme, sound, toast, celebrate, gameOver, info,
+    mount, standalone, theme, sound, toast, celebrate, gameOver, info, openCashier,
+    announce, reducedMotion, registerShortcuts, showShortcuts,
     awardXp, dailyBonus, syncBalance, renderProgression,
     get profile() { return snapshot(); },
     wallet: null

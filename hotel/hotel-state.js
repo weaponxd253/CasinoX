@@ -141,16 +141,11 @@ const HotelState = (() => {
       achievements: {
         reputationBonus: 0,
         unlocked:        [],
-        progress: {
-          'first_upgrade':      { current:0, required:1  },
-          'five_upgrades':      { current:0, required:5  },
-          'satisfaction_80':    { current:0, required:1  },
-          'first_vip':          { current:0, required:1  },
-          'ten_blackjack_wins': { current:0, required:10 },
-          'jackpot_hit':        { current:0, required:1  },
-          'full_house':         { current:0, required:1  },
-          'all_depts_unlocked': { current:0, required:7  },
-        },
+        // One entry per catalog achievement (hotel-config.js)
+        progress: Object.fromEntries(HotelConfig.ACHIEVEMENT_CATALOG.map(entry =>
+          [entry.id, { current: 0, required: entry.required ?? 1 }])),
+        unlockedAt: {},
+        unseen: [],
       },
       casinoBridge: {
         activeMultiplier:  1.0,
@@ -188,6 +183,15 @@ const HotelState = (() => {
       state.guests        = state.guests        ?? createNewSave().guests;
       state.achievements  = state.achievements  ?? createNewSave().achievements;
     }
+    // Every catalog achievement has a progress entry (new ones join old saves)
+    state.achievements = state.achievements ?? createNewSave().achievements;
+    state.achievements.progress = state.achievements.progress ?? {};
+    state.achievements.unlockedAt = state.achievements.unlockedAt ?? {};
+    if (!Array.isArray(state.achievements.unseen)) state.achievements.unseen = [];
+    HotelConfig.ACHIEVEMENT_CATALOG.forEach(entry => {
+      state.achievements.progress[entry.id] = state.achievements.progress[entry.id]
+        ?? { current: 0, required: entry.required ?? 1 };
+    });
     const fresh = createNewSave();
     const hadOnboarding = !!state.onboarding;
     const hadGuidedStep = typeof state.onboarding?.guidedStep === 'string';
@@ -660,8 +664,32 @@ const HotelState = (() => {
     if (!entry) return;
     _state.achievements.unlocked.push(id);
     _state.achievements.reputationBonus += entry.repBonus;
+    _state.achievements.unlockedAt = _state.achievements.unlockedAt ?? {};
+    _state.achievements.unlockedAt[id] = Date.now();
+    // Announced by the hotel UI (works for unlocks on shift pages too)
+    _state.achievements.unseen = [...(_state.achievements.unseen ?? []), id];
     save();
     return entry;
+  }
+
+  /* Set progress to an absolute value (for counters such as upgrades). */
+  function setAchievementProgress(id, value) {
+    const prog = _state.achievements.progress[id];
+    if (!prog || _state.achievements.unlocked.includes(id)) return null;
+    const next = Math.min(prog.required, Math.max(prog.current, Math.floor(value)));
+    if (next === prog.current) return null;
+    prog.current = next;
+    if (prog.current >= prog.required) return unlockAchievement(id);
+    save();
+    return null;
+  }
+
+  function takeUnseenAchievements() {
+    const ids = _state.achievements.unseen ?? [];
+    if (!ids.length) return [];
+    _state.achievements.unseen = [];
+    save();
+    return ids.map(id => HotelConfig.ACHIEVEMENT_CATALOG.find(a => a.id === id)).filter(Boolean);
   }
 
   function tickAchievementProgress(id, increment = 1) {
@@ -673,8 +701,16 @@ const HotelState = (() => {
     return null;
   }
 
+  /* A high roller stays for a fixed visit; while they're in the house the
+     casino opens a high-stakes table (hotel-perks.js reads highRollerUntil).
+     A second arrival during a visit extends it. */
   function setHighRollerFlag() {
-    _state.guests.highRollerPresent = true;
+    const g = _state.guests;
+    const now = Date.now();
+    if (!g.highRollerPresent || !(g.highRollerUntil > now)) g.stats.highRollersHosted = (g.stats.highRollersHosted ?? 0) + 1;
+    setAchievementProgress('high_roller_host', g.stats.highRollersHosted);
+    g.highRollerPresent = true;
+    g.highRollerUntil = now + HotelConfig.ECONOMY.HIGH_ROLLER_VISIT_MS;
     save();
   }
 
@@ -698,6 +734,7 @@ const HotelState = (() => {
 
   function clearHighRollerFlag() {
     _state.guests.highRollerPresent = false;
+    _state.guests.highRollerUntil = null;
     save();
   }
 
@@ -944,6 +981,11 @@ const HotelState = (() => {
     shifts.history = shifts.history.slice(0, 20);
     shifts.completions[cycleKey] = shifts.completions[cycleKey] ?? {};
     shifts.completions[cycleKey][deptId] = entry;
+    // Lifetime counters (daily goals measure progress against these)
+    _state.stats.shiftsCompleted = (_state.stats.shiftsCompleted ?? 0) + 1;
+    _state.stats.shiftsByDept = _state.stats.shiftsByDept ?? {};
+    _state.stats.shiftsByDept[deptId] = (_state.stats.shiftsByDept[deptId] ?? 0) + 1;
+    setAchievementProgress('ten_shifts', _state.stats.shiftsCompleted);
     if (shifts.active?.deptId === deptId) shifts.active = null;
     save();
     return entry;
@@ -2123,7 +2165,7 @@ const HotelState = (() => {
     assignStaff, restStaff, adjustStaffStamina, trainStaff, promoteStaff, getFireStaffImpact, fireStaff, processStaffPayroll, applyStaffFatigue,
     getStaffApplications, reviewStaffApplication, shortlistStaffApplication, rejectStaffApplication, hireStaffApplication,
     departmentFitScore,
-    unlockAchievement, tickAchievementProgress,
+    unlockAchievement, tickAchievementProgress, setAchievementProgress, takeUnseenAchievements,
   };
 })();
 

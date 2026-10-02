@@ -450,7 +450,7 @@ const CheckInGame = (() => {
       </div>` : ''}
       `;
 
-    if (pct >= 70) CasinoShell.celebrate(cashBonus);
+    if (pct >= 70) CasinoShell.celebrate(cashBonus, { currency: 'hotel' });
 
     $('overlay-results').style.display = 'flex';
   }

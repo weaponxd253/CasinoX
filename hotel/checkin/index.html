@@ -8,10 +8,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="../../casino-shell.css?v=2026.10.1-s1">
-  <link rel="stylesheet" href="game.css?v=2026.10.1-s1">
-  <link rel="stylesheet" href="../../casino-mobile.css?v=2026.10.1-s1">
-  <link rel="stylesheet" href="../shift-briefing.css?v=2026.10.1-s1">
+  <link rel="stylesheet" href="../../casino-shell.css?v=2026.10.1-p3">
+  <link rel="stylesheet" href="game.css?v=2026.10.1-p3">
+  <link rel="stylesheet" href="../../casino-mobile.css?v=2026.10.1-p3">
+  <link rel="stylesheet" href="../shift-briefing.css?v=2026.10.1-p3">
 </head>
 <body>
   <!-- Shell header injected by CasinoShell.mount() -->
@@ -89,7 +89,7 @@
         <i class="fa-solid fa-clock"></i>
         Next session available in <strong id="cooldown-time"></strong>
       </div>
-      <a href="../index.html" class="ci-back-link">Back to Hotel</a>
+      <a href="../index.html" class="ci-back-link">Back to Hotel Lobby</a>
     </div>
   </div>
 
@@ -109,19 +109,21 @@
       <div class="results-reward" id="results-reward"></div>
       <div class="results-actions">
         <button class="ci-start-btn" id="play-again-btn">Start Check-In Again</button>
-        <a href="../index.html" class="ci-back-link">Return to Hotel</a>
+        <a href="../index.html" class="ci-back-link">Back to Hotel Lobby</a>
       </div>
     </div>
   </div>
 
   <!-- Scripts — load order matters -->
-  <script src="../../wallet.js?v=2026.10.1-s1"></script>
-  <script src="../../casino-shell.js?v=2026.10.1-s1"></script>
-  <script src="../hotel-config.js?v=2026.10.1-s1"></script>
-  <script src="../hotel-state.js?v=2026.10.1-s1"></script>
-  <script src="../hotel-guests.js?v=2026.10.1-s1"></script>
-  <script src="../hotel-guest-pool.js?v=2026.10.1-s1"></script>
-  <script src="../shift-briefing.js?v=2026.10.1-s1"></script>
-  <script src="game.js?v=2026.10.1-s1"></script>
+  <script src="../../wallet.js?v=2026.10.1-p3"></script>
+  <script src="../../casino-shell.js?v=2026.10.1-p3"></script>
+  <script src="../../hotel-events.js?v=2026.10.1-p3"></script>
+  <script src="../../hotel-perks.js?v=2026.10.1-p3"></script>
+  <script src="../hotel-config.js?v=2026.10.1-p3"></script>
+  <script src="../hotel-state.js?v=2026.10.1-p3"></script>
+  <script src="../hotel-guests.js?v=2026.10.1-p3"></script>
+  <script src="../hotel-guest-pool.js?v=2026.10.1-p3"></script>
+  <script src="../shift-briefing.js?v=2026.10.1-p3"></script>
+  <script src="game.js?v=2026.10.1-p3"></script>
 </body>
 </html>

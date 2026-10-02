@@ -260,8 +260,20 @@
      ════════════════════════════════════════════════════ */
   body:not(.mid-hand) #hit-button,
   body:not(.mid-hand) #stand-button,
+  body:not(.mid-hand) #double-button,
+  body:not(.mid-hand) #split-button,
   body.mid-hand #deal-button,
-  body.mid-hand #reset-button { display: none; }
+  body.mid-hand #reset-button,
+  /* only offer Double/Split when they're possible, to keep the bar short */
+  body.mid-hand #double-button:disabled,
+  body.mid-hand #split-button:disabled,
+  /* while insurance is on offer, that's the only decision */
+  body.insurance-offer #hit-button,
+  body.insurance-offer #stand-button,
+  body.insurance-offer #double-button,
+  body.insurance-offer #split-button { display: none; }
+  .hand-group .hand-cards .card { width: 52px; height: 76px; }
+  .hand-group .card-pip { font-size: 30px; }
   body.mid-hand #hit-button,
   body.mid-hand #stand-button {
     box-shadow: 0 0 12px rgba(201,168,76,0.25);

@@ -14,6 +14,12 @@ const MAX_HISTORY = 10;
 let currentYPositions = [0, 0, 0];
 let currentBet = 0.6;
 let typeToken = 0;      // bumps on each typewriter call; older runs stop
+
+/* Auto-spin: a run of spins that stops on a big win (5× the bet or more:
+   three stars/bells, a 💰 pair), when the bankroll falls to half of where the run started,
+   when the bet is no longer affordable, or when the player stops it. */
+const AUTO_BIG_WIN_MULT = 5;
+let auto = null;        // { remaining, floor } while a run is going
 let spinning = false;   // true from bet placed until the reels settle
 
 const wallet = () => (window.CasinoShell && CasinoShell.wallet) || window.CasinoWallet;
@@ -21,6 +27,8 @@ const wallet = () => (window.CasinoShell && CasinoShell.wallet) || window.Casino
 // Animation is optional: if GSAP failed to load, reels settle without it
 // instead of hanging after the bet has been taken.
 const hasGsap = () => typeof window.gsap !== "undefined";
+// Reel spin and win shakes are skipped for players who prefer less motion.
+const animate = () => hasGsap() && !CasinoShell.reducedMotion();
 
 // ─── Hotel event helper ────────────────────────────────────────────────────────
 // Queues events for the hotel — no hotel scripts needed on this page.
@@ -127,12 +135,21 @@ function checkGameOver() {
 }
 
 function resetMoney() {
-  if (!wallet().topUp()) {
-    CasinoShell.toast(`The Cashier refills your bankroll once it drops below $${wallet().TOPUP_BELOW}.`);
-    return;
-  }
-  document.querySelectorAll(".bet-buttons .pushable").forEach((b) => (b.disabled = false));
-  refreshBetButtons();
+  CasinoShell.openCashier();
+}
+
+/* The top bet grows with the hotel's Casino Floor ($6 × its bet multiplier). */
+function applyHotelLimits() {
+  const maxBet = window.HotelPerks?.slotsMaxBet?.() ?? BETS[BETS.length - 1];
+  if (maxBet <= BETS[BETS.length - 1]) return;
+  BETS[BETS.length - 1] = maxBet;
+  const btn = document.querySelector(".bet-buttons [data-bet]:last-child");
+  if (!btn) return;
+  btn.dataset.bet = String(maxBet);
+  btn.setAttribute("aria-label", `Bet ${maxBet} dollars, hotel high-limit maximum`);
+  btn.title = "High limit unlocked by your hotel's Casino Floor";
+  btn.querySelector(".front").innerHTML = `$${maxBet.toFixed(2)}<span class="bet-max-tag"> Max</span>`;
+  btn.classList.add("high-limit");
 }
 
 // ─── Typewriter ───────────────────────────────────────────────────────────────
@@ -145,6 +162,15 @@ function typewriterEffect(element, text, baseSpeed = 100, callback = null) {
   let index = 0;
   const dynamicSpeed = text.length > 20 ? baseSpeed : baseSpeed / 2;
   spinButton.disabled = true;
+  if (CasinoShell.reducedMotion()) {           // show the whole message at once
+    element.textContent = text;
+    setTimeout(() => {
+      if (token !== typeToken) return;
+      if (!spinning) spinButton.disabled = false;
+      if (callback) callback();
+    }, 0);
+    return;
+  }
   (function type() {
     try {
       if (token !== typeToken) return;
@@ -156,7 +182,7 @@ function typewriterEffect(element, text, baseSpeed = 100, callback = null) {
 
 // ─── Win animation on reels ───────────────────────────────────────────────────
 function animateWinningReels(reelElements) {
-  if (!hasGsap()) return;
+  if (!animate()) return;
   reelElements.forEach((reel) => {
     const container = reel.querySelector(".icon-container");
     gsap.to(reel, { boxShadow: "0 0 20px 6px #ffd700", duration: 0.3, yoyo: true, repeat: 5, ease: "power1.inOut",
@@ -189,7 +215,7 @@ function spin() {
   typewriterEffect(result, "Spinning...", 100);
 
   allButtons.forEach((b) => (b.disabled = true));
-  if (hasGsap()) {
+  if (animate()) {
     gsap.to(spinButton, { scale: 1.1, duration: 0.4, yoyo: true, repeat: -1, ease: "power1.inOut" });
     reelWrappers.forEach((r) => gsap.set(r, { boxShadow: "" }));
   }
@@ -207,7 +233,7 @@ function spin() {
         CasinoShell.sound.tone([220, 262, 330][index], "sine", 0.15, 0.2); // reel-stop
         resolve(finalSymbol);
       };
-      if (!hasGsap()) { setTimeout(settle, 600 + index * 300); return; }
+      if (!animate()) { setTimeout(settle, CasinoShell.reducedMotion() ? 150 + index * 150 : 600 + index * 300); return; }
       container.innerHTML += randomSymbols.map((s) => `<div>${s}</div>`).join("") + `<div>${finalSymbol}</div>`;
       gsap.fromTo(container, { y: currentYPositions[index] }, {
         y: finalPosition, duration: 2 + index * 0.2, ease: "power2.inOut", onComplete: settle
@@ -222,7 +248,7 @@ function spin() {
 
   Promise.all(reelPromises).then((finalSymbols) => {
     spinning = false;
-    if (hasGsap()) {
+    if (animate()) {
       gsap.killTweensOf(spinButton);
       gsap.to(spinButton, { scale: 1, duration: 0.2 });
     }
@@ -253,12 +279,57 @@ function spin() {
         : net > 0  ? `🎉 You Win $${winnings.toFixed(2)}! 🎉`
         : net === 0 ? `Bet back — $${winnings.toFixed(2)} returned.`
         : `Partial match — $${winnings.toFixed(2)} back.`;
-      typewriterEffect(result, label, 80, () => { allButtons.forEach((b) => (b.disabled = false)); checkGameOver(); });
+      CasinoShell.announce(`${finalSymbols.join(" ")}. ${label.replace(/[🎰🎉]/gu, "").trim()}`);
+      typewriterEffect(result, label, 80, () => { allButtons.forEach((b) => (b.disabled = false)); checkGameOver(); continueAuto(winnings); });
     } else {
       CasinoShell.sound.lose();
-      typewriterEffect(result, "Try Again!", 50, () => { allButtons.forEach((b) => (b.disabled = false)); checkGameOver(); });
+      CasinoShell.announce(`${finalSymbols.join(" ")}. No match, lost $${currentBet.toFixed(2)}.`);
+      typewriterEffect(result, "Try Again!", 50, () => { allButtons.forEach((b) => (b.disabled = false)); checkGameOver(); continueAuto(0); });
     }
   });
+}
+
+// ─── Auto-spin ────────────────────────────────────────────────────────────────
+function startAuto(count) {
+  if (spinning || auto) return;
+  if (!wallet().canAfford(currentBet)) { CasinoShell.toast("Not enough chips for this bet."); return; }
+  auto = { remaining: count, floor: wallet().get() / 2 };
+  CasinoShell.announce(`Auto-spin: ${count} spins at $${currentBet.toFixed(2)}.`);
+  renderAuto();
+  autoSpinOnce();
+}
+
+function autoSpinOnce() {
+  if (!auto) return;
+  auto.remaining--;
+  renderAuto();
+  spin();
+}
+
+function stopAuto(reason = "Auto-spin stopped.") {
+  if (!auto) return;
+  auto = null;
+  renderAuto();
+  CasinoShell.toast(reason);
+  CasinoShell.announce(reason);
+}
+
+function continueAuto(winnings) {
+  if (!auto) return;
+  if (winnings >= currentBet * AUTO_BIG_WIN_MULT) return stopAuto(`Auto-spin stopped on a big win: $${winnings.toFixed(2)}!`);
+  if (wallet().get() < auto.floor) return stopAuto("Auto-spin stopped: bankroll is down by half.");
+  if (!wallet().canAfford(currentBet)) return stopAuto("Auto-spin stopped: not enough chips for this bet.");
+  if (auto.remaining <= 0) return stopAuto("Auto-spin finished.");
+  setTimeout(() => { if (auto && !spinning) autoSpinOnce(); }, CasinoShell.reducedMotion() ? 250 : 600);
+}
+
+function renderAuto() {
+  const running = !!auto;
+  document.querySelectorAll(".autospin-btn").forEach((btn) => { btn.hidden = running; });
+  const stop = document.getElementById("autospin-stop");
+  stop.hidden = !running;
+  if (running) stop.textContent = `Stop · ${auto.remaining} left`;
+  document.querySelector(".autospin-row").classList.toggle("running", running);
 }
 
 // ─── Help content ───────────────────────────────────────────────────────────
@@ -269,13 +340,14 @@ function showHelp() {
     <h6>📝 Gameplay</h6>
     <ol>
       <li>Pick a bet with the buttons.</li>
-      <li>Spin with the button or press <strong>Space</strong>.</li>
+      <li>Spin with the button or press <kbd>Space</kbd>. Keys <kbd>1</kbd>–<kbd>5</kbd> pick a bet.</li>
+      <li>Auto-spin runs 10, 25 or 50 spins and stops on a big win, if your bankroll halves, or when you press Stop, <kbd>Space</kbd> or <kbd>Esc</kbd>.</li>
       <li>Match symbols to win — see the table for payouts.</li>
     </ol>
     <h6>🔘 Buttons</h6>
     <ul>
-      <li><strong>Spin</strong> — spin the reels (also: Space)</li>
-      <li><strong>Cashier</strong> — refills your bankroll to $100 once it drops below $1</li>
+      <li><strong>Spin</strong> — spin the reels (also: <kbd>Space</kbd>)</li>
+      <li><strong>Cashier</strong> — free refill below $1, or trade hotel cash for chips</li>
       <li><strong>Help</strong> — this guide</li>
     </ul>
     <h6>💡 Tip</h6>
@@ -287,28 +359,37 @@ document.addEventListener("DOMContentLoaded", () => {
   CasinoShell.mount({ name: "Lucky Reels", subtitle: "Casino Edition" });
 
   initializeReels();
+  applyHotelLimits();
   updateWinningExamples(currentBet);   // starts at 60¢; no toast if unaffordable
   refreshBetButtons();
 
   document.querySelectorAll(".bet-buttons [data-bet]").forEach((btn) =>
     btn.addEventListener("click", () => setBet(Number(btn.dataset.bet))));
   wallet().onChange(() => refreshBetButtons());
-  document.querySelector(".spin-button").addEventListener("click", spin);
+  document.querySelector(".spin-button").addEventListener("click", () => { if (auto) stopAuto(); else spin(); });
+  document.querySelectorAll(".autospin-btn").forEach((btn) =>
+    btn.addEventListener("click", () => startAuto(Number(btn.dataset.auto))));
+  document.getElementById("autospin-stop").addEventListener("click", () => stopAuto());
+  renderAuto();
   document.getElementById("reset-button").addEventListener("click", resetMoney);
   document.getElementById("help").addEventListener("click", showHelp);
 
-  document.addEventListener("keydown", (e) => {
-    if (e.code !== "Space" || e.repeat) return;
-    // Let Space press focused controls, and never spin behind an open dialog.
-    if (e.target.closest?.("button, a, input, select, textarea, [contenteditable]")) return;
-    if (document.querySelector(".shell-modal.open")) return;
-    e.preventDefault();
-    const spinBtn = document.querySelector(".spin-button");
-    if (!spinning && !spinBtn.disabled) spin();
-  });
+  CasinoShell.registerShortcuts([
+    { keys: [" "], label: "Spin (stops auto-spin)", run: () => {
+      if (auto) { stopAuto(); return; }
+      if (!spinning && !document.querySelector(".spin-button").disabled) spin();
+    } },
+    { keys: ["Escape"], label: "Stop auto-spin", run: () => stopAuto() },
+    { keys: ["a"], label: "Auto-spin 10", run: () => startAuto(10) },
+    { keys: ["1", "2", "3", "4", "5"], label: "Pick a bet (smallest to largest)", run: (e) => {
+      if (spinning) return;
+      const btn = document.querySelectorAll(".bet-buttons [data-bet]")[Number(e.key) - 1];
+      if (btn) setBet(Number(btn.dataset.bet));
+    } },
+  ]);
 
   if (!localStorage.getItem("slotToastShown")) {
-    CasinoShell.toast("💡 Press Space to spin. Theme & sound are in the header.");
+    CasinoShell.toast("💡 Press Space to spin, or ? for all keyboard shortcuts.");
     localStorage.setItem("slotToastShown", "true");
   }
 });

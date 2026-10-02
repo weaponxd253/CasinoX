@@ -92,7 +92,7 @@ const RestaurantGame = (() => {
 
     $('start-tasting-btn').disabled = true;
     $('start-tasting-btn').innerHTML = '<i class="fa-solid fa-spinner"></i> In Service';
-    setReturnLink('Back to Hotel', 'fa-arrow-left');
+    setReturnLink('Back to Hotel Lobby', 'fa-arrow-left');
     setNextStep('Choose 3 dishes for the first table.');
     hideResults();
     clearLog();
@@ -209,17 +209,17 @@ const RestaurantGame = (() => {
     service.active = false;
     $('start-tasting-btn').disabled = false;
     $('start-tasting-btn').innerHTML = '<i class="fa-solid fa-rotate-right"></i> Open Service Again';
-    setReturnLink('Return to Hotel', 'fa-building');
+    setReturnLink('Back to Hotel Lobby', 'fa-building');
     $('fire-course-btn').disabled = true;
     $('fire-course-btn').innerHTML = '<i class="fa-solid fa-bell-concierge"></i> Service Complete';
     $('clear-flight-btn').disabled = true;
-    setNextStep('Return to Hotel with the result, or open service again.');
+    setNextStep('Head back to the Hotel Lobby with the result, or open service again.');
     syncHotelCash();
     updateStats();
     showResults({ cash, served, signatures, satBonus, avgHarmony, bestTable: service.bestTable, weakTable: service.weakTable });
     log(`Service complete. Hotel earned $${fmt(cash)}. Satisfaction +${satBonus}.`, 'gold');
     if (rewardMult < 1) log(`Repeat run this phase: ${Math.round(rewardMult * 100)}% rewards. Full rewards return next phase.`, 'bad');
-    CasinoShell.celebrate(cash);
+    CasinoShell.celebrate(cash, { currency: 'hotel' });
     CasinoShell.toast(`Tasting room complete: +$${fmt(cash)} hotel cash`);
   }
 
@@ -625,7 +625,7 @@ const RestaurantGame = (() => {
     radarWants   = null;
     drawRadar(radarCurrent, null);
     log(level > 0 ? 'Dining room is ready.' : 'Restaurant is not built yet.', level > 0 ? 'gold' : 'bad', true);
-    setReturnLink('Back to Hotel', 'fa-arrow-left');
+    setReturnLink('Back to Hotel Lobby', 'fa-arrow-left');
     setNextStep(level > 0 ? 'Open service to see the first table.' : 'Build the Restaurant to unlock service.');
   }
 

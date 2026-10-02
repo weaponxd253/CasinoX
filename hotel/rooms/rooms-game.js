@@ -86,7 +86,7 @@ const RoomsGame = (() => {
 
     $('start-ops-btn').disabled = true;
     $('start-ops-btn').innerHTML = '<i class="fa-solid fa-spinner"></i> On Shift';
-    setReturnLink('Back to Hotel', 'fa-arrow-left');
+    setReturnLink('Back to Hotel Lobby', 'fa-arrow-left');
     setNextStep('Click a room request to dispatch the best available staff.');
     hideResults();
     clearLog();
@@ -337,14 +337,14 @@ const RoomsGame = (() => {
 
     $('start-ops-btn').disabled = false;
     $('start-ops-btn').innerHTML = '<i class="fa-solid fa-rotate-right"></i> Run Floor Ops Again';
-    setReturnLink('Return to Hotel', 'fa-building');
-    setNextStep('Return to Hotel with the result, or run Floor Ops again.');
+    setReturnLink('Back to Hotel Lobby', 'fa-building');
+    setNextStep('Head back to the Hotel Lobby with the result, or run Floor Ops again.');
     syncHotelCash();
     updateAll();
     showResults(satBonus);
     log(`Shift complete. Hotel earned $${fmt(shift.earned)}. Satisfaction +${satBonus}.`, 'gold');
     if (rewardMult < 1) log(`Repeat run this phase: ${Math.round(rewardMult * 100)}% rewards. Full rewards return next phase.`, 'bad');
-    if (shift.earned > 0) CasinoShell.celebrate(shift.earned);
+    if (shift.earned > 0) CasinoShell.celebrate(shift.earned, { currency: 'hotel' });
     CasinoShell.toast(`Floor Ops complete: +$${fmt(shift.earned)} hotel cash`);
   }
 
@@ -463,7 +463,7 @@ const RoomsGame = (() => {
     $('ops-time').textContent = '1:10';
     $('ops-session-fill').style.width = '0%';
     log('Guest Rooms are ready for Floor Ops.', 'gold', true);
-    setReturnLink('Back to Hotel', 'fa-arrow-left');
+    setReturnLink('Back to Hotel Lobby', 'fa-arrow-left');
     setNextStep('Start Floor Ops, then click a room to dispatch staff.');
     updateStats();
     renderSelectedBrief();

@@ -205,6 +205,7 @@ const HotelEngine = (() => {
       HotelState.setGuestData(gResult);
     }
 
+    expireHighRoller(state, now);
     recalculateSatisfaction(state);
     recalculateReputation(state);
     checkAchievements(state);
@@ -250,12 +251,13 @@ const HotelEngine = (() => {
         } else if (ev.type === 'high_roller_arrival') {
           HotelState.setHighRollerFlag();
           HotelBridge?.emit('high_roller_arrival', {});
-          CasinoShell?.toast('💎 A High Roller has arrived — head to the casino!');
-        } else if (ev.type === 'high_roller_departure') {
-          HotelState.clearHighRollerFlag();
+          CasinoShell?.toast('💎 A High Roller has arrived — the casino opens a high-stakes table for 45 minutes!');
+        } else if (ev.type === 'high_roller_departure' && !state.guests.highRollerUntil) {
+          HotelState.clearHighRollerFlag();   // legacy visits without an end time
         }
       });
     }
+    expireHighRoller(state, now);
 
     HotelState.updateTicker(now);
     recalculateSatisfaction(state);
@@ -268,11 +270,10 @@ const HotelEngine = (() => {
   /* ── Achievement checks ──────────────────────────────────── */
 
   function checkAchievements(state) {
-    // Upgrade count
-    if (state.stats.upgradeCount >= 1)
-      HotelState.tickAchievementProgress('first_upgrade',  0);
-    if (state.stats.upgradeCount >= 5)
-      HotelState.tickAchievementProgress('five_upgrades',  0);
+    // Upgrade count (these used to tick by 0 and could never unlock)
+    HotelState.setAchievementProgress('first_upgrade', state.stats.upgradeCount);
+    HotelState.setAchievementProgress('five_upgrades', state.stats.upgradeCount);
+    HotelState.setAchievementProgress('ten_shifts', state.stats.shiftsCompleted ?? 0);
 
     // Satisfaction
     if (state.satisfaction.current >= 80)
@@ -400,11 +401,13 @@ const HotelEngine = (() => {
     const staffReport = HotelState.processStaffPayroll?.({ day: before.day, phase: before.phase }) ?? null;
 
     let guestResult = null;
+    let guestIncome = 0;
     if (window.HotelGuests) {
       guestResult = HotelGuests.tick(state);
       applyEntertainmentTraffic(state, guestResult);
       HotelState.setGuestData(guestResult);
-      if (guestResult.guestIncome > 0) HotelState.addHotelCash(Math.floor(guestResult.guestIncome * 6));
+      guestIncome = guestResult.guestIncome > 0 ? Math.floor(guestResult.guestIncome * 6) : 0;
+      if (guestIncome > 0) HotelState.addHotelCash(guestIncome);
       (guestResult.specialEvents ?? []).forEach(processSpecialGuestEvent);
     }
 
@@ -421,6 +424,10 @@ const HotelEngine = (() => {
       nextDay: nextCalendar.day,
       nextPhase: nextCalendar.phase,
       income,
+      guestIncome,
+      dayRolled,
+      satisfaction: HotelState.get().satisfaction.current,
+      createdAt: Date.now(),
       guestPopulation: HotelState.get().guests.population,
       shows: activeShows.map(show => show.label),
       trafficBoost: activeShows.reduce((sum, show) => sum + (show.effects?.trafficBoost ?? 0), 0),
@@ -464,9 +471,18 @@ const HotelEngine = (() => {
     } else if (ev.type === 'high_roller_arrival') {
       HotelState.setHighRollerFlag();
       HotelBridge?.emit('high_roller_arrival', {});
-      CasinoShell?.toast('A High Roller has arrived.');
-    } else if (ev.type === 'high_roller_departure') {
+      CasinoShell?.toast('💎 A High Roller has arrived — the casino opens a high-stakes table for 45 minutes!');
+    } else if (ev.type === 'high_roller_departure' && !HotelState.get().guests.highRollerUntil) {
       HotelState.clearHighRollerFlag();
+    }
+  }
+
+  /* End a high-roller visit once its time is up. */
+  function expireHighRoller(state = HotelState.get(), now = Date.now()) {
+    const g = state.guests;
+    if (g?.highRollerPresent && g.highRollerUntil && g.highRollerUntil <= now) {
+      HotelState.clearHighRollerFlag();
+      CasinoShell?.toast('💎 The high roller has checked out. The high-stakes table is closed.');
     }
   }
 
@@ -486,7 +502,7 @@ const HotelEngine = (() => {
     checkAchievements, checkDeptUnlocks,
     currentIpm, nextUpgradeCost, nextUpgradeStats,
     activeEntertainmentEffects,
-    advanceCalendarPhase, advanceCooldownRemaining, activeEntertainmentBookings,
+    advanceCalendarPhase, advanceCooldownRemaining, activeEntertainmentBookings, expireHighRoller,
     calendarDayKey, CALENDAR_PHASES, WEEKDAYS,
   };
 })();

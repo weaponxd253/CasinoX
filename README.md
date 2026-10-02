@@ -10,11 +10,11 @@ A browser-based casino hub plus hotel-management sim with a shared bankroll, met
 
 | Game / Mode | Status | Min Bet | Notes |
 |---|---|---|---|
-| Lucky Reels | ✅ Live | $0.60 | Slots · 8 symbols · jackpot 50× |
-| Blackjack X | ✅ Live | $1 | 3:2 payout · dealer stands on 17 |
-| Coin Flip | ✅ Live | $1 | Double or nothing |
+| Lucky Reels | ✅ Live | $0.60 | Slots · 8 symbols · jackpot 50× · auto-spin |
+| Blackjack X | ✅ Live | $1 | 3:2 payout · dealer stands on 17 · double, split, insurance |
+| Coin Flip | ✅ Live | $1 | Double or nothing · let it ride (up to 32×) |
 | Hotel Manager | ✅ Live / in UX tuning | — | Idle hotel sim · staff, guests, operations, guided onboarding |
-| Roulette Royale | 🔒 Soon | — | |
+| Roulette Royale | 🔓 Unlock | $1 | European wheel · unlocks at Casino Floor Lv 2 + reputation 5 |
 | Texas Hold'em | 🔒 Soon | — | |
 
 ---
@@ -33,6 +33,7 @@ CasinoX/
 ├── casino-mobile.css       ← Full mobile layout pass (link last on every page)
 ├── wallet.js               ← Shared bankroll via localStorage
 ├── hotel-events.js         ← Casino → hotel event queue (applied by the hotel)
+├── hotel-perks.js          ← Hotel → casino perks (limits, bonuses, comps), read-only
 ├── vendor/                 ← Local copies of third-party scripts (GSAP)
 ├── dev-tools.js            ← Testing panel, loaded only in dev mode (?dev=1)
 ├── scripts/bump-version.js ← Stamps one ?v= cache-busting version on all pages
@@ -55,6 +56,11 @@ CasinoX/
 │   ├── betting.css         ← Chip + wager UI
 │   └── script.js           ← Game logic + local deck + betting system
 │
+├── roulette/
+│   ├── index.html          ← On the shell ✓ (gated by hotel progress)
+│   ├── styles.css          ← Wheel + table
+│   └── script.js           ← European single-zero roulette
+│
 ├── coinflip/
 │   ├── index.html          ← On the shell ✓
 │   ├── styles.css          ← Coin flip styles
@@ -70,6 +76,7 @@ CasinoX/
     ├── hotel-bridge.js     ← Casino-to-hotel sync hooks
     ├── hotel-guests.js     ← Guest simulation helpers
     ├── hotel-guest-pool.js ← Guest profile pool
+    ├── hotel-goals.js      ← Three daily goals + reward chest
     ├── checkin/            ← Check-In Rush operation
     ├── rooms/              ← Rooms operation
     ├── restaurant/         ← Restaurant operation
@@ -318,7 +325,7 @@ See `coinflip/` for a complete working example in ~50 lines of JS.
 - [ ] Expand Hotel Manager reports, late-game goals, and prestige hooks
 - [ ] Persistent player profile page (lifetime stats, achievements)
 - [ ] Daily bonus timer (free-chip refill every N hours)
-- [ ] Roulette Royale (simplified red/black/number board, GSAP wheel spin)
+- [x] Roulette Royale (European wheel, unlocked through the hotel)
 - [ ] Mines (high-tension push-your-luck format)
 - [ ] Video Poker — Jacks or Better
 - [ ] PWA / installable (manifest + service worker)
