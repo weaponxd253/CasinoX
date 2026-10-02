@@ -10,21 +10,21 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-  <link rel="stylesheet" href="../../casino-shell.css?v=2026.10.2-g1">
-  <link rel="stylesheet" href="spa.css?v=2026.10.2-g1">
-  <link rel="stylesheet" href="../../casino-mobile.css?v=2026.10.2-g1">
-  <link rel="stylesheet" href="../shift-briefing.css?v=2026.10.2-g1">
+  <link rel="stylesheet" href="../../casino-shell.css?v=2026.10.2-g2">
+  <link rel="stylesheet" href="spa.css?v=2026.10.2-g2">
+  <link rel="stylesheet" href="../../casino-mobile.css?v=2026.10.2-g2">
+  <link rel="stylesheet" href="../shift-briefing.css?v=2026.10.2-g2">
 
-  <script src="../../wallet.js?v=2026.10.2-g1"></script>
-  <script src="../../casino-shell.js?v=2026.10.2-g1"></script>
-  <script src="../../hotel-events.js?v=2026.10.2-g1"></script>
-  <script src="../../hotel-perks.js?v=2026.10.2-g1"></script>
-  <script src="../hotel-config.js?v=2026.10.2-g1"></script>
-  <script src="../hotel-state.js?v=2026.10.2-g1"></script>
-  <script src="../hotel-engine.js?v=2026.10.2-g1"></script>
-  <script src="../hotel-bridge.js?v=2026.10.2-g1"></script>
-  <script src="../shift-briefing.js?v=2026.10.2-g1"></script>
-  <script src="spa-game.js?v=2026.10.2-g1"></script>
+  <script src="../../wallet.js?v=2026.10.2-g2"></script>
+  <script src="../../casino-shell.js?v=2026.10.2-g2"></script>
+  <script src="../../hotel-events.js?v=2026.10.2-g2"></script>
+  <script src="../../hotel-perks.js?v=2026.10.2-g2"></script>
+  <script src="../hotel-config.js?v=2026.10.2-g2"></script>
+  <script src="../hotel-state.js?v=2026.10.2-g2"></script>
+  <script src="../hotel-engine.js?v=2026.10.2-g2"></script>
+  <script src="../hotel-bridge.js?v=2026.10.2-g2"></script>
+  <script src="../shift-briefing.js?v=2026.10.2-g2"></script>
+  <script src="spa-game.js?v=2026.10.2-g2"></script>
 </head>
 <body>
   <main class="game-stage spa-rush-shell">
@@ -48,7 +48,7 @@
           </div>
           <div class="spa-session-meter">
             <span>Time</span>
-            <strong id="spa-time">0:60</strong>
+            <strong id="spa-time">1:00</strong>
             <div class="spa-session-track">
               <div class="spa-session-fill" id="spa-session-fill"></div>
             </div>
@@ -57,7 +57,11 @@
 
         <div class="spa-layout">
           <section class="spa-guests">
-            <div class="spa-section-title">Active Guest</div>
+            <div class="spa-section-title spa-lounge-title">
+              <span>Waiting Lounge</span>
+              <button class="spa-menu-btn" id="spa-menu-btn" type="button"><i class="fa-solid fa-book" aria-hidden="true"></i> Treatment menu</button>
+            </div>
+            <div class="spa-lounge" id="spa-lounge" aria-label="Waiting guests"></div>
             <div class="guest-slots" id="guest-slots"></div>
           </section>
 

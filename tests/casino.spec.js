@@ -514,8 +514,9 @@ test.describe('earlier fixes and round 3', () => {
     // Math.random is pinned to 0.1, so the first order is always beer.
     await expect(page.locator('#ticket-drink')).toContainText('Beer');
     await page.evaluate(() => {
-      const btn = document.querySelector('.drink-btn[data-drink="beer"]');
-      btn.click(); btn.click(); btn.click();
+      document.querySelector('.ingredient-btn[data-ingredient="lager"]').click();
+      const serve = document.getElementById('serve-btn');
+      serve.click(); serve.click(); serve.click();
     });
     await expect(page.locator('#served-count')).toHaveText('1');
   });
@@ -966,10 +967,69 @@ test.describe('shift hints and grades', () => {
   test('Bar Shift only highlights the order while hints are on', async ({ page }) => {
     await openShift(page, '/hotel/bar/index.html', 'bar');
     await page.locator('#start-shift-btn').click();
-    await expect(page.locator('.drink-btn.is-order')).toHaveCount(1);
+    await expect(page.locator('.ingredient-btn.is-order')).toHaveCount(1);   // beer = lager
+    await expect(page.locator('#ticket-recipe .recipe-chip')).toHaveCount(1);
     await page.selectOption('[data-shift-hint-mode]', 'off');
-    await expect(page.locator('.drink-btn.is-order')).toHaveCount(0);
+    await expect(page.locator('.ingredient-btn.is-order')).toHaveCount(0);
+    await expect(page.locator('#ticket-recipe .recipe-chip')).toHaveCount(0);
     await expect(page.locator('.mini-shift-hints')).toContainText('Hints off');
+  });
+
+  test('Bar Shift v2: cocktails are built from ingredients, and a wrong glass is a miss', async ({ page }) => {
+    await openShift(page, '/hotel/bar/index.html', 'bar');
+    const recipes = await page.evaluate(() => Object.fromEntries(BarGame.DRINKS.map(d => [d.id, d.recipe])));
+    expect(recipes.martini).toEqual(expect.arrayContaining(['gin', 'vermouth', 'olive']));
+    await page.locator('#start-shift-btn').click();
+    await expect(page.locator('#ticket-drink')).toContainText('Beer');
+    // Wrong: wine instead of lager
+    await page.locator('.ingredient-btn[data-ingredient="wine"]').click();
+    await expect(page.locator('#glass-contents')).toContainText('Wine');
+    await page.locator('#serve-btn').click();
+    await expect(page.locator('#shift-log p').first()).toContainText('Lager');
+    await expect(page.locator('#served-count')).toHaveText('0');
+    // More than one guest at the counter at once
+    await expect.poll(() => page.locator('.bar-seat:not(.empty)').count(), { timeout: 8000 }).toBeGreaterThan(1);
+  });
+
+  test('Spa Rush v2: two needs per guest, long treatments backfire on impatient guests', async ({ page }) => {
+    await openShift(page, '/hotel/spa/index.html', 'spa');
+    const tiers = await page.evaluate(() => ({
+      both: SpaRush.debugEvaluate('massage', ['stressed', 'sore']).tier,
+      one: SpaRush.debugEvaluate('massage', ['stressed', 'tired']).tier,
+      none: SpaRush.debugEvaluate('sauna', ['luxury', 'quiet']).tier,
+      rushedLong: SpaRush.debugEvaluate('signature', ['stressed', 'sore'], 20).tier,
+      rushedShort: SpaRush.debugEvaluate('sauna', ['tired', 'sore'], 20).tier,
+    }));
+    expect(tiers).toEqual({ both: 'best', one: 'acceptable', none: 'risky', rushedLong: 'acceptable', rushedShort: 'best' });
+
+    await page.locator('#start-spa-btn').click();
+    await expect(page.locator('.active-guest-card .need-chip')).toHaveCount(2);
+    await expect.poll(() => page.locator('.lounge-guest[data-guest-id]').count(), { timeout: 5000 }).toBeGreaterThan(1);
+    await page.locator('.treatment-btn.best-match').click();
+    await expect(page.locator('.station-card.busy')).toHaveCount(1);
+  });
+
+  test('Spa Rush v2: rooms reset between guests and can be tidied by hand', async ({ page }) => {
+    await openShift(page, '/hotel/spa/index.html', 'spa');
+    await page.locator('#start-spa-btn').click();
+    await page.locator('.treatment-btn.best-match').click();
+    // Finish the treatment now instead of waiting for it
+    await page.evaluate(() => { SpaRush.debugSession().stations[0].doneAt = Date.now() - 1; });
+    await expect(page.locator('.station-card.cleaning')).toHaveCount(1);
+    await expect(page.locator('#spa-served')).toHaveText('1');
+    await page.keyboard.press('c');
+    await expect(page.locator('.station-card.cleaning')).toHaveCount(0);
+  });
+
+  test('Spa Rush without hints hides ratings but keeps the treatment menu', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('hotelShiftHints', 'off'));
+    await openShift(page, '/hotel/spa/index.html', 'spa');
+    await page.locator('#start-spa-btn').click();
+    await expect(page.locator('.active-guest-card .need-chip')).toHaveCount(2);
+    await expect(page.locator('.treatment-btn.best-match')).toHaveCount(0);
+    await expect(page.locator('.treatment-covers')).toHaveCount(0);
+    await page.locator('#spa-menu-btn').click();
+    await expect(page.locator('.spa-menu li')).toHaveCount(6);
   });
 
   test('Floor Ops without hints: pick the room, then the staff member', async ({ page }) => {
