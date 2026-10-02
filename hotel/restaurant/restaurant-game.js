@@ -25,6 +25,9 @@ const RestaurantGame = (() => {
     { id:'family',      name:'Celebration Table', guests:6, brief:'A lively group wants comfort, sparkle, and nothing too severe.', wants:{ comfort:3, bright:2, luxury:2, surprise:1 }, keywords:['warm','festive','safe'], traits:['warm','festive','safe','comfort'], coursePrefs:{ open:'warm', turn:'comfort', finish:'festive' }, bonus:'comfort', reactions:{ great:'The whole table finds something to toast.', good:'Comfort carries the room, with enough sparkle to keep it festive.', weak:'Too severe for a celebration table looking for easy joy.' } },
   ];
 
+  // Calendar twist (weekends): a wedding party books one table mid-service
+  const WEDDING_TABLE = { id:'wedding', name:'Wedding Party', guests:10, payMult:2.5, special:true, brief:'The whole wedding party. Warm and festive to open, something luxurious, then a showpiece finale.', wants:{ comfort:3, bright:1, luxury:4, surprise:1 }, keywords:['festive','luxury','showpiece'], traits:['festive','warm','luxury','showpiece'], coursePrefs:{ open:'festive', turn:'luxury', finish:'showpiece' }, bonus:'luxury', reactions:{ great:'The toasts start before dessert lands. A night they will talk about.', good:'The party is happy, though the finale could have been grander.', weak:'The wedding party was polite, but this was not the meal they planned for.' } };
+
   const FLAVORS = ['comfort', 'bright', 'luxury', 'surprise'];
   const COURSES = [
     { key:'open', label:'Open', prompt:'Set the first impression' },
@@ -75,11 +78,13 @@ const RestaurantGame = (() => {
     }
 
     window.HotelShiftBriefing?.start?.('restaurant', 'Tasting Room');
+    const twist = window.HotelShiftBriefing?.twistFor?.('restaurant') ?? null;
     service = {
       active: true,
       restaurantLevel,
+      twist,
       staffEffect: HotelState.getStaffEffect?.('restaurant') ?? null,
-      target: Math.min(7, 3 + restaurantLevel),
+      target: Math.min(7, 3 + restaurantLevel) + (twist?.effects.extraGuests ?? 0),
       served: 0,
       earned: 0,
       signatures: 0,
@@ -102,6 +107,7 @@ const RestaurantGame = (() => {
     nextTable();
     updateStats();
     log(`Service opened. Restaurant staff coverage: ${service.staffEffect?.score ?? 0}% ${service.staffEffect?.label ?? 'Short'}.`, 'gold');
+    if (twist) log(`${twist.emoji} ${twist.title}: ${twist.summary}`, 'gold');
   }
 
   function nextTable() {
@@ -111,7 +117,12 @@ const RestaurantGame = (() => {
       return;
     }
     service.firing = false;
-    service.table = TABLES[Math.floor(Math.random() * TABLES.length)];
+    const weddingDue = service.twist?.effects.bigTable === 'wedding' && service.served === Math.floor(service.target / 2);
+    service.table = weddingDue ? WEDDING_TABLE : TABLES[Math.floor(Math.random() * TABLES.length)];
+    if (weddingDue) {
+      log('💍 The wedding party has arrived. This table pays 2.5×.', 'gold');
+      CasinoShell.announce?.('The wedding party has arrived.');
+    }
     service.selected = [];
     service.lastHarmony = 0;
     hideFlightFeedback();
@@ -152,7 +163,7 @@ const RestaurantGame = (() => {
     const base = service.selected.reduce((sum, dish) => sum + dish.value, 0);
     const tableBonus = service.table.guests * 8;
     const levelBonus = service.restaurantLevel * 14;
-    const earned = Math.round((base + tableBonus + levelBonus) * (0.55 + score.harmony / 180) * (service.staffEffect?.incomeMult ?? 1));
+    const earned = Math.round((base + tableBonus + levelBonus) * (0.55 + score.harmony / 180) * (service.staffEffect?.incomeMult ?? 1) * (service.table.payMult ?? 1) * (service.twist?.effects.cashMult ?? 1));
 
     service.served++;
     service.earned += earned;
@@ -196,7 +207,7 @@ const RestaurantGame = (() => {
     HotelEngine.recalculateReputation(HotelState.get());
     HotelBridge.applyHotelToCasino(HotelState.get());
     HotelState.recordShiftResult?.('restaurant', {
-      title: 'Tasting Room complete',
+      title: `Tasting Room complete${service.twist ? ` · ${service.twist.title}` : ''}`,
       cash,
       satisfaction: satBonus,
       rewardMult,
@@ -555,11 +566,11 @@ const RestaurantGame = (() => {
     const table = service?.table;
     if (!table) return;
     $('table-number').textContent = `Table ${service.served + 1}`;
-    $('table-persona').textContent = table.name;
+    $('table-persona').textContent = table.special ? `💍 ${table.name}` : table.name;
     $('brief-title').textContent = table.name;
     $('brief-copy').textContent = table.brief;
     $('craving-tags').innerHTML = table.keywords.map(tag => `<span>${tag}</span>`).join('');
-    $('table-guests').innerHTML = Array.from({ length: table.guests }, (_, i) =>
+    $('table-guests').innerHTML = Array.from({ length: Math.min(8, table.guests) }, (_, i) =>
       `<span style="--i:${i}"><i class="fa-solid fa-user"></i></span>`
     ).join('');
   }

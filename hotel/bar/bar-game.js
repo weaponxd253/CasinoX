@@ -90,10 +90,12 @@ const BarGame = (() => {
     }
 
     window.HotelShiftBriefing?.start?.('bar', 'Bar Shift');
+    const twist = window.HotelShiftBriefing?.twistFor?.('bar') ?? null;
     shift = {
       active: true,
       barLevel,
-      target: Math.min(8, 4 + barLevel),     // guests this shift
+      twist,
+      target: Math.min(8, 4 + barLevel) + (twist?.effects.extraGuests ?? 0),     // guests this shift
       spawned: 0,
       served: 0,        // guests finished (served or walked out)
       misses: 0,
@@ -117,6 +119,7 @@ const BarGame = (() => {
     hideResults();
     clearLog();
     log(`Shift opened: ${shift.target} guests, ${shift.seats.length} seats.`, 'gold');
+    if (twist) log(`${twist.emoji} ${twist.title}: ${twist.summary}`, 'gold');
     if (shift.highRollerDue >= 0) log('🎰 A high roller is staying at the hotel. They\'ll stop by the bar. Treat them well.', 'gold');
     renderIngredients();
     tick();
@@ -164,7 +167,7 @@ const BarGame = (() => {
     const empty = shift.seats.findIndex(g => g === null);
     if (empty !== -1 && shift.spawned < shift.target && now >= shift.nextArrival) {
       seatGuest(empty);
-      shift.nextArrival = now + 1600 + Math.random() * 1600;
+      shift.nextArrival = now + (1600 + Math.random() * 1600) * (shift.twist?.effects.arrivalMult ?? 1);
       renderAll();
     }
 
@@ -220,7 +223,7 @@ const BarGame = (() => {
       const left = patienceLeft(guest);
       const speedBonus = Math.round(guest.drink.tip * left * 0.55);
       const streakBonus = Math.min(18, shift.streak * 4);
-      const earned = Math.round((guest.drink.tip + speedBonus + streakBonus + shift.barLevel * 3) * (guest.highRoller ? 3 : guest.vip ? 1.8 : 1));
+      const earned = Math.round((guest.drink.tip + speedBonus + streakBonus + shift.barLevel * 3) * (guest.highRoller ? 3 : guest.vip ? 1.8 : 1) * (shift.twist?.effects.cashMult ?? 1));
       shift.speedTotal += left;
       shift.tips += earned;
       shift.streak++;
@@ -281,7 +284,7 @@ const BarGame = (() => {
     HotelEngine.recalculateReputation(HotelState.get());
     HotelBridge.applyHotelToCasino(HotelState.get());
     HotelState.recordShiftResult?.('bar', {
-      title: 'Bar Shift complete',
+      title: `Bar Shift complete${shift.twist ? ` · ${shift.twist.title}` : ''}`,
       cash: tips,
       satisfaction: satisfactionBonus,
       rewardMult,

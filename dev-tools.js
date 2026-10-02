@@ -52,6 +52,16 @@ const CasinoDevTools = (() => {
     { group: 'Hotel', hotel: true, label: 'Build all departments', run: () => setDeptLevels(() => 1) },
     { group: 'Hotel', hotel: true, label: 'Summon a high roller', run: () => { HotelState.setHighRollerFlag(); afterHotelChange(); } },
     { group: 'Hotel', hotel: true, label: '+3 dirty rooms', run: () => { HotelState.addDirtyRooms(3); afterHotelChange(); } },
+    {
+      group: 'Hotel', hotel: true, label: 'Force next shift twist',
+      run: () => {
+        if (!window.HotelTwists) { CasinoShell.toast('Twists load on hotel pages.'); return; }
+        const twist = HotelTwists.cycleForced();
+        CasinoShell.toast(twist ? `Forced twist: ${twist.emoji} ${twist.title} (${twist.dept})` : 'Twists follow the calendar again');
+        document.querySelectorAll('[data-mini-shift-briefing]').forEach(el => window.HotelShiftBriefing?.mount?.(el.dataset.miniShiftBriefing));
+        afterHotelChange();
+      },
+    },
     { group: 'Hotel', hotel: true, label: 'Max all departments', run: () => setDeptLevels(catalog => catalog.length) },
     {
       group: 'Hotel', hotel: true, label: 'Reset hotel save', danger: true,

@@ -407,3 +407,4 @@ body.light .countdown-ring  { background: rgba(255,255,255,0.1); }
 .room-clean-track { display: block; height: 4px; margin-top: 5px; border-radius: 2px; background: rgba(0,0,0,0.35); overflow: hidden; }
 .room-clean-fill { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #f39c12, var(--gold-light)); }
 .diff-dirty { color: #f0b36b; }
+.diff-twist { color: #8fe3ff; }

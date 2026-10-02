@@ -42,7 +42,7 @@ const HotelShiftBriefing = (() => {
     section.className = `mini-shift-briefing risk-${briefing.risk ?? 'medium'} ${briefing.prepared ? 'is-prepared' : 'needs-prep'}`;
     section.dataset.miniShiftBriefing = deptId;
     section.setAttribute('aria-label', `${briefing.title} shift briefing`);
-    section.innerHTML = renderBriefing(briefing, options) + renderHintControl(deptId);
+    section.innerHTML = renderBriefing(briefing, options) + renderTwist(deptId) + renderHintControl(deptId);
     section.querySelector('[data-shift-hint-mode]')?.addEventListener('change', e => setHintMode(e.target.value));
 
     if (!existing) {
@@ -58,6 +58,8 @@ const HotelShiftBriefing = (() => {
     const briefing = briefingFor(deptId);
     mount(deptId);
     const rewardMult = HotelState.shiftRewardMultiplier?.(deptId) ?? 1;
+    const twist = twistFor(deptId);
+    if (twist) window.CasinoShell?.announce?.(`Shift twist: ${twist.title}. ${twist.summary}`);
     if (rewardMult < 1 && deptId !== 'entertainment') {
       window.CasinoShell?.toast?.(`Repeat run this phase: ${Math.round(rewardMult * 100)}% rewards. Full rewards return next phase.`, 6000);
     }
@@ -201,6 +203,7 @@ const HotelShiftBriefing = (() => {
     const best = window.HotelState?.recordShiftBest?.(deptId, grade.score, grade.letter)
       ?? { isNewBest: false, previous: null, best: null };
     const result = { ...grade, hints, ...best };
+    result.twist = twistFor(deptId)?.title ?? null;
     if (panel) showGrade(panel, result);
     window.CasinoShell?.announce?.(`Grade ${grade.letter}, ${grade.score} out of 100.${best.isNewBest ? ' New personal best!' : ''}`);
     return result;
@@ -224,7 +227,27 @@ const HotelShiftBriefing = (() => {
         <strong><span class="grade-stars" aria-label="${result.stars} of 3 stars">${stars}</span> ${result.score}/100</strong>
         <small>${escapeHtml(bestText)}</small>
         ${result.hints ? '<small class="grade-hints">Played with hints on</small>' : ''}
+        ${result.twist ? `<small class="grade-twist">Shift twist: ${escapeHtml(result.twist)}</small>` : ''}
       </span>`;
+  }
+
+  /* ── Calendar twists (shift-twists.js) ── */
+  function twistFor(deptId) {
+    return window.HotelTwists?.active?.(deptId) ?? null;
+  }
+
+  function renderTwist(deptId) {
+    const twist = twistFor(deptId);
+    if (!twist) return '';
+    return `
+      <div class="mini-shift-twist" data-shift-twist="${escapeHtml(twist.id)}">
+        <span class="mini-shift-twist-emoji" aria-hidden="true">${escapeHtml(twist.emoji)}</span>
+        <span>
+          <small>Shift twist</small>
+          <strong>${escapeHtml(twist.title)}</strong>
+          <em>${escapeHtml(twist.summary)}</em>
+        </span>
+      </div>`;
   }
 
   function renderHintControl(deptId) {
@@ -251,7 +274,7 @@ const HotelShiftBriefing = (() => {
     }[ch]));
   }
 
-  return { mount, start, briefingFor, hintsOn, hintStatus, setHintMode, gradeFor, finishRun, GRADES };
+  return { mount, start, briefingFor, hintsOn, hintStatus, setHintMode, gradeFor, finishRun, twistFor, GRADES };
 })();
 
 if (typeof window !== 'undefined') window.HotelShiftBriefing = HotelShiftBriefing;

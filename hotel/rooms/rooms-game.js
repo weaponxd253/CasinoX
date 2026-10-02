@@ -70,14 +70,16 @@ const RoomsGame = (() => {
     }
 
     window.HotelShiftBriefing?.start?.('rooms', 'Floor Ops');
+    const twist = window.HotelShiftBriefing?.twistFor?.('rooms') ?? null;
     const now = Date.now();
     shift = {
       active: true,
       roomsLevel,
+      twist,
       staffEffect: HotelState.getStaffEffect?.('rooms') ?? null,
       startedAt: now,
       endsAt: now + SHIFT_MS,
-      target: 8 + roomsLevel * 2,
+      target: 8 + roomsLevel * 2 + (twist?.effects.extraGuests ?? 0),
       rooms: buildRooms(roomsLevel),
       staff: STAFF.map(s => ({ ...s, request:null, doneAt:0, startedAt:0 })),
       selectedRequestId: null,
@@ -101,6 +103,7 @@ const RoomsGame = (() => {
     hideResults();
     clearLog();
     log(`Floor Ops opened. Room staff coverage: ${shift.staffEffect?.score ?? 0}% ${shift.staffEffect?.label ?? 'Short'}.`, 'gold');
+    if (twist) log(`${twist.emoji} ${twist.title}: ${twist.summary}`, 'gold');
     if (shift.backlogToSpawn) log(`${shift.backlogToSpawn} dirty room${shift.backlogToSpawn === 1 ? ' is' : 's are'} waiting from earlier. Clean them so Check-In can use them.`, 'bad');
     spawnRequests(3);
     updateAll();
@@ -121,7 +124,11 @@ const RoomsGame = (() => {
     // Rooms left dirty by an earlier shift come back first as resets
     const backlog = shift.backlogToSpawn > 0;
     if (backlog) shift.backlogToSpawn--;
-    const base = backlog ? REQUESTS.find(r => r.id === 'housekeeping') : options[Math.floor(Math.random() * options.length)];
+    // Checkout Rush: a share of requests are room resets and spills
+    const share = shift.twist?.effects.cleaningShare ?? 0;
+    const cleaning = options.filter(r => CLEANING_TYPES.includes(r.type) && !r.vip);
+    const pool = share && Math.random() < share ? cleaning : options;
+    const base = backlog ? REQUESTS.find(r => r.id === 'housekeeping') : pool[Math.floor(Math.random() * pool.length)];
     const template = backlog
       ? { ...base, label:'Dirty Room Reset', consequence:'Check-In cannot use this room until it is clean.', backlog:true }
       : base;
@@ -290,7 +297,7 @@ const RoomsGame = (() => {
     const handled = fit.tier !== 'risky';
     const base = request.cash + shift.roomsLevel * 7;
     const speedBonus = fast ? request.cash * 0.22 : 0;
-    const earned = Math.round((base * fit.cashMult + speedBonus + (perfect ? request.cash * 0.35 : 0)) * (shift.staffEffect?.incomeMult ?? 1));
+    const earned = Math.round((base * fit.cashMult + speedBonus + (perfect ? request.cash * 0.35 : 0)) * (shift.staffEffect?.incomeMult ?? 1) * (shift.twist?.effects.cashMult ?? 1));
     const sat = perfect
       ? request.sat
       : fit.tier === 'best'
@@ -365,7 +372,7 @@ const RoomsGame = (() => {
     HotelEngine.recalculateReputation(HotelState.get());
     HotelBridge.applyHotelToCasino(HotelState.get());
     HotelState.recordShiftResult?.('rooms', {
-      title: 'Floor Ops complete',
+      title: `Floor Ops complete${shift.twist ? ` · ${shift.twist.title}` : ''}`,
       cash: shift.earned,
       satisfaction: satBonus,
       rewardMult,

@@ -1195,3 +1195,92 @@ test.describe('linked shifts', () => {
     expect(await page.evaluate(() => HotelState.highRollerInHouse())).toBe(false);
   });
 });
+
+test.describe('calendar twists', () => {
+  test('the calendar picks one twist per shift, and day 1 stays plain', async ({ page }) => {
+    await page.goto('/hotel/index.html');
+    const picks = await page.evaluate(() => {
+      const s = HotelState.get();
+      const at = (day, weekday, phase) => {
+        Object.assign(s.calendar, { day, weekday, phase });
+        return Object.fromEntries(['bar', 'restaurant', 'spa', 'rooms', 'lobby'].map(d => [d, HotelTwists.active(d, s)?.id ?? null]));
+      };
+      const out = {
+        dayOne: at(1, 0, 'evening'),
+        mondayEvening: at(2, 0, 'evening'),
+        saturdayMorning: at(6, 5, 'morning'),
+        mondayAfternoon: at(8, 0, 'afternoon'),
+        fridayEvening: at(5, 4, 'evening'),
+      };
+      // A show on right now turns the bar into a show-night crowd
+      at(9, 1, 'evening');
+      s.entertainment.schedule.bookings.push({ id: 't', label: 'Jazz Night', dateKey: HotelEngine.calendarDayKey(s), phase: 'evening', effects: {} });
+      out.showNight = HotelTwists.active('bar', s)?.id;
+      out.showDinner = HotelTwists.active('restaurant', s)?.id;
+      return out;
+    });
+    expect(picks.dayOne).toEqual({ bar: null, restaurant: null, spa: null, rooms: null, lobby: null });
+    expect(picks.mondayEvening).toMatchObject({ bar: 'happyHour', spa: 'executiveUnwind', restaurant: null, rooms: null });
+    expect(picks.saturdayMorning).toMatchObject({ restaurant: 'weddingParty', spa: 'morningAfter', rooms: 'checkoutRush', bar: null });
+    expect(picks.mondayAfternoon).toMatchObject({ lobby: 'conference' });
+    expect(picks.fridayEvening).toMatchObject({ lobby: 'fridayArrivals', bar: 'happyHour' });
+    expect(picks.showNight).toBe('showNightBar');
+    expect(picks.showDinner).toBe('showNightDining');
+  });
+
+  test('Happy Hour: the bar briefing shows the twist and the shift has more guests', async ({ page }) => {
+    await page.goto('/hotel/index.html');
+    await page.evaluate(() => {
+      const s = HotelState.get();
+      s.departments.bar.unlocked = true;
+      s.departments.bar.level = 1;
+      Object.assign(s.calendar, { day: 2, weekday: 0, phase: 'evening' });
+      HotelState.saveNow();
+    });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect.poll(() => page.evaluate(() => document.body.textContent.includes('Happy Hour now'))).toBe(true);
+    await page.goto('/hotel/bar/index.html');
+    await expect(page.locator('.mini-shift-twist')).toContainText('Happy Hour');
+    await page.locator('#start-shift-btn').click();
+    await expect(page.locator('#served-target')).toHaveText('7');     // 5 at bar level 1, +2 for Happy Hour
+    await expect(page.locator('#shift-log')).toContainText('Happy Hour');
+  });
+
+  test('Wedding Party: a big table arrives mid-service and pays 2.5x', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('hotelTwistForce', 'weddingParty'));
+    await page.goto('/hotel/index.html');
+    await page.evaluate(() => {
+      const s = HotelState.get();
+      s.departments.restaurant.unlocked = true;
+      s.departments.restaurant.level = 2;
+      HotelState.saveNow();
+    });
+    await page.goto('/hotel/restaurant/index.html');
+    await page.locator('#start-tasting-btn').click();
+    await expect(page.locator('#tables-target')).toHaveText('6');      // 5 at level 2, +1 for the wedding
+    for (let table = 0; table < 3; table++) {
+      await expect(page.locator('#table-persona')).not.toContainText('Wedding');
+      for (let i = 0; i < 3; i++) await page.locator('.dish-card:not([disabled])').first().click();
+      await page.locator('#fire-course-btn').click();
+      await expect(page.locator('#table-number')).toHaveText(`Table ${table + 2}`, { timeout: 4000 });
+    }
+    await expect(page.locator('#table-persona')).toContainText('Wedding Party');
+    await expect(page.locator('#tasting-log')).toContainText('pays 2.5×');
+  });
+
+  test('Morning After: every spa guest needs recovery', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('hotelTwistForce', 'morningAfter'));
+    await page.goto('/hotel/index.html');
+    await page.evaluate(() => {
+      const s = HotelState.get();
+      s.departments.spa.unlocked = true;
+      s.departments.spa.level = 3;
+      HotelState.saveNow();
+    });
+    await page.goto('/hotel/spa/index.html');
+    await page.locator('#start-spa-btn').click();
+    await expect.poll(() => page.evaluate(() => SpaRush.debugSession().guests.length), { timeout: 5000 }).toBeGreaterThan(1);
+    const needs = await page.evaluate(() => SpaRush.debugSession().guests.map(g => g.needs));
+    needs.forEach(pair => expect(pair).toContain('tired'));
+  });
+});
