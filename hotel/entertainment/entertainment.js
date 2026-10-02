@@ -236,6 +236,7 @@ const EntertainmentBooker = (() => {
         ${effectChip('Income', `+${pct(act.effects.incomeBoost)}`)}
         ${effectChip('VIP Chance', `+${pct(act.effects.vipChance)}`)}
       </div>
+      <p class="show-twist-note">🎭 While it's on, the Bar gets a Show Night Crowd and the Tasting Room a Pre-Show Dinner.</p>
     `;
   }
 

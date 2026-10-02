@@ -49,6 +49,7 @@ const CheckInGame = (() => {
   let countdownVal   = 3;
   let cleaning       = null;       // { roomId, doneAt } while housekeeping is on the way
   let cleanedCount   = 0;
+  let twist          = null;       // calendar twist for this session (shift-twists.js)
 
   /* ── DOM refs ────────────────────────────────────────────── */
   const $ = id => document.getElementById(id);
@@ -133,11 +134,12 @@ const CheckInGame = (() => {
   function startSession() {
     phase = 'active';
     window.HotelShiftBriefing?.start?.('lobby', 'Check-In Rush');
+    twist = window.HotelShiftBriefing?.twistFor?.('lobby') ?? null;
     $('overlay-countdown').style.display = 'none';
     $('ci-hud').style.display            = 'flex';
     $('ci-game-area').style.display      = 'grid';
 
-    sessionMs  = diff.duration * 1000;
+    sessionMs  = (diff.duration + (twist?.effects.extraSeconds ?? 0)) * 1000;
     sessionEnd = Date.now() + sessionMs;
     staffEffect = HotelState.getStaffEffect?.('lobby') ?? null;
     results    = [];
@@ -159,7 +161,8 @@ const CheckInGame = (() => {
   function _buildGuestQueue() {
     const state = HotelState.get();
     const q = [];
-    for (let i = 0; i < diff.guests; i++) {
+    const count = diff.guests + (twist?.effects.extraGuests ?? 0);
+    for (let i = 0; i < count; i++) {
       const g = HotelGuestPool.previewArrival(state);
       if (g) q.push(g);
     }
@@ -181,7 +184,7 @@ const CheckInGame = (() => {
     }
 
     activeGuest  = guestQueue.shift();
-    patienceTotal = (BASE_PATIENCE[activeGuest.type] ?? 20000) * diff.patience * (staffEffect?.patienceMult ?? 1);
+    patienceTotal = (BASE_PATIENCE[activeGuest.type] ?? 20000) * diff.patience * (staffEffect?.patienceMult ?? 1) * (twist?.effects.patienceMult ?? 1);
     if (activeGuest.isReturning) patienceTotal *= 1.3;   // returning guests wait longer
     patienceEnd  = Date.now() + patienceTotal;
 
@@ -441,7 +444,7 @@ const CheckInGame = (() => {
       0.5 * (total0 ? (checkedIn.length / total0) * 100 : 0) + 50 * quality,
       document.querySelector('#overlay-results .results-content'));
     const rewardMult  = HotelState.shiftRewardMultiplier?.('lobby') ?? 1;
-    const cashBonus   = Math.round(baseCashBonus * (staffEffect?.incomeMult ?? 1) * rewardMult);
+    const cashBonus   = Math.round(baseCashBonus * (staffEffect?.incomeMult ?? 1) * (twist?.effects.cashMult ?? 1) * rewardMult);
     const matchRate   = checkedIn.length > 0 ? perfect.length / checkedIn.length : 0;
     const satBoost    = Math.round((Math.round(matchRate * 18) + (checkedIn.length ? (staffEffect?.satisfactionBonus ?? 0) : 0)) * rewardMult);
     const total        = results.length;
@@ -465,7 +468,7 @@ const CheckInGame = (() => {
     }
     HotelState.applyStaffFatigue?.('lobby', checkedIn.length ? 3 : 1);
     HotelState.recordShiftResult?.('lobby', {
-      title: 'Check-In Rush complete',
+      title: `Check-In Rush complete${twist ? ` · ${twist.title}` : ''}`,
       cash: cashBonus,
       satisfaction: satBoost,
       rewardMult,
@@ -525,6 +528,12 @@ const CheckInGame = (() => {
         <i class="fa-solid fa-broom"></i>
         <span>${cleanedCount ? `Cleaned ${cleanedCount} dirty room${cleanedCount === 1 ? '' : 's'}` : 'Dirty rooms'}</span>
         <strong>${dirtyLeft ? `${dirtyLeft} still dirty · run Floor Ops` : 'All clean'}</strong>
+      </div>` : ''}
+      ${twist ? `
+      <div class="reward-row">
+        <span aria-hidden="true">${twist.emoji}</span>
+        <span>Shift twist</span>
+        <strong>${twist.title}</strong>
       </div>` : ''}
       ${staffEffect?.assignedCount ? `
       <div class="reward-row">
@@ -718,11 +727,13 @@ const CheckInGame = (() => {
   ─────────────────────────────────────────────────────────── */
   function _renderDiffCard() {
     const lobbyLevel = HotelState.get().departments.lobby?.level ?? 1;
+    const upcoming = window.HotelShiftBriefing?.twistFor?.('lobby') ?? null;
     $('diff-card').innerHTML = `
       <div class="diff-level">${diff.label}</div>
       <div class="diff-stats">
-        <span>👥 ${diff.guests} guests</span>
-        <span>⏱ ${diff.duration}s</span>
+        <span>👥 ${diff.guests + (upcoming?.effects.extraGuests ?? 0)} guests</span>
+        <span>⏱ ${diff.duration + (upcoming?.effects.extraSeconds ?? 0)}s</span>
+        ${upcoming ? `<span class="diff-twist">${upcoming.emoji} ${upcoming.title}</span>` : ''}
         <span>🏨 Lobby Lv ${lobbyLevel}</span>
         ${HotelState.getStaffEffect?.('lobby')?.assignedCount ? `<span>👔 Staff ${HotelState.getStaffEffect('lobby').score}%</span>` : ''}
         ${HotelState.getDirtyRooms?.() ? `<span class="diff-dirty">🧹 ${HotelState.getDirtyRooms()} dirty room${HotelState.getDirtyRooms() === 1 ? '' : 's'} from Floor Ops</span>` : ''}

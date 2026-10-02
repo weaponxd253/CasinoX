@@ -93,13 +93,15 @@ const SpaRush = (() => {
     }
 
     window.HotelShiftBriefing?.start?.('spa', 'Spa Rush');
+    const twist = window.HotelShiftBriefing?.twistFor?.('spa') ?? null;
     const now = Date.now();
     session = {
       active: true,
       spaLevel,
+      twist,
       startedAt: now,
       endsAt: now + SESSION_MS,
-      target: 7 + spaLevel,
+      target: 7 + spaLevel + (twist?.effects.extraGuests ?? 0),
       guests: [],
       stations: Array.from({ length: STATION_COUNT }, (_, i) => ({ id:`station_${i}`, treatment:null, guest:null, startedAt:0, doneAt:0, cleanUntil:0 })),
       selectedGuestId: null,
@@ -124,6 +126,7 @@ const SpaRush = (() => {
     hideResults();
     clearLog();
     log('Spa session opened. Each guest has two needs.', 'gold');
+    if (twist) log(`${twist.emoji} ${twist.title}: ${twist.summary}`, 'gold');
     if (session.highRollerDue >= 0) log('🎰 A high roller is staying at the hotel and will book in. Give them a perfect treatment.', 'gold');
     spawnGuest(now);
     session.nextArrival = now + 1200; // a second guest arrives quickly so there is a choice
@@ -187,7 +190,10 @@ const SpaRush = (() => {
   }
 
   function makeGuest(now) {
-    const pairs = needPairs(session.spaLevel);
+    // A twist can give every guest the same need (e.g. Morning After: recovery)
+    const twistNeed = session.twist?.effects.need;
+    const allPairs = needPairs(session.spaLevel);
+    const pairs = twistNeed && allPairs.some(p => p.includes(twistNeed)) ? allPairs.filter(p => p.includes(twistNeed)) : allPairs;
     const easy = pairs.filter(p => perfectable(p, session.spaLevel));
     const pool = easy.length && Math.random() < 0.65 ? easy : pairs;
     const highRoller = session.spawned === session.highRollerDue;
@@ -195,7 +201,7 @@ const SpaRush = (() => {
     const luxuryPair = highRoller ? pairs.find(p => p.includes('luxury')) : null;
     const needs = luxuryPair ?? pool[Math.floor(Math.random() * pool.length)];
     const vip = highRoller || Math.random() < (session.spaLevel >= 5 ? VIP_CHANCE * 1.6 : VIP_CHANCE);
-    const patience = Math.round(16000 * Math.max(0.72, 1.08 - session.spaLevel * 0.04) * (highRoller ? 0.7 : vip ? 0.8 : 1));
+    const patience = Math.round(16000 * Math.max(0.72, 1.08 - session.spaLevel * 0.04) * (highRoller ? 0.7 : vip ? 0.8 : 1) * (session.twist?.effects.patienceMult ?? 1));
     return {
       id: `spa_guest_${session.spawned}_${now}`,
       name: highRoller ? 'High Roller' : NAMES[Math.floor(Math.random() * NAMES.length)],
@@ -292,7 +298,7 @@ const SpaRush = (() => {
     const perfect = read.tier === 'best';
     const acceptable = read.tier === 'acceptable';
     const mult = (perfect ? 1.4 : acceptable ? 1 : 0.5) * (guest.highRoller ? 3 : guest.vip ? 1.6 : 1);
-    const earned = Math.round(treatment.cash * mult + session.spaLevel * 8);
+    const earned = Math.round((treatment.cash * mult + session.spaLevel * 8) * (session.twist?.effects.cashMult ?? 1));
     const sat = perfect ? treatment.sat : acceptable ? Math.max(1, treatment.sat - 2) : 0;
 
     guest.status = 'done';
@@ -430,7 +436,7 @@ const SpaRush = (() => {
     HotelEngine.recalculateReputation(HotelState.get());
     HotelBridge.applyHotelToCasino(HotelState.get());
     HotelState.recordShiftResult?.('spa', {
-      title: 'Spa Rush complete',
+      title: `Spa Rush complete${session.twist ? ` · ${session.twist.title}` : ''}`,
       cash: session.earned,
       satisfaction: satBonus,
       rewardMult,

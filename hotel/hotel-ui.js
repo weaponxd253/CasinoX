@@ -935,6 +935,8 @@ const HotelUI = (() => {
     const guestSummary = context.guestSummary;
     const dirty = HotelState.getDirtyRooms?.() ?? 0;
     const highRollerIn = HotelState.highRollerInHouse?.() ?? false;
+    const twist = window.HotelTwists?.active?.(op.dept, state);
+    if (twist && op.enabled !== false) return `${twist.emoji} ${twist.title} now — busier shift, bigger rewards`;
     if (op.dept === 'lobby' && dirty) return `🧹 ${dirty} dirty room${dirty === 1 ? '' : 's'} blocked until cleaned`;
     if (op.dept === 'rooms' && dirty) return `🧹 ${dirty} room${dirty === 1 ? '' : 's'} left dirty — Check-In can't use ${dirty === 1 ? 'it' : 'them'}`;
     if ((op.dept === 'bar' || op.dept === 'spa') && highRollerIn) return `🎰 The high roller will visit — treat them well to keep them at the tables`;

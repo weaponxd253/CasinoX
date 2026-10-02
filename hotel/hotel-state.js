@@ -822,13 +822,14 @@ const HotelState = (() => {
   function shiftGoalForDept(deptId, state = _state) {
     const guests = Math.max(0, state?.guests?.population ?? 0);
     const level = Math.max(1, state?.departments?.[deptId]?.level ?? 1);
+    const extra = (typeof window !== 'undefined' && window.HotelTwists?.active?.(deptId, state)?.effects.extraGuests) || 0;
     if (deptId === 'lobby') return guests ? 'Match arrivals quickly and grow the guest roster.' : 'Fill open rooms and start guest revenue.';
     if (deptId === 'rooms') return `Resolve guest requests for ${guests || 'incoming'} in-house guests.`;
     if (deptId === 'casino') return 'Push casino floor progress and keep VIP energy high.';
-    if (deptId === 'restaurant') return `Serve ${Math.min(7, 3 + level)} tables with strong harmony.`;
-    if (deptId === 'bar') return `Serve ${Math.min(8, 4 + level)} lounge guests before patience drops.`;
+    if (deptId === 'restaurant') return `Serve ${Math.min(7, 3 + level) + extra} tables with strong harmony.`;
+    if (deptId === 'bar') return `Serve ${Math.min(8, 4 + level) + extra} lounge guests before patience drops.`;
     if (deptId === 'entertainment') return 'Book the best show slot for traffic and mood.';
-    if (deptId === 'spa') return `Treat ${7 + level} wellness guests before walkouts.`;
+    if (deptId === 'spa') return `Treat ${7 + level + extra} wellness guests before walkouts.`;
     return 'Complete the shift and return with hotel progress.';
   }
 
