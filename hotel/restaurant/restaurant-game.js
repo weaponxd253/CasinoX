@@ -46,6 +46,9 @@ const RestaurantGame = (() => {
 
   let service = null;
 
+  function hintsOn() { return window.HotelShiftBriefing?.hintsOn?.('restaurant') ?? true; }
+  document.addEventListener('shift-hints-changed', () => renderDishes());
+
   function init() {
     syncHotelCash();
     window.HotelShiftBriefing?.mount?.('restaurant');
@@ -183,6 +186,9 @@ const RestaurantGame = (() => {
     const signatures = service.signatures;
     const served = service.served;
     const avgHarmony = served ? Math.round(service.harmonyTotal / served) : 0;
+    // Grade: average harmony, plus a lift for signature flights
+    const grade = window.HotelShiftBriefing?.finishRun?.('restaurant',
+      avgHarmony + (served ? (signatures / served) * 15 : 0), $('tasting-results'));
     const satBonus = Math.round(Math.max(0, Math.min(8, signatures * 2 + Math.round(avgHarmony / 35) - 1 + (service.staffEffect?.satisfactionBonus ?? 0))) * rewardMult);
     HotelState.addHotelCash(cash);
     HotelState.addSatisfactionBonus(satBonus);
@@ -194,6 +200,8 @@ const RestaurantGame = (() => {
       cash,
       satisfaction: satBonus,
       rewardMult,
+      grade: grade?.letter,
+      score: grade?.score,
       primaryLabel: 'Tables',
       primaryValue: served,
       summary: `${served} tables served with ${signatures} signature flights.`,
@@ -582,7 +590,8 @@ const RestaurantGame = (() => {
       const nextCourse = COURSES[service?.selected?.length ?? 0];
       const courseFit = service?.active && nextCourse ? (dish.courseBonus?.[nextCourse.key] ?? 0) >= 7 : false;
       const tableFit = service?.active && service.table ? dishFitsTable(dish, service.table) : false;
-      const suggested = unlocked && !selectedIds.has(dish.id) && (courseFit || tableFit);
+      // Training hint: flag dishes that fit (HotelShiftBriefing decides when)
+      const suggested = hintsOn() && unlocked && !selectedIds.has(dish.id) && (courseFit || tableFit);
       const hint = courseFit ? 'Course Fit' : tableFit ? 'Table Fit' : '';
 
       // Build mini flavor bars (4 axes, each 0–3)

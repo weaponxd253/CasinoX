@@ -608,6 +608,7 @@ const HotelUI = (() => {
     const op = operationCatalog().find(item => item.dept === result.deptId);
     const meta = HotelConfig.DEPT_META[result.deptId];
     const metrics = [
+      result.grade ? renderShiftResultMetric('Grade', `${result.grade} · ${result.score}/100`) : '',
       renderShiftResultMetric('Reward', shiftResultRewardText(result)),
       result.primaryLabel ? renderShiftResultMetric(result.primaryLabel, result.primaryValue) : '',
       ...(Array.isArray(result.metrics) ? result.metrics.slice(0, 2).map(metric => renderShiftResultMetric(metric.label, metric.value)) : []),
@@ -852,6 +853,7 @@ const HotelUI = (() => {
           <span class="shift-card-copy">
             <span class="shift-card-state">${escapeHtml(shiftStateLabel(op))}</span>
             ${op.briefing?.prepared ? '<span class="shift-prepared-badge"><i class="fa-solid fa-circle-check"></i> Prepared</span>' : ''}
+            ${(() => { const best = HotelState.getShiftBest?.(op.dept, state); return best ? `<span class="shift-best-badge grade-${best.letter}" title="Personal best: ${best.score}/100">Best ${best.letter}</span>` : ''; })()}
             <span class="shift-card-kicker">${escapeHtml(op.priorityLabel)}</span>
             <strong>${escapeHtml(op.title)}</strong>
             <em>${escapeHtml(op.reason ?? shiftDetail(op, state))}</em>

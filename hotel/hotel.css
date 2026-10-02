@@ -4442,3 +4442,12 @@ body.light-theme .hotel-achievements-card { background: rgba(255,255,255,0.65); 
 .phase-report-next { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; color: var(--text-dim); }
 body.light .phase-report,
 body.light-theme .phase-report { background: rgba(255,255,255,0.7); }
+
+/* Personal-best grade on shift cards */
+.shift-best-badge {
+  display: inline-flex; align-items: center; margin-left: 4px; padding: 1px 7px;
+  border: 1px solid rgba(201,168,76,0.45); border-radius: 999px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--gold-light);
+}
+.shift-best-badge.grade-S { background: linear-gradient(135deg, var(--gold-dark), var(--gold)); color: #132113; }

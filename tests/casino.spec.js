@@ -939,6 +939,77 @@ test.describe('phase 3 gameplay', () => {
   });
 });
 
+test.describe('shift hints and grades', () => {
+  async function openShift(page, path, dept) {
+    await page.goto('/hotel/index.html');
+    await page.evaluate((dept) => {
+      const s = HotelState.get();
+      s.departments[dept].unlocked = true;
+      s.departments[dept].level = Math.max(1, s.departments[dept].level);
+      HotelState.saveNow();
+    }, dept);
+    await page.goto(path);
+  }
+
+  test('hints are training wheels: on for the first runs, then off unless staff coach', async ({ page }) => {
+    await openShift(page, '/hotel/bar/index.html', 'bar');
+    await expect(page.locator('.mini-shift-hints')).toContainText('Training hints · 3 runs left');
+    const status = await page.evaluate(() => {
+      HotelState.get().stats.shiftsByDept = { bar: 3, rooms: 3 };
+      return { bar: HotelShiftBriefing.hintStatus('bar'), rooms: HotelShiftBriefing.hintStatus('rooms') };
+    });
+    expect(status.bar.on).toBe(false);
+    expect(status.rooms.on).toBe(true);                  // Guest Rooms starts fully staffed
+    expect(status.rooms.reason).toContain('Staff coaching you');
+  });
+
+  test('Bar Shift only highlights the order while hints are on', async ({ page }) => {
+    await openShift(page, '/hotel/bar/index.html', 'bar');
+    await page.locator('#start-shift-btn').click();
+    await expect(page.locator('.drink-btn.is-order')).toHaveCount(1);
+    await page.selectOption('[data-shift-hint-mode]', 'off');
+    await expect(page.locator('.drink-btn.is-order')).toHaveCount(0);
+    await expect(page.locator('.mini-shift-hints')).toContainText('Hints off');
+  });
+
+  test('Floor Ops without hints: pick the room, then the staff member', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('hotelShiftHints', 'off'));
+    await openShift(page, '/hotel/rooms/index.html', 'rooms');
+    await page.locator('#start-ops-btn').click();
+    const room = page.locator('[data-request-id]').first();
+    await expect(room).toBeVisible({ timeout: 10000 });
+    await room.click();
+    await expect(page.locator('.staff-card.busy')).toHaveCount(0);
+    await expect(page.locator('.staff-fit-label')).toHaveCount(0);
+    await page.locator('.staff-card:not(.busy)').first().click();
+    await expect(page.locator('.staff-card.busy')).toHaveCount(1);
+  });
+
+  test('Check-In without hints hides room match badges', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('hotelShiftHints', 'off'));
+    await page.goto('/hotel/checkin/index.html');
+    await page.locator('#ci-start-btn').click();
+    await expect(page.locator('.ci-room-tile').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.ci-room-tile .match-badge')).toHaveCount(0);
+  });
+
+  test('runs are graded and personal bests are kept', async ({ page }) => {
+    await openShift(page, '/hotel/bar/index.html', 'bar');
+    const runs = await page.evaluate(() => {
+      const first = HotelShiftBriefing.finishRun('bar', 78);
+      const second = HotelShiftBriefing.finishRun('bar', 62);
+      const third = HotelShiftBriefing.finishRun('bar', 93);
+      return [first, second, third].map(r => ({ letter: r.letter, stars: r.stars, isNewBest: r.isNewBest }));
+    });
+    expect(runs).toEqual([
+      { letter: 'A', stars: 2, isNewBest: true },
+      { letter: 'B', stars: 1, isNewBest: false },
+      { letter: 'S', stars: 3, isNewBest: true },
+    ]);
+    expect(await page.evaluate(() => HotelState.getShiftBest('bar'))).toMatchObject({ letter: 'S', score: 93 });
+  });
+});
+
 test.describe('live game smoke paths', () => {
   for (const game of LIVE_GAMES) {
     test(`${game.name} can place a basic wager without freezing`, async ({ page }) => {

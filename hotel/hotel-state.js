@@ -958,6 +958,8 @@ const HotelState = (() => {
       cycleKey,
       runInCycle,
       rewardMult: result.rewardMult ?? 1,
+      grade: result.grade ?? null,
+      score: result.score ?? null,
       completedAt: now,
       title: result.title ?? `${briefing?.title ?? deptLabel(deptId)} complete`,
       cash: Math.max(0, Math.round(Number(result.cash ?? 0))),
@@ -989,6 +991,22 @@ const HotelState = (() => {
     if (shifts.active?.deptId === deptId) shifts.active = null;
     save();
     return entry;
+  }
+
+  /* Personal best grade per shift (HotelShiftBriefing.finishRun). */
+  function recordShiftBest(deptId, score, letter) {
+    if (!_state || !deptId) return { isNewBest: false, previous: null, best: null };
+    const shifts = ensureShiftState();
+    shifts.best = shifts.best ?? {};
+    const previous = shifts.best[deptId] ?? null;
+    const isNewBest = !previous || score > previous.score;
+    if (isNewBest) shifts.best[deptId] = { score, letter, at: Date.now() };
+    save();
+    return { isNewBest, previous, best: shifts.best[deptId] };
+  }
+
+  function getShiftBest(deptId, state = _state) {
+    return state?.shifts?.best?.[deptId] ?? null;
   }
 
   function dismissShiftResult(resultId = _state?.shifts?.lastResult?.id) {
@@ -2154,7 +2172,7 @@ const HotelState = (() => {
     setCalendar, addCalendarReport,
     recordShiftStart, recordShiftResult, dismissShiftResult,
     getShiftStatus, getShiftResult, getLatestShiftResult, getShiftBriefing, shiftCycleKey,
-    shiftRunsThisCycle, shiftRewardMultiplier,
+    shiftRunsThisCycle, shiftRewardMultiplier, recordShiftBest, getShiftBest,
     addGuestToRoster, removeGuestFromRoster, pruneExpiredFromRoster,
     getRoster, getRosterCount,
     applyCheckInBoost, consumeCheckInBoost, getCheckInBoost,

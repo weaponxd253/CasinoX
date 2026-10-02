@@ -51,6 +51,11 @@ const CheckInGame = (() => {
   /* ────────────────────────────────────────────────────────────
      INIT
   ─────────────────────────────────────────────────────────── */
+  function hintsOn() { return window.HotelShiftBriefing?.hintsOn?.('lobby') ?? true; }
+  document.addEventListener('shift-hints-changed', () => {
+    if (phase === 'active') { _renderRoomList(); if (selectedRoom) selectRoom(selectedRoom); }
+  });
+
   function init() {
     CasinoShell.mount({
       name:     'Check-In Rush',
@@ -276,16 +281,21 @@ const CheckInGame = (() => {
     if (nextTile) nextTile.classList.add('selected');
 
     const match = _computeMatch(activeGuest, room);
+    const hints = hintsOn();
     renderSelectionSummary(room, match);
-    setNextStep(`Confirm Room ${room.number} for ${activeGuest.name}. Match: ${_matchPlainLabel(match.quality)}.`);
+    setNextStep(hints
+      ? `Confirm Room ${room.number} for ${activeGuest.name}. Match: ${_matchPlainLabel(match.quality)}.`
+      : `Confirm Room ${room.number} for ${activeGuest.name}, or pick another room.`);
     const btn   = $('ci-confirm-btn');
     btn.disabled = false;
-    btn.innerHTML = match.quality === 'perfect'
+    btn.innerHTML = !hints
+      ? '<i class="fa-solid fa-key"></i> Assign Room & Check In'
+      : match.quality === 'perfect'
       ? '<i class="fa-solid fa-star"></i> Perfect match — Check In!'
       : match.quality === 'good'
       ? '<i class="fa-solid fa-key"></i> Good match — Check In'
       : '<i class="fa-solid fa-key"></i> Assign Room & Check In';
-    btn.className = `ci-confirm-btn match-${match.quality}`;
+    btn.className = `ci-confirm-btn ${hints ? `match-${match.quality}` : ''}`;
   }
 
   /* ────────────────────────────────────────────────────────────
@@ -369,6 +379,15 @@ const CheckInGame = (() => {
     // Reward calculation
     const baseCashBonus = checkedIn.reduce((s, r) =>
       s + Math.round((r.room?.label?.startsWith('Presidential') ? 350 : r.income * 0.25)), 0);
+    // Grade: half for how many guests got rooms, half for how well they matched
+    const matchValue  = { perfect: 1, good: 0.75, acceptable: 0.4 };
+    const quality     = checkedIn.length
+      ? checkedIn.reduce((sum, r) => sum + (matchValue[r.match?.quality] ?? 0), 0) / checkedIn.length
+      : 0;
+    const total0      = results.length;
+    const runGrade    = window.HotelShiftBriefing?.finishRun?.('lobby',
+      0.5 * (total0 ? (checkedIn.length / total0) * 100 : 0) + 50 * quality,
+      document.querySelector('#overlay-results .results-content'));
     const rewardMult  = HotelState.shiftRewardMultiplier?.('lobby') ?? 1;
     const cashBonus   = Math.round(baseCashBonus * (staffEffect?.incomeMult ?? 1) * rewardMult);
     const matchRate   = checkedIn.length > 0 ? perfect.length / checkedIn.length : 0;
@@ -393,6 +412,8 @@ const CheckInGame = (() => {
       cash: cashBonus,
       satisfaction: satBoost,
       rewardMult,
+      grade: runGrade?.letter,
+      score: runGrade?.score,
       primaryLabel: 'Checked In',
       primaryValue: checkedIn.length,
       summary: `${checkedIn.length} guests checked in, ${perfect.length} perfect matches, ${missed.length} walked out.`,
@@ -575,7 +596,8 @@ const CheckInGame = (() => {
         </div>`;
       }
 
-      const match    = activeGuest ? _computeMatch(activeGuest, room) : null;
+      // Training hint: badge each room's match for the active guest
+      const match    = activeGuest && hintsOn() ? _computeMatch(activeGuest, room) : null;
       const isSelected = selectedRoom === room.id;
       const qualClass  = match ? `match-${match.quality}` : '';
       const bestClass = match && match.quality === bestQuality ? 'best-choice' : '';
@@ -639,7 +661,7 @@ const CheckInGame = (() => {
     el.innerHTML = `
       <span>Selected Room</span>
       <strong>${room.number} · ${room.label}</strong>
-      <small>${_matchPlainLabel(match.quality)} match for ${activeGuest?.name ?? 'guest'}.</small>
+      <small>${hintsOn() ? `${_matchPlainLabel(match.quality)} match for ${activeGuest?.name ?? 'guest'}.` : `Check their preferences against the room's features.`}</small>
     `;
   }
 

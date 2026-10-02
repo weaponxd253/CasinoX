@@ -6,6 +6,24 @@
    ============================================================ */
 
 const HotelShiftBriefing = (() => {
+  /* ── Coaching hints ───────────────────────────────────────
+     Shifts used to highlight the right answer every time. Hints are
+     now training wheels: on for the first runs of each shift, or while
+     the department's staff are well prepared ("coaching"), or always if
+     the player chooses. Games ask HotelShiftBriefing.hintsOn(deptId). */
+  const HINT_RUNS = 3;
+  const COACH_COVERAGE = 80;
+  const HINT_KEY = 'hotelShiftHints';      // 'auto' | 'always' | 'off'
+
+  /* ── Grades ───────────────────────────────────────────────
+     Each game turns a run into a 0–100 score; this turns it into a
+     letter + stars and tracks the personal best per shift. */
+  const GRADES = [
+    { min: 90, letter: 'S', stars: 3 },
+    { min: 75, letter: 'A', stars: 2 },
+    { min: 55, letter: 'B', stars: 1 },
+    { min: 0,  letter: 'C', stars: 0 },
+  ];
   const OP_META = {
     lobby: { title:'Check-In Rush', department:'Lobby', icon:'fa-id-card' },
     rooms: { title:'Floor Ops', department:'Guest Rooms', icon:'fa-bell-concierge' },
@@ -24,7 +42,8 @@ const HotelShiftBriefing = (() => {
     section.className = `mini-shift-briefing risk-${briefing.risk ?? 'medium'} ${briefing.prepared ? 'is-prepared' : 'needs-prep'}`;
     section.dataset.miniShiftBriefing = deptId;
     section.setAttribute('aria-label', `${briefing.title} shift briefing`);
-    section.innerHTML = renderBriefing(briefing, options);
+    section.innerHTML = renderBriefing(briefing, options) + renderHintControl(deptId);
+    section.querySelector('[data-shift-hint-mode]')?.addEventListener('change', e => setHintMode(e.target.value));
 
     if (!existing) {
       const header = document.querySelector('.shell-header');
@@ -139,6 +158,89 @@ const HotelShiftBriefing = (() => {
     return briefing.prepNote ?? `Assign staff before starting to improve ${coverage} coverage.`;
   }
 
+  function hintMode() {
+    try { return ['always', 'off'].includes(localStorage.getItem(HINT_KEY)) ? localStorage.getItem(HINT_KEY) : 'auto'; }
+    catch (_) { return 'auto'; }
+  }
+
+  function setHintMode(mode) {
+    try { localStorage.setItem(HINT_KEY, mode); } catch (_) { /* storage unavailable */ }
+    document.querySelectorAll('[data-mini-shift-briefing]').forEach(el => mount(el.dataset.miniShiftBriefing));
+    document.dispatchEvent(new CustomEvent('shift-hints-changed'));
+  }
+
+  function runsOf(deptId) {
+    return window.HotelState?.get?.()?.stats?.shiftsByDept?.[deptId] ?? 0;
+  }
+
+  function hintStatus(deptId) {
+    const mode = hintMode();
+    if (mode === 'always') return { on: true, mode, reason: 'Hints always on' };
+    if (mode === 'off') return { on: false, mode, reason: 'Hints off' };
+    const left = HINT_RUNS - runsOf(deptId);
+    if (left > 0) return { on: true, mode, reason: `Training hints · ${left} run${left === 1 ? '' : 's'} left` };
+    const briefing = briefingFor(deptId);
+    if (briefing.prepared && (briefing.coverageScore ?? 0) >= COACH_COVERAGE) {
+      return { on: true, mode, reason: `Staff coaching you (${briefing.coverageScore}% coverage)` };
+    }
+    return { on: false, mode, reason: `No hints · staff at ${COACH_COVERAGE}%+ coverage will coach you` };
+  }
+
+  const hintsOn = (deptId) => hintStatus(deptId).on;
+
+  function gradeFor(score) {
+    const value = Math.max(0, Math.min(100, Math.round(Number(score) || 0)));
+    return { score: value, ...GRADES.find(g => value >= g.min) };
+  }
+
+  /* Grade a finished run, record the personal best, and show the grade
+     at the top of the game's results panel. Returns the grade info. */
+  function finishRun(deptId, score, panel = null) {
+    const grade = gradeFor(score);
+    const hints = hintsOn(deptId);
+    const best = window.HotelState?.recordShiftBest?.(deptId, grade.score, grade.letter)
+      ?? { isNewBest: false, previous: null, best: null };
+    const result = { ...grade, hints, ...best };
+    if (panel) showGrade(panel, result);
+    window.CasinoShell?.announce?.(`Grade ${grade.letter}, ${grade.score} out of 100.${best.isNewBest ? ' New personal best!' : ''}`);
+    return result;
+  }
+
+  function showGrade(panel, result) {
+    let el = panel.querySelector('.shift-grade');
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'shift-grade';
+      panel.insertBefore(el, panel.firstChild);
+    }
+    el.className = `shift-grade grade-${result.letter}${result.isNewBest ? ' new-best' : ''}`;
+    const stars = '★'.repeat(result.stars) + '☆'.repeat(3 - result.stars);
+    const bestText = result.isNewBest
+      ? (result.previous ? `New personal best! (was ${result.previous.letter} · ${result.previous.score})` : 'First grade on record!')
+      : result.best ? `Personal best: ${result.best.letter} · ${result.best.score}` : '';
+    el.innerHTML = `
+      <span class="grade-letter" aria-hidden="true">${result.letter}</span>
+      <span class="grade-copy">
+        <strong><span class="grade-stars" aria-label="${result.stars} of 3 stars">${stars}</span> ${result.score}/100</strong>
+        <small>${escapeHtml(bestText)}</small>
+        ${result.hints ? '<small class="grade-hints">Played with hints on</small>' : ''}
+      </span>`;
+  }
+
+  function renderHintControl(deptId) {
+    if (deptId === 'entertainment' || deptId === 'casino') return '';
+    const status = hintStatus(deptId);
+    return `
+      <label class="mini-shift-hints ${status.on ? 'hints-on' : 'hints-off'}">
+        <span><i class="fa-solid fa-lightbulb" aria-hidden="true"></i> ${escapeHtml(status.reason)}</span>
+        <select data-shift-hint-mode aria-label="Shift hints">
+          <option value="auto" ${status.mode === 'auto' ? 'selected' : ''}>Hints: auto</option>
+          <option value="always" ${status.mode === 'always' ? 'selected' : ''}>Hints: always</option>
+          <option value="off" ${status.mode === 'off' ? 'selected' : ''}>Hints: off</option>
+        </select>
+      </label>`;
+  }
+
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>"']/g, ch => ({
       '&': '&amp;',
@@ -149,7 +251,7 @@ const HotelShiftBriefing = (() => {
     }[ch]));
   }
 
-  return { mount, start, briefingFor };
+  return { mount, start, briefingFor, hintsOn, hintStatus, setHintMode, gradeFor, finishRun, GRADES };
 })();
 
 if (typeof window !== 'undefined') window.HotelShiftBriefing = HotelShiftBriefing;

@@ -33,6 +33,9 @@ const SpaRush = (() => {
 
   const $ = id => document.getElementById(id);
 
+  function hintsOn() { return window.HotelShiftBriefing?.hintsOn?.('spa') ?? true; }
+  document.addEventListener('shift-hints-changed', () => updateAll());
+
   function init() {
     syncHotelCash();
     window.HotelShiftBriefing?.mount?.('spa');
@@ -268,6 +271,10 @@ const SpaRush = (() => {
     clearInterval(tickTimer);
     session.active = false;
 
+    // Grade: perfect treatments, partial credit for good ones, walkouts count against
+    const treatedWell = session.perfect + 0.6 * Math.max(0, session.treated - session.perfect);
+    const grade = window.HotelShiftBriefing?.finishRun?.('spa',
+      100 * treatedWell / Math.max(1, session.treated + session.walkouts), $('spa-results'));
     const rewardMult = HotelState.shiftRewardMultiplier?.('spa') ?? 1;
     session.earned = Math.round(session.earned * rewardMult);
     const satBonus = Math.round(Math.max(0, Math.min(10, Math.round(session.satPoints / 2) - session.walkouts)) * rewardMult);
@@ -280,6 +287,8 @@ const SpaRush = (() => {
       cash: session.earned,
       satisfaction: satBonus,
       rewardMult,
+      grade: grade?.letter,
+      score: grade?.score,
       primaryLabel: 'Treated',
       primaryValue: session.treated,
       summary: `${session.treated} guests treated, ${session.walkouts} walkouts.`,
@@ -366,7 +375,9 @@ const SpaRush = (() => {
         </div>
         <div class="active-guest-read">
           <div><span>Need</span><strong>${mood.wants}</strong></div>
-          <div><span>Best Treatment</span><strong>${treatment}</strong></div>
+          ${hintsOn()
+            ? `<div><span>Best Treatment</span><strong>${treatment}</strong></div>`
+            : `<div><span>Mood</span><strong>${mood.label}</strong></div>`}
         </div>
         <div class="active-patience">
           <div class="active-patience-top">
@@ -410,7 +421,8 @@ const SpaRush = (() => {
     const openStation = !session?.active || session.stations.some(station => !station.guest);
     wrap.innerHTML = TREATMENTS.map(t => {
       const unlocked = spaLevel >= t.level;
-      const read = guest && unlocked ? evaluateTreatment(t, guest) : null;
+      // Training hint: rate each treatment for the active guest
+      const read = hintsOn() && guest && unlocked ? evaluateTreatment(t, guest) : null;
       const recommended = read?.tier === 'best';
       const acceptable = read?.tier === 'acceptable';
       const risky = read?.tier === 'risky';
@@ -561,7 +573,9 @@ const SpaRush = (() => {
       setNextStep('All treatment rooms are busy. Wait for one to open.');
       return;
     }
-    setNextStep(`Choose a treatment for ${guest.name}. Best match: ${treatmentLabel(guest.mood.best)}.`);
+    setNextStep(hintsOn()
+      ? `Choose a treatment for ${guest.name}. Best match: ${treatmentLabel(guest.mood.best)}.`
+      : `Choose a treatment for ${guest.name}, who wants ${guest.mood.wants.toLowerCase()}.`);
   }
 
   function setNextStep(message) {
