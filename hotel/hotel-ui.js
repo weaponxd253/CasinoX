@@ -933,6 +933,11 @@ const HotelUI = (() => {
 
   function shiftDetail(op, state = HotelState.get(), context = todayShiftContext(state)) {
     const guestSummary = context.guestSummary;
+    const dirty = HotelState.getDirtyRooms?.() ?? 0;
+    const highRollerIn = HotelState.highRollerInHouse?.() ?? false;
+    if (op.dept === 'lobby' && dirty) return `🧹 ${dirty} dirty room${dirty === 1 ? '' : 's'} blocked until cleaned`;
+    if (op.dept === 'rooms' && dirty) return `🧹 ${dirty} room${dirty === 1 ? '' : 's'} left dirty — Check-In can't use ${dirty === 1 ? 'it' : 'them'}`;
+    if ((op.dept === 'bar' || op.dept === 'spa') && highRollerIn) return `🎰 The high roller will visit — treat them well to keep them at the tables`;
     if (op.dept === 'lobby') {
       if (guestSummary) return `${Math.max(0, guestSummary.capacity - guestSummary.population)} rooms ready for arrivals`;
       return 'Check guests into open rooms';

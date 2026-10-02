@@ -833,3 +833,7 @@
 @media (prefers-reduced-motion: reduce) {
   .bar-seat.leaving-happy, .bar-seat.leaving-annoyed { transform: none; }
 }
+
+/* ── High roller visiting from the casino ── */
+.bar-seat.high-roller { border-color: #62d6ff; box-shadow: 0 0 16px rgba(98,214,255,0.3); }
+.bar-seat.high-roller .seat-name { color: #8fe3ff; }

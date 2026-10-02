@@ -176,6 +176,10 @@ const ECONOMY = {
   SHIFT_REPEAT_REWARD: [1, 0.5, 0.25],
   // High-roller visits open a high-stakes casino table for this long
   HIGH_ROLLER_VISIT_MS: 45 * 60_000,
+  // A high roller pampered at the bar or spa stays this much longer; a botched one checks out
+  HIGH_ROLLER_SERVICE_BONUS_MS: 15 * 60_000,
+  // Rooms Floor Ops leaves uncleaned; Check-In can't use them until they're cleaned
+  DIRTY_ROOM_CAP:      6,
 };
 
 /* ── Dev mode ── (?dev=1 / ?dev=0 — defined in wallet.js)

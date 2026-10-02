@@ -106,6 +106,9 @@ const BarGame = (() => {
       glass: [],
       nextArrival: Date.now(),
       guestId: 0,
+      // A high roller staying at the hotel drops by mid-shift
+      highRollerDue: HotelState.highRollerInHouse?.() ? Math.max(1, Math.floor(Math.min(8, 4 + barLevel) / 2)) : -1,
+      highRollerResult: null,
     };
 
     document.getElementById('start-shift-btn').disabled = true;
@@ -114,6 +117,7 @@ const BarGame = (() => {
     hideResults();
     clearLog();
     log(`Shift opened: ${shift.target} guests, ${shift.seats.length} seats.`, 'gold');
+    if (shift.highRollerDue >= 0) log('🎰 A high roller is staying at the hotel. They\'ll stop by the bar. Treat them well.', 'gold');
     renderIngredients();
     tick();
     renderAll();
@@ -124,14 +128,19 @@ const BarGame = (() => {
   /* ── Guests ────────────────────────────────────────────── */
   function seatGuest(index) {
     const drinks = unlockedDrinks(shift.barLevel);
-    const drink = drinks[Math.floor(Math.random() * drinks.length)];
-    const vip = Math.random() < VIP_CHANCE && shift.spawned > 0;
+    const highRoller = shift.spawned === shift.highRollerDue;
+    // The high roller orders the priciest drink on the menu
+    const drink = highRoller
+      ? drinks.reduce((best, d) => (d.tip > best.tip ? d : best), drinks[0])
+      : drinks[Math.floor(Math.random() * drinks.length)];
+    const vip = highRoller || (Math.random() < VIP_CHANCE && shift.spawned > 0);
     const levelPace = Math.max(0.75, 1 - (shift.barLevel - 1) * 0.04);
-    const patience = Math.round((10_000 + drink.recipe.length * 3_000) * levelPace * (vip ? 0.75 : 1));
+    const patience = Math.round((10_000 + drink.recipe.length * 3_000) * levelPace * (highRoller ? 0.7 : vip ? 0.75 : 1));
     const guest = {
       id: ++shift.guestId,
-      name: vip ? 'VIP' : GUESTS[Math.floor(Math.random() * GUESTS.length)],
+      name: highRoller ? 'High Roller' : vip ? 'VIP' : GUESTS[Math.floor(Math.random() * GUESTS.length)],
       vip,
+      highRoller,
       drink,
       patience,
       arrivedAt: Date.now(),
@@ -211,7 +220,7 @@ const BarGame = (() => {
       const left = patienceLeft(guest);
       const speedBonus = Math.round(guest.drink.tip * left * 0.55);
       const streakBonus = Math.min(18, shift.streak * 4);
-      const earned = Math.round((guest.drink.tip + speedBonus + streakBonus + shift.barLevel * 3) * (guest.vip ? 1.8 : 1));
+      const earned = Math.round((guest.drink.tip + speedBonus + streakBonus + shift.barLevel * 3) * (guest.highRoller ? 3 : guest.vip ? 1.8 : 1));
       shift.speedTotal += left;
       shift.tips += earned;
       shift.streak++;
@@ -232,12 +241,24 @@ const BarGame = (() => {
       CasinoShell.announce?.(why);
     }
 
+    if (guest.highRoller) settleHighRoller(correct);
+
     if (shift.selected === index) {
       const next = shift.seats.findIndex(g => g !== null);
       shift.selected = next === -1 ? null : next;
     }
     shift.nextArrival = Math.max(shift.nextArrival, Date.now() + 900);
     renderAll();
+  }
+
+  function settleHighRoller(pleased) {
+    const result = HotelState.settleHighRollerService?.(pleased);
+    shift.highRollerResult = pleased ? 'pleased' : 'lost';
+    const msg = pleased
+      ? `🎰 The high roller loved it and will stay longer at the tables${result?.minutesLeft ? ` (${result.minutesLeft} min left)` : ''}.`
+      : '🎰 The high roller checked out early. The casino\'s high-stakes table closes.';
+    log(msg, pleased ? 'good' : 'bad');
+    CasinoShell.toast(msg);
   }
 
   /* ── Finish ────────────────────────────────────────────── */
@@ -314,11 +335,11 @@ const BarGame = (() => {
         return `<div class="bar-seat empty" data-seat="${i}"><span class="seat-num">${i + 1}</span><span class="seat-empty">${shift?.active && shift.spawned < shift.target ? 'Guest arriving…' : 'Empty'}</span></div>`;
       }
       return `
-        <button type="button" class="bar-seat ${selected ? 'selected' : ''} ${guest.vip ? 'vip' : ''}" data-seat="${i}" aria-pressed="${selected ? 'true' : 'false'}"
+        <button type="button" class="bar-seat ${selected ? 'selected' : ''} ${guest.vip ? 'vip' : ''} ${guest.highRoller ? 'high-roller' : ''}" data-seat="${i}" aria-pressed="${selected ? 'true' : 'false'}"
                 aria-label="Seat ${i + 1}: ${guest.name} wants a ${guest.drink.label}">
           <span class="seat-num">${i + 1}</span>
           <span class="seat-avatar" aria-hidden="true"></span>
-          <span class="seat-name">${guest.name}${guest.vip ? ' ★' : ''}</span>
+          <span class="seat-name">${guest.highRoller ? '🎰 ' : ''}${guest.name}${guest.vip && !guest.highRoller ? ' ★' : ''}</span>
           <strong class="seat-order">${guest.drink.icon} ${guest.drink.label}</strong>
           <span class="seat-patience"><span class="seat-patience-fill" style="width:${Math.round(patienceLeft(guest) * 100)}%"></span></span>
         </button>`;
@@ -463,6 +484,7 @@ const BarGame = (() => {
   function renderIdle() {
     const barLevel = HotelState.get().departments.bar?.level ?? 0;
     log(barLevel > 0 ? 'Bar is ready.' : 'Bar & Lounge is not built yet.', barLevel > 0 ? 'gold' : 'bad', true);
+    if (barLevel > 0 && HotelState.highRollerInHouse?.()) log('🎰 A high roller is staying at the hotel. They\'ll stop by during your next shift.', 'gold');
     setReturnLink('Back to Hotel Lobby', 'fa-arrow-left');
     renderIngredients();
     renderAll();
@@ -504,7 +526,7 @@ const BarGame = (() => {
     return Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
   }
 
-  return { init, DRINKS, INGREDIENTS };
+  return { init, DRINKS, INGREDIENTS, debugShift: () => shift };
 })();
 
 if (typeof window !== 'undefined') window.BarGame = BarGame;

@@ -91,6 +91,7 @@ const HotelState = (() => {
         vipDepartsAt:        null,
         roster:              [],
         checkInBoostRemaining: 0,
+        dirtyRooms:          0,
         rosterIdCounter:     0,
         stats: { totalHosted:0, vipsHosted:0, highRollersHosted:0, totalSpent:0 },
       },
@@ -226,6 +227,7 @@ const HotelState = (() => {
     state.guests.stats = state.guests.stats ?? fresh.guests.stats;
     if (!Array.isArray(state.guests.roster)) state.guests.roster = [];
     if (typeof state.guests.checkInBoostRemaining !== 'number') state.guests.checkInBoostRemaining = 0;
+    if (typeof state.guests.dirtyRooms !== 'number') state.guests.dirtyRooms = 0;
     if (typeof state.guests.rosterIdCounter !== 'number') {
       state.guests.rosterIdCounter = state.guests.roster.length;
     }
@@ -732,6 +734,30 @@ const HotelState = (() => {
     save();
   }
 
+  /** Is a high roller in the house right now? */
+  function highRollerInHouse() {
+    const g = _state.guests;
+    return !!(g.highRollerPresent && g.highRollerUntil > Date.now());
+  }
+
+  /** Great service from a shift keeps the high roller around longer. */
+  function extendHighRoller(ms = HotelConfig.ECONOMY.HIGH_ROLLER_SERVICE_BONUS_MS) {
+    if (!highRollerInHouse()) return false;
+    _state.guests.highRollerUntil += ms;
+    save();
+    return true;
+  }
+
+  /** A shift served the visiting high roller: pleased → they stay longer,
+      botched → they check out early and the high-stakes table closes. */
+  function settleHighRollerService(pleased) {
+    if (!highRollerInHouse()) return { pleased, inHouse: false, minutesLeft: 0 };
+    if (pleased) extendHighRoller();
+    else clearHighRollerFlag();
+    const until = _state.guests.highRollerUntil ?? 0;
+    return { pleased, inHouse: pleased, minutesLeft: pleased ? Math.ceil((until - Date.now()) / 60_000) : 0 };
+  }
+
   function clearHighRollerFlag() {
     _state.guests.highRollerPresent = false;
     _state.guests.highRollerUntil = null;
@@ -1139,6 +1165,24 @@ const HotelState = (() => {
 
   function getCheckInBoost() {
     return _state.guests.checkInBoostRemaining ?? 0;
+  }
+
+  /* Dirty rooms: Floor Ops leaves them when cleaning requests escalate, and
+     cleans them when it finishes cleaning requests. Check-In Rush can't
+     assign a dirty room until it calls housekeeping. */
+  function getDirtyRooms() {
+    return _state.guests.dirtyRooms ?? 0;
+  }
+
+  function addDirtyRooms(n) {
+    const cap = HotelConfig.ECONOMY.DIRTY_ROOM_CAP ?? 6;
+    _state.guests.dirtyRooms = Math.max(0, Math.min(cap, getDirtyRooms() + Math.round(n || 0)));
+    save();
+    return _state.guests.dirtyRooms;
+  }
+
+  function cleanDirtyRooms(n) {
+    return addDirtyRooms(-Math.abs(Math.round(n || 0)));
   }
 
   function getStaffRoster() {
@@ -2166,7 +2210,8 @@ const HotelState = (() => {
     setReputation, setSatisfaction, setSatisfactionComponents, setTrend,
     getSatisfactionBonus, addSatisfactionBonus,
     upgradeDept, unlockDept, updateTicker,
-    updateCasinoBridge, setHighRollerFlag, clearHighRollerFlag,
+    updateCasinoBridge, setHighRollerFlag, clearHighRollerFlag, highRollerInHouse, extendHighRoller, settleHighRollerService,
+    getDirtyRooms, addDirtyRooms, cleanDirtyRooms,
     setGuestData, setVipPresent,
     bookEntertainmentShow, cancelEntertainmentShow,
     setCalendar, addCalendarReport,
