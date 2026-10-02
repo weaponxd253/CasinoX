@@ -331,7 +331,10 @@ const CasinoShell = (function () {
     const t = document.createElement('div');
     t.className = 'shell-toast';
     t.textContent = msg;
+    t.title = 'Dismiss';
+    t.addEventListener('click', () => t.remove());   // tap to dismiss
     wrap.appendChild(t);
+    while (wrap.children.length > 3) wrap.firstChild.remove();   // never stack more than 3
     setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; setTimeout(() => t.remove(), 300); }, ms);
   }
 

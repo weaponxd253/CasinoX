@@ -86,6 +86,10 @@ const CheckInGame = (() => {
       _unlockStart();
     });
     $('ci-confirm-btn').addEventListener('click', confirmCheckIn);
+    $('ci-room-list').addEventListener('click', e => {
+      const tile = e.target.closest('.ci-room-tile[data-room-id]');
+      if (tile && !tile.disabled) selectRoom(tile.dataset.roomId);
+    });
   }
 
   /* ────────────────────────────────────────────────────────────
@@ -287,10 +291,10 @@ const CheckInGame = (() => {
 
     if (previousRoom) {
       const prevTile = document.querySelector(`.ci-room-tile[data-room-id="${previousRoom}"]`);
-      if (prevTile) prevTile.classList.remove('selected');
+      if (prevTile) { prevTile.classList.remove('selected'); prevTile.setAttribute('aria-pressed', 'false'); }
     }
     const nextTile = document.querySelector(`.ci-room-tile[data-room-id="${roomId}"]`);
-    if (nextTile) nextTile.classList.add('selected');
+    if (nextTile) { nextTile.classList.add('selected'); nextTile.setAttribute('aria-pressed', 'true'); }
 
     const match = _computeMatch(activeGuest, room);
     const hints = hintsOn();
@@ -669,11 +673,11 @@ const CheckInGame = (() => {
 
     $('ci-room-list').innerHTML = rooms.map(room => {
       if (room.occupied) {
-        return `<div class="ci-room-tile occupied">
+        return `<button type="button" class="ci-room-tile occupied" disabled aria-label="Room ${room.number}, occupied">
           <span class="room-num">${room.number}</span>
           <span class="room-type">${room.label}</span>
           <span class="room-status">Occupied</span>
-        </div>`;
+        </button>`;
       }
 
       // Training hint: badge each room's match for the active guest
@@ -683,37 +687,36 @@ const CheckInGame = (() => {
       const bestClass = match && !room.dirty && match.quality === bestQuality ? 'best-choice' : '';
       if (room.dirty) {
         const isCleaning = cleaning?.roomId === room.id;
-        return `<div class="ci-room-tile dirty ${isCleaning ? 'cleaning' : ''} ${qualClass}"
-                     data-room-id="${room.id}" onclick="CheckInGame.selectRoom('${room.id}')"
-                     role="button" aria-label="Room ${room.number} needs cleaning. ${isCleaning ? 'Housekeeping is on it.' : 'Call housekeeping.'}">
-          <div class="room-tile-top">
+        return `<button type="button" class="ci-room-tile dirty ${isCleaning ? 'cleaning' : ''} ${qualClass}"
+                     data-room-id="${room.id}" aria-label="Room ${room.number} needs cleaning. ${isCleaning ? 'Housekeeping is on it.' : 'Call housekeeping.'}">
+          <span class="room-tile-top">
             <span class="room-num">${room.number}</span>
             ${match ? `<span class="match-badge match-${match.quality}">${_matchLabel(match.quality)}</span>` : ''}
-          </div>
-          <div class="room-tile-body">
+          </span>
+          <span class="room-tile-body">
             <span class="room-type">${room.label}</span>
             <span class="room-beds">${room.beds}</span>
-          </div>
+          </span>
           <span class="room-dirty-label">🧹 ${isCleaning ? 'Cleaning…' : 'Needs cleaning · tap to call housekeeping'}</span>
           ${isCleaning ? '<span class="room-clean-track"><span class="room-clean-fill"></span></span>' : ''}
-        </div>`;
+        </button>`;
       }
       const featHtml   = room.features.slice(0, 2).map(f =>
         `<span class="room-feat">${_prefShort(f)}</span>`
       ).join('');
 
-      return `<div class="ci-room-tile ${qualClass} ${bestClass} ${isSelected ? 'selected' : ''}"
-                   data-room-id="${room.id}" onclick="CheckInGame.selectRoom('${room.id}')">
-        <div class="room-tile-top">
+      return `<button type="button" class="ci-room-tile ${qualClass} ${bestClass} ${isSelected ? 'selected' : ''}"
+                   data-room-id="${room.id}" aria-pressed="${isSelected}">
+        <span class="room-tile-top">
           <span class="room-num">${room.number}</span>
           ${match ? `<span class="match-badge match-${match.quality}">${_matchLabel(match.quality)}</span>` : ''}
-        </div>
-        <div class="room-tile-body">
+        </span>
+        <span class="room-tile-body">
           <span class="room-type">${room.label}</span>
           <span class="room-beds">${room.beds}</span>
-        </div>
-        <div class="room-feats">${featHtml}</div>
-      </div>`;
+        </span>
+        <span class="room-feats">${featHtml}</span>
+      </button>`;
     }).join('');
   }
 

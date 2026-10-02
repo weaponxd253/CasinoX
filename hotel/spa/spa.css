@@ -80,9 +80,9 @@
 .spa-section-title,
 .spa-session-meter span,
 .next-step-panel span,
-.spa-boost-top span,
-.spa-stats span,
-.results-grid span {
+.spa-boost-top > span,
+.spa-stats > div > span,
+.results-grid > div > span {
   display: block;
   font-size: 10px;
   letter-spacing: 0.2em;

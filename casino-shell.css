@@ -257,9 +257,20 @@ h1, h2, h3 {
 }
 
 /* ── Toasts ── */
+/* Bottom corner, so toasts never cover the header's chips and buttons. */
 #shell-toasts {
-  position: fixed; top: 14px; right: 14px; z-index: 2000;
-  display: flex; flex-direction: column; gap: 8px;
+  position: fixed; bottom: 18px; right: 18px; z-index: 2000;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+  pointer-events: none;
+}
+#shell-toasts .shell-toast { pointer-events: auto; cursor: pointer; }
+@media (max-width: 768px) {
+  /* Phones: centred, above the sticky action bars (spin, hit/stand, bet) */
+  #shell-toasts {
+    left: 12px; right: 12px; align-items: center;
+    bottom: calc(var(--sticky-safe, 0px) + 96px);
+  }
+  #shell-toasts .shell-toast { max-width: 100%; font-size: 14px; }
 }
 .shell-toast {
   background: var(--bg-2);
@@ -272,7 +283,7 @@ h1, h2, h3 {
   max-width: 320px;
   animation: shell-toast-in 0.25s ease;
 }
-@keyframes shell-toast-in { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+@keyframes shell-toast-in { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
 
 /* ── Modal (game over, etc.) ── */
 .shell-modal {

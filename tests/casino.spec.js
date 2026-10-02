@@ -1284,3 +1284,55 @@ test.describe('calendar twists', () => {
     needs.forEach(pair => expect(pair).toContain('tired'));
   });
 });
+
+test.describe('ui bug fixes', () => {
+  test('shift stat numbers render at full size, not as tiny labels', async ({ page }) => {
+    await page.goto('/hotel/index.html');
+    await page.evaluate(() => {
+      const s = HotelState.get();
+      ['bar', 'spa', 'restaurant'].forEach(d => { s.departments[d].unlocked = true; s.departments[d].level = 1; });
+      HotelState.saveNow();
+    });
+    for (const [path, number, label] of [
+      ['/hotel/spa/index.html', '#spa-served', '.spa-stats > div > span'],
+      ['/hotel/rooms/index.html', '#ops-resolved', '.ops-stats > div > span'],
+      ['/hotel/bar/index.html', '#tips-total', '.shift-stats > div > span'],
+      ['/hotel/restaurant/index.html', '#tables-served', '.tasting-stats > div > span'],
+    ]) {
+      await page.goto(path);
+      const sizes = await page.evaluate(([n, l]) => ({
+        number: parseFloat(getComputedStyle(document.querySelector(n)).fontSize),
+        label: parseFloat(getComputedStyle(document.querySelector(l)).fontSize),
+      }), [number, label]);
+      expect(sizes.number, path).toBeGreaterThan(sizes.label + 4);
+    }
+  });
+
+  test('Check-In room tiles are buttons you can pick with the keyboard', async ({ page }) => {
+    await page.goto('/hotel/checkin/index.html');
+    await page.locator('#ci-start-btn').click();
+    const tile = page.locator('button.ci-room-tile:not([disabled])').first();
+    await expect(tile).toBeVisible({ timeout: 6000 });
+    await expect(page.locator('div.ci-room-tile')).toHaveCount(0);
+    await tile.focus();
+    await page.keyboard.press('Enter');
+    await expect(tile).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#ci-confirm-btn')).toBeEnabled();
+  });
+
+  test('phone dashboard keeps a side gutter and toasts sit at the bottom', async ({ page }) => {
+    await page.setViewportSize({ width: 393, height: 852 });
+    await page.goto('/hotel/index.html');
+    const layout = await page.evaluate(() => {
+      CasinoShell.toast('hello');
+      const bar = document.querySelector('.hotel-cash-bar').getBoundingClientRect();
+      const theme = document.querySelector('.hotel-theme-toggle').getBoundingClientRect();
+      const toast = document.querySelector('.shell-toast').getBoundingClientRect();
+      return { left: bar.left, right: innerWidth - bar.right, oneRow: Math.abs(theme.top - bar.top) < 30, toastTop: toast.top, h: innerHeight };
+    });
+    expect(layout.left).toBeGreaterThanOrEqual(12);
+    expect(layout.right).toBeGreaterThanOrEqual(12);
+    expect(layout.oneRow).toBe(true);
+    expect(layout.toastTop).toBeGreaterThan(layout.h / 2);
+  });
+});

@@ -517,7 +517,7 @@
   padding: 11px;
 }
 
-.shift-stats span {
+.shift-stats > div > span {
   display: block;
   font-size: 10px;
   letter-spacing: 0.16em;
@@ -598,7 +598,7 @@
   padding: 9px;
 }
 
-.results-grid span {
+.results-grid > div > span {
   display: block;
   font-size: 9px;
   letter-spacing: 0.16em;
