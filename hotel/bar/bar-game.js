@@ -17,6 +17,10 @@ const BarGame = (() => {
   let shift = null;
   let timer = null;
 
+  document.addEventListener('shift-hints-changed', () => {
+    if (shift?.active && shift.order) setDrinkHighlight(hintsOn() ? shift.order.id : null);
+  });
+
   function init() {
     syncHotelCash();
     window.HotelShiftBriefing?.mount?.('bar');
@@ -48,6 +52,7 @@ const BarGame = (() => {
       tips: 0,
       streak: 0,
       misses: 0,
+      speedTotal: 0,      // patience left on each correct serve (0–1), for the grade
       order: null,
       orderStarted: 0,
       guest: '',
@@ -83,7 +88,8 @@ const BarGame = (() => {
 
     document.getElementById('ticket-drink').textContent = `${shift.order.icon} ${shift.order.label}`;
     setOrderState('active');
-    setDrinkHighlight(shift.order.id);
+    // Training hint: light up the ordered drink (HotelShiftBriefing decides when)
+    setDrinkHighlight(hintsOn() ? shift.order.id : null);
     setNextStep(`Serve ${shift.order.label} for the ${shift.guest} before patience runs out.`);
     setCustomerMood('');
     updatePatience();
@@ -106,6 +112,7 @@ const BarGame = (() => {
       const speedBonus = Math.round(order.tip * patienceLeft * 0.55);
       const streakBonus = Math.min(18, shift.streak * 4);
       const earned = order.tip + speedBonus + streakBonus + (shift.barLevel * 3);
+      shift.speedTotal += patienceLeft;
       shift.tips += earned;
       shift.streak++;
       shift.served++;
@@ -157,6 +164,11 @@ const BarGame = (() => {
     const satisfactionBonus = Math.round(Math.max(0, Math.min(4, shift.streak + 2 - shift.misses)) * rewardMult);
     const served = shift.served;
     const misses = shift.misses;
+    // Grade: correct orders, weighted by how quickly they were served
+    const correct = served - misses;
+    const avgSpeed = correct ? shift.speedTotal / correct : 0;
+    const gradeScore = 100 * (correct / Math.max(1, shift.target)) * (0.55 + 0.45 * avgSpeed);
+    const grade = window.HotelShiftBriefing?.finishRun?.('bar', gradeScore, document.getElementById('shift-results'));
     HotelState.addHotelCash(tips);
     HotelState.addSatisfactionBonus(satisfactionBonus);
     HotelEngine.recalculateReputation(HotelState.get());
@@ -166,6 +178,8 @@ const BarGame = (() => {
       cash: tips,
       satisfaction: satisfactionBonus,
       rewardMult,
+      grade: grade?.letter,
+      score: grade?.score,
       primaryLabel: 'Served',
       primaryValue: served,
       summary: `${served} guests served, ${misses} misses, $${tips} in tips.`,
@@ -304,6 +318,8 @@ const BarGame = (() => {
     if (!el) return;
     el.querySelector('strong').textContent = message;
   }
+
+  function hintsOn() { return window.HotelShiftBriefing?.hintsOn?.('bar') ?? true; }
 
   function setDrinkHighlight(drinkId) {
     document.querySelectorAll('.drink-btn').forEach(btn => {

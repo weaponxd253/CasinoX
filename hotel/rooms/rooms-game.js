@@ -34,6 +34,9 @@ const RoomsGame = (() => {
 
   const $ = id => document.getElementById(id);
 
+  function hintsOn() { return window.HotelShiftBriefing?.hintsOn?.('rooms') ?? true; }
+  document.addEventListener('shift-hints-changed', () => updateAll());
+
   function init() {
     syncHotelCash();
     window.HotelShiftBriefing?.mount?.('rooms');
@@ -146,6 +149,14 @@ const RoomsGame = (() => {
     if (!shift?.active) return;
     const request = findRequest(requestId);
     if (!request || request.status !== 'waiting') return;
+    // Without hints there's no auto-dispatch: select the room, then pick who goes.
+    if (!hintsOn() && !shift.selectedStaffId) {
+      shift.selectedRequestId = requestId;
+      shift.lastOutcome = null;
+      updateAll();
+      CasinoShell.sound.tone(500, 'sine', 0.05, 0.12);
+      return;
+    }
     const staff = chooseStaffForRequest(request);
     if (!staff) {
       shift.selectedRequestId = requestId;
@@ -165,6 +176,12 @@ const RoomsGame = (() => {
     if (!shift?.active) return;
     const staff = shift.staff.find(s => s.id === staffId);
     if (!staff || staff.request) return;
+    const waiting = findRequest(shift.selectedRequestId);
+    if (!hintsOn() && waiting?.status === 'waiting') {   // room first, then staff
+      shift.selectedStaffId = staffId;
+      assignStaffToRequest(staff, waiting);
+      return;
+    }
     shift.selectedStaffId = shift.selectedStaffId === staffId ? null : staffId;
     shift.selectedRequestId = null;
     shift.lastOutcome = shift.selectedStaffId
@@ -310,6 +327,10 @@ const RoomsGame = (() => {
     clearInterval(timer);
     shift.active = false;
 
+    // Grade: requests handled well vs. requests that turned into complaints
+    const handledWell = shift.perfect + 0.6 * Math.max(0, shift.resolved - shift.perfect);
+    const grade = window.HotelShiftBriefing?.finishRun?.('rooms',
+      100 * handledWell / Math.max(1, shift.resolved + shift.complaints), $('ops-results'));
     const rewardMult = HotelState.shiftRewardMultiplier?.('rooms') ?? 1;
     shift.earned = Math.round(shift.earned * rewardMult);
     const satBonus = Math.round(Math.max(0, Math.min(9, Math.round(shift.satPoints / 3) - shift.complaints + (shift.staffEffect?.satisfactionBonus ?? 0))) * rewardMult);
@@ -323,6 +344,8 @@ const RoomsGame = (() => {
       cash: shift.earned,
       satisfaction: satBonus,
       rewardMult,
+      grade: grade?.letter,
+      score: grade?.score,
       primaryLabel: 'Resolved',
       primaryValue: shift.resolved,
       summary: `${shift.resolved} requests resolved, ${shift.complaints} complaints, ${shift.perfect} perfect dispatches.`,
@@ -495,7 +518,7 @@ const RoomsGame = (() => {
           </div>
           <div class="room-meta">
             <span class="urgency-pill ${urgency.tier}">${urgency.label}</span>
-            <span>${staffLabel(request.need)}</span>
+            ${hintsOn() ? `<span>${staffLabel(request.need)}</span>` : ''}
           </div>
           <strong>${request.label}</strong>
           <span class="room-risk">${request.pressure}</span>
@@ -519,7 +542,8 @@ const RoomsGame = (() => {
     const request = findRequest(shift?.selectedRequestId);
     wrap.innerHTML = staff.map(member => {
       const busy = !!member.request;
-      const fit = request && !busy && shift?.active ? evaluateDispatch(member, request) : null;
+      // Training hint: show how well each staff member fits the selected room
+      const fit = hintsOn() && request && !busy && shift?.active ? evaluateDispatch(member, request) : null;
       const recommended = fit?.tier === 'best';
       const selected = shift?.selectedStaffId === member.id;
       const pct = staffPct(member);
@@ -527,7 +551,7 @@ const RoomsGame = (() => {
         <button class="staff-card ${busy ? 'busy' : ''} ${recommended ? 'recommended' : ''} ${selected ? 'manual-selected' : ''} ${fit ? `fit-${fit.tier}` : ''}" type="button" data-staff-id="${member.id}" ${busy || !shift?.active ? 'disabled' : ''}>
           <i class="fa-solid ${member.icon}"></i>
           <span>${member.label}</span>
-          <strong>${busy ? `Room ${member.request.roomNumber}` : selected ? 'Manual Override' : 'Auto Available'}</strong>
+          <strong>${busy ? `Room ${member.request.roomNumber}` : selected ? 'Manual Override' : request && !hintsOn() ? `Send to Room ${request.roomNumber}` : hintsOn() ? 'Auto Available' : 'Available'}</strong>
           ${fit ? `<small class="staff-fit-label">${fit.label}</small><em>${fit.reason}</em>` : selected ? '<small class="staff-fit-label">Selected</small><em>Click a room to send this staff member.</em>' : `<em>${member.strength}</em>`}
           <div class="staff-track"><div class="staff-fill" style="width:${pct}%"></div></div>
         </button>
@@ -547,13 +571,15 @@ const RoomsGame = (() => {
         <p>${shift?.active
           ? selectedStaff
             ? `Click a room to send ${selectedStaff.label}. Click the staff card again to return to auto-dispatch.`
-            : 'Click any active room request to auto-dispatch the best available staff.'
+            : hintsOn()
+              ? 'Click any active room request to auto-dispatch the best available staff.'
+              : 'Click a room request, then choose which staff member to send.'
           : 'Start a shift to open live room requests and triage the floor.'}</p>
       `;
       setNextStep(shift?.active
         ? selectedStaff
           ? `Click a room to send ${selectedStaff.label}.`
-          : 'Click a room request to dispatch the best available staff.'
+          : hintsOn() ? 'Click a room request to dispatch the best available staff.' : 'Click a room request, then pick who goes.'
         : 'Start Floor Ops to open room requests.');
       return;
     }
@@ -562,14 +588,17 @@ const RoomsGame = (() => {
     wrap.innerHTML = `
       <span>Selected Request</span>
       <strong>Room ${request.roomNumber}: ${request.label}</strong>
-      <p>${request.guestName} needs ${request.risk} handled. Best staff: ${staff?.label ?? 'Any staff'}.</p>
+      <p>${request.guestName} needs ${request.risk} handled.${hintsOn() ? ` Best staff: ${staff?.label ?? 'Any staff'}.` : ' Choose who to send.'}</p>
       <div class="request-brief-grid">
         <div><span>Pressure</span><strong>${urgency.label}</strong></div>
         <div><span>Reward</span><strong>${request.rewardLabel}</strong></div>
         <div><span>Consequence</span><strong>${request.consequence}</strong></div>
       </div>
     `;
-    setNextStep(`All staff are busy. Room ${request.roomNumber} is queued until someone frees up.`);
+    const anyFree = (shift?.staff ?? []).some(member => !member.request);
+    setNextStep(anyFree && !hintsOn()
+      ? `Pick a staff member to send to Room ${request.roomNumber}.`
+      : `All staff are busy. Room ${request.roomNumber} is queued until someone frees up.`);
   }
 
   function renderDispatchPanel() {
@@ -577,7 +606,7 @@ const RoomsGame = (() => {
     if (!panel) return;
     const request = findRequest(shift?.selectedRequestId);
 
-    if (request) {
+    if (request && hintsOn()) {
       const bestStaff = STAFF.find(member => member.id === request.need);
       const available = (shift?.staff ?? []).filter(member => !member.request);
       const riskyCount = available.filter(member => evaluateDispatch(member, request).tier === 'risky').length;
