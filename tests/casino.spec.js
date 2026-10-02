@@ -1113,3 +1113,85 @@ async function tapCenter(locator) {
   if (!box) throw new Error('Cannot tap an element without a bounding box.');
   await locator.page().mouse.click(box.x + box.width / 2, box.y + box.height / 2);
 }
+
+test.describe('linked shifts', () => {
+  async function seedHotel(page, fn, arg) {
+    await page.goto('/hotel/index.html');
+    await page.evaluate(([fnSrc, arg]) => {
+      const s = HotelState.get();
+      ['rooms', 'lobby', 'bar', 'spa'].forEach(d => {
+        s.departments[d].unlocked = true;
+        s.departments[d].level = Math.max(1, s.departments[d].level);
+      });
+      new Function('arg', fnSrc)(arg);
+      HotelState.saveNow();
+    }, [fn, arg]);
+  }
+
+  test('Floor Ops: escalated cleaning leaves dirty rooms, and old ones come back as resets', async ({ page }) => {
+    await seedHotel(page, 'HotelState.addDirtyRooms(arg)', 2);
+    await page.goto('/hotel/rooms/index.html');
+    await expect(page.locator('#ops-next-step')).toContainText('clean 2 dirty rooms');
+    await page.locator('#start-ops-btn').click();
+    await expect(page.locator('#room-grid')).toContainText('Dirty Room Reset');
+    // Expire everything: the 2 backlog resets stay dirty, a fresh housekeeping request adds one
+    await page.evaluate(() => {
+      const shift = RoomsGame.debugShift();
+      const fresh = shift.rooms.map(r => r.request).find(r => r && !r.backlog);
+      fresh.type = 'housekeeping';
+      shift.rooms.forEach(r => { if (r.request?.status === 'waiting') r.request.patienceEnd = Date.now() - 1; });
+      shift.endsAt = Date.now() + 400;
+    });
+    await expect(page.locator('#ops-results')).toBeVisible();
+    expect(await page.evaluate(() => HotelState.getDirtyRooms())).toBe(3);
+    await expect(page.locator('#ops-dirty-note')).toContainText('3 dirty rooms carried over');
+  });
+
+  test('Check-In: dirty rooms are blocked until housekeeping cleans them', async ({ page }) => {
+    await seedHotel(page, 'HotelState.addDirtyRooms(arg)', 3);
+    await page.goto('/hotel/checkin/index.html');
+    await expect(page.locator('#diff-card')).toContainText('3 dirty rooms');
+    await page.locator('#ci-start-btn').click();
+    await expect(page.locator('.ci-room-tile.dirty')).toHaveCount(3, { timeout: 6000 });
+    await expect(page.locator('#room-count')).toContainText('3 dirty');
+    const dirty = page.locator('.ci-room-tile.dirty').first();
+    await dirty.click();
+    await expect(page.locator('#ci-confirm-btn')).toBeDisabled();          // can't assign it
+    await expect(page.locator('.ci-room-tile.dirty.cleaning')).toHaveCount(1);
+    await expect(page.locator('#ci-next-step')).toContainText('Housekeeping is cleaning');
+    await expect(page.locator('.ci-room-tile.dirty')).toHaveCount(2, { timeout: 6000 });
+  });
+
+  test('Bar Shift: a pleased high roller stays longer at the casino', async ({ page }) => {
+    await seedHotel(page, 'HotelState.setHighRollerFlag()');
+    await page.goto('/hotel/bar/index.html');
+    await expect(page.locator('#shift-log')).toContainText('high roller');
+    const before = await page.evaluate(() => HotelState.get().guests.highRollerUntil);
+    await page.locator('#start-shift-btn').click();
+    await page.evaluate(() => { const s = BarGame.debugShift(); s.highRollerDue = s.spawned; s.nextArrival = 0; });
+    const seat = page.locator('.bar-seat.high-roller');
+    await expect(seat).toBeVisible({ timeout: 5000 });
+    await seat.click();
+    await page.evaluate(() => {
+      const s = BarGame.debugShift();
+      s.seats[s.selected].drink.recipe.forEach(id => document.querySelector(`.ingredient-btn[data-ingredient="${id}"]`).click());
+      document.getElementById('serve-btn').click();
+    });
+    await expect(page.locator('#shift-log')).toContainText('will stay longer');
+    const after = await page.evaluate(() => HotelState.get().guests.highRollerUntil);
+    expect(after - before).toBeGreaterThanOrEqual(14 * 60_000);
+  });
+
+  test('Spa Rush: a high roller who walks out checks out of the hotel', async ({ page }) => {
+    await seedHotel(page, 'HotelState.setHighRollerFlag()');
+    await page.goto('/hotel/spa/index.html');
+    await page.locator('#start-spa-btn').click();
+    await page.evaluate(() => { const s = SpaRush.debugSession(); s.highRollerDue = s.spawned; s.nextArrival = 0; });
+    await expect(page.locator('.lounge-guest.high-roller')).toBeVisible({ timeout: 5000 });
+    await page.evaluate(() => {
+      SpaRush.debugSession().guests.find(g => g.highRoller).patienceEnd = Date.now() - 1;
+    });
+    await expect(page.locator('#spa-log')).toContainText('checked out early');
+    expect(await page.evaluate(() => HotelState.highRollerInHouse())).toBe(false);
+  });
+});

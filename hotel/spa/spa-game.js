@@ -113,6 +113,9 @@ const SpaRush = (() => {
       earned: 0,
       satPoints: 0,
       lastOutcome: null,
+      // A high roller staying at the hotel books in mid-session
+      highRollerDue: HotelState.highRollerInHouse?.() ? Math.floor((7 + spaLevel) / 2) : -1,
+      highRollerResult: null,
     };
 
     $('start-spa-btn').disabled = true;
@@ -121,6 +124,7 @@ const SpaRush = (() => {
     hideResults();
     clearLog();
     log('Spa session opened. Each guest has two needs.', 'gold');
+    if (session.highRollerDue >= 0) log('🎰 A high roller is staying at the hotel and will book in. Give them a perfect treatment.', 'gold');
     spawnGuest(now);
     session.nextArrival = now + 1200; // a second guest arrives quickly so there is a choice
     updateAll();
@@ -186,14 +190,18 @@ const SpaRush = (() => {
     const pairs = needPairs(session.spaLevel);
     const easy = pairs.filter(p => perfectable(p, session.spaLevel));
     const pool = easy.length && Math.random() < 0.65 ? easy : pairs;
-    const needs = pool[Math.floor(Math.random() * pool.length)];
-    const vip = Math.random() < (session.spaLevel >= 5 ? VIP_CHANCE * 1.6 : VIP_CHANCE);
-    const patience = Math.round(16000 * Math.max(0.72, 1.08 - session.spaLevel * 0.04) * (vip ? 0.8 : 1));
+    const highRoller = session.spawned === session.highRollerDue;
+    // High rollers always want pampering once the spa offers it
+    const luxuryPair = highRoller ? pairs.find(p => p.includes('luxury')) : null;
+    const needs = luxuryPair ?? pool[Math.floor(Math.random() * pool.length)];
+    const vip = highRoller || Math.random() < (session.spaLevel >= 5 ? VIP_CHANCE * 1.6 : VIP_CHANCE);
+    const patience = Math.round(16000 * Math.max(0.72, 1.08 - session.spaLevel * 0.04) * (highRoller ? 0.7 : vip ? 0.8 : 1));
     return {
       id: `spa_guest_${session.spawned}_${now}`,
-      name: NAMES[Math.floor(Math.random() * NAMES.length)],
+      name: highRoller ? 'High Roller' : NAMES[Math.floor(Math.random() * NAMES.length)],
       needs,
       vip,
+      highRoller,
       status: 'waiting',
       arrivedAt: now,
       patience,
@@ -283,7 +291,7 @@ const SpaRush = (() => {
     const read = guest.treatmentRead ?? evaluateTreatment(treatment, guest);
     const perfect = read.tier === 'best';
     const acceptable = read.tier === 'acceptable';
-    const mult = (perfect ? 1.4 : acceptable ? 1 : 0.5) * (guest.vip ? 1.6 : 1);
+    const mult = (perfect ? 1.4 : acceptable ? 1 : 0.5) * (guest.highRoller ? 3 : guest.vip ? 1.6 : 1);
     const earned = Math.round(treatment.cash * mult + session.spaLevel * 8);
     const sat = perfect ? treatment.sat : acceptable ? Math.max(1, treatment.sat - 2) : 0;
 
@@ -309,12 +317,30 @@ const SpaRush = (() => {
       perfect ? 'good' : acceptable ? 'gold' : 'bad'
     );
     CasinoShell.sound.tone(perfect ? 760 : acceptable ? 520 : 330, 'sine', 0.12, 0.22);
+    if (guest.highRoller) settleHighRoller(perfect ? true : acceptable ? null : false);
 
     station.guest = null;
     station.treatment = null;
     station.startedAt = 0;
     station.doneAt = 0;
     station.cleanUntil = now + CLEAN_MS;
+  }
+
+  // pleased: true = perfect (stays longer), false = botched (checks out), null = fine, no change
+  function settleHighRoller(pleased) {
+    if (!session) return;
+    if (pleased === null) {
+      session.highRollerResult = 'satisfied';
+      log('🎰 The high roller was satisfied, but not wowed.', 'gold');
+      return;
+    }
+    const result = HotelState.settleHighRollerService?.(pleased);
+    session.highRollerResult = pleased ? 'pleased' : 'lost';
+    const msg = pleased
+      ? `🎰 The high roller loved it and will stay longer at the tables${result?.minutesLeft ? ` (${result.minutesLeft} min left)` : ''}.`
+      : '🎰 The high roller checked out early. The casino\'s high-stakes table closes.';
+    log(msg, pleased ? 'good' : 'bad');
+    CasinoShell.toast(msg);
   }
 
   function tidyStation(id) {
@@ -340,6 +366,7 @@ const SpaRush = (() => {
     };
     log(`${guest.name} left before treatment.`, 'bad');
     CasinoShell.sound.lose();
+    if (guest.highRoller) settleHighRoller(false);
   }
 
   function startTick() {
@@ -384,7 +411,11 @@ const SpaRush = (() => {
     // Guests still in a room finish now; anyone left in the lounge counts as a walkout.
     const now = Date.now();
     session.stations.filter(s => s.guest).forEach(s => completeTreatment(s, now));
-    waitingGuests().forEach(g => { g.status = 'left'; session.walkouts++; });
+    waitingGuests().forEach(g => {
+      g.status = 'left';
+      session.walkouts++;
+      if (g.highRoller) settleHighRoller(false);
+    });
     session.active = false;
 
     // Grade: perfect treatments, partial credit for good ones, walkouts count against
@@ -448,6 +479,7 @@ const SpaRush = (() => {
     $('spa-time').textContent = '1:00';
     $('spa-session-fill').style.width = '0%';
     log(spaLevel > 0 ? 'Spa is ready for guests.' : 'Spa & Wellness is not built yet.', spaLevel > 0 ? 'gold' : 'bad', true);
+    if (spaLevel > 0 && HotelState.highRollerInHouse?.()) log('🎰 A high roller is staying at the hotel. They\'ll book in during your next session.', 'gold');
     setReturnLink('Back to Hotel Lobby', 'fa-arrow-left');
     setNextStep(spaLevel > 0 ? 'Start Spa Rush to seat waiting guests.' : 'Build Spa & Wellness to unlock this shift.');
     updateStats();
@@ -468,10 +500,10 @@ const SpaRush = (() => {
       const pct = patiencePct(guest);
       const selected = guest.id === session.selectedGuestId;
       return `
-        <button type="button" class="lounge-guest ${selected ? 'selected' : ''} ${guest.vip ? 'vip' : ''}" data-guest-id="${guest.id}"
+        <button type="button" class="lounge-guest ${selected ? 'selected' : ''} ${guest.vip ? 'vip' : ''} ${guest.highRoller ? 'high-roller' : ''}" data-guest-id="${guest.id}"
                 aria-pressed="${selected}" aria-label="${guest.name}, needs ${guest.needs.map(n => need(n).wants).join(' and ')}, patience ${pct}%">
           <span class="lounge-key" aria-hidden="true">${i + 1}</span>
-          <span class="lounge-name">${guest.name}${guest.vip ? ' <em>VIP</em>' : ''}</span>
+          <span class="lounge-name">${guest.highRoller ? '🎰 ' : ''}${guest.name}${guest.vip && !guest.highRoller ? ' <em>VIP</em>' : ''}</span>
           <span class="lounge-needs">${guest.needs.map(n => `<i class="fa-solid ${need(n).icon}" title="${need(n).wants}"></i>`).join('')}</span>
           <span class="patience-track"><span class="patience-fill ${pctClass(pct)}" style="width:${pct}%"></span></span>
         </button>`;
@@ -518,14 +550,14 @@ const SpaRush = (() => {
             <strong>${guest.name}</strong>
             <p>${guest.needs.map(n => need(n).label).join(' · ')}</p>
           </div>
-          ${guest.vip ? '<span class="guest-vip">VIP</span>' : ''}
+          ${guest.highRoller ? '<span class="guest-vip high-roller">High Roller</span>' : guest.vip ? '<span class="guest-vip">VIP</span>' : ''}
         </div>
         <div class="active-guest-needs">${needChips(guest)}</div>
         <div class="active-guest-read">
           <div><span>Needs</span><strong>2</strong></div>
           ${hintsOn()
             ? `<div><span>Best Treatment</span><strong>${rec ? rec.label : 'None covers both'}</strong></div>`
-            : `<div><span>Pays</span><strong>${guest.vip ? 'VIP ×1.6' : 'Standard'}</strong></div>`}
+            : `<div><span>Pays</span><strong>${guest.highRoller ? 'High roller ×3' : guest.vip ? 'VIP ×1.6' : 'Standard'}</strong></div>`}
         </div>
         <div class="active-patience">
           <div class="active-patience-top">

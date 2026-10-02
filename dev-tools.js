@@ -51,6 +51,7 @@ const CasinoDevTools = (() => {
     { group: 'Hotel', hotel: true, label: '+$10,000 hotel cash', run: () => { HotelState.addHotelCash(10000); afterHotelChange(); } },
     { group: 'Hotel', hotel: true, label: 'Build all departments', run: () => setDeptLevels(() => 1) },
     { group: 'Hotel', hotel: true, label: 'Summon a high roller', run: () => { HotelState.setHighRollerFlag(); afterHotelChange(); } },
+    { group: 'Hotel', hotel: true, label: '+3 dirty rooms', run: () => { HotelState.addDirtyRooms(3); afterHotelChange(); } },
     { group: 'Hotel', hotel: true, label: 'Max all departments', run: () => setDeptLevels(catalog => catalog.length) },
     {
       group: 'Hotel', hotel: true, label: 'Reset hotel save', danger: true,
