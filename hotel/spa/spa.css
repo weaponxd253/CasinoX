@@ -890,3 +890,84 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Spa Rush v2: lounge, two needs, room resets ── */
+.spa-lounge-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.spa-menu-btn {
+  min-height: 28px; padding: 0 10px;
+  border: 1px solid rgba(201,168,76,0.4); border-radius: 8px;
+  background: rgba(0,0,0,0.25); color: var(--gold-light);
+  font: 700 11px/1 var(--font-body); letter-spacing: 0.04em; text-transform: none; cursor: pointer;
+}
+.spa-lounge { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.lounge-guest {
+  position: relative; display: grid; gap: 6px; align-content: start; min-height: 84px; padding: 9px 10px;
+  border: 1px solid var(--border); border-radius: 9px; background: rgba(0,0,0,0.24);
+  color: var(--text); text-align: left; font: inherit; cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.lounge-guest:hover:not(.empty) { border-color: rgba(201,168,76,0.7); }
+.lounge-guest.selected {
+  border-color: var(--gold);
+  background: linear-gradient(180deg, rgba(201,168,76,0.18), rgba(111,207,151,0.06)), rgba(0,0,0,0.22);
+  box-shadow: 0 0 0 1px rgba(201,168,76,0.3), 0 0 18px rgba(201,168,76,0.22);
+}
+.lounge-guest.vip { border-style: dashed; }
+.lounge-guest.empty {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-dim); font-style: italic; font-size: 13px; cursor: default;
+}
+.lounge-key {
+  position: absolute; top: 6px; right: 7px; font-size: 10px; font-weight: 800;
+  color: var(--text-dim); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px;
+}
+.lounge-name { font: 700 14px/1.2 var(--font-display); color: var(--gold-light); padding-right: 16px; }
+.lounge-name em { font-style: normal; font-size: 9px; letter-spacing: 0.12em; color: var(--gold); margin-left: 4px; }
+.lounge-needs { display: flex; gap: 8px; color: #a7e6d7; font-size: 15px; }
+.lounge-guest .patience-track { display: block; margin-top: 2px; }
+.lounge-guest .patience-fill { display: block; }
+
+.active-guest-card { min-height: 0; }
+.active-guest-needs { display: flex; flex-wrap: wrap; gap: 8px; }
+.need-chip {
+  display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px;
+  border: 1px solid rgba(111,207,151,0.4); border-radius: 999px;
+  background: rgba(111,207,151,0.1); color: var(--text); font-size: 13px; font-weight: 700;
+}
+.need-chip i { color: #a7e6d7; }
+.rush-note { margin: 8px 0 0; color: #f0b36b; font-size: 12px; font-weight: 700; }
+.rush-note[hidden] { display: none; }
+
+.station-card.cleaning {
+  border-color: rgba(243,156,18,0.5);
+  background: linear-gradient(180deg, rgba(243,156,18,0.08), rgba(0,0,0,0.2)), rgba(0,0,0,0.2);
+}
+.station-card.cleaning .station-fill { background: linear-gradient(90deg, #f39c12, var(--gold-light)); }
+.station-tidy {
+  min-height: 30px; padding: 0 8px; border: 1px solid rgba(243,156,18,0.6); border-radius: 7px;
+  background: rgba(243,156,18,0.16); color: var(--gold-light); font: 700 12px/1 var(--font-body); cursor: pointer;
+}
+.station-tidy kbd, .treatment-btn kbd {
+  font-size: 10px; padding: 0 4px; border: 1px solid var(--border); border-radius: 4px;
+  font-family: var(--font-body); color: var(--text-dim); background: rgba(0,0,0,0.3);
+}
+
+.treatment-bar { grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); }
+.treatment-covers { display: flex; gap: 7px; color: #a7e6d7; font-size: 13px; min-height: 15px; }
+.treatment-covers i { font-size: 13px; }
+.treatment-btn.long:not(:disabled) .treatment-step::after { content: " · long"; opacity: 0.7; }
+.treatment-btn.also-perfect:not(:disabled) { border-color: rgba(111,207,151,0.55); }
+
+.recipe-book { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; text-align: left; }
+.recipe-book li { display: flex; justify-content: space-between; gap: 12px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; }
+.recipe-book li small { color: var(--text-dim); }
+.recipe-book li.locked { opacity: 0.5; }
+.recipe-book-note { color: var(--text-dim); font-size: 13px; margin: 0 0 10px; }
+
+@media (max-width: 700px) {
+  .spa-lounge { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .lounge-guest { padding: 8px; min-height: 78px; }
+  .lounge-name { font-size: 12px; }
+  .treatment-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .treatment-btn kbd, .station-tidy kbd, .lounge-key { display: none; }
+}
