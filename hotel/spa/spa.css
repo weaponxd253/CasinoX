@@ -975,3 +975,6 @@
 /* ── High roller visiting from the casino ── */
 .lounge-guest.high-roller { border-style: solid; border-color: #62d6ff; box-shadow: 0 0 14px rgba(98,214,255,0.25); }
 .guest-vip.high-roller { border-color: rgba(98,214,255,0.6); color: #8fe3ff; }
+
+/* Long rating labels ("Good Backup · long") wrap inside the button instead of spilling out */
+.treatment-btn .treatment-step { max-width: 100%; white-space: normal; text-align: center; line-height: 1.2; }

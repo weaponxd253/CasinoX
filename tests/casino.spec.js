@@ -969,6 +969,9 @@ test.describe('shift hints and grades', () => {
     await page.locator('#start-shift-btn').click();
     await expect(page.locator('.ingredient-btn.is-order')).toHaveCount(1);   // beer = lager
     await expect(page.locator('#ticket-recipe .recipe-chip')).toHaveCount(1);
+    // Mid-shift the briefing is collapsed; expand it to reach the hints control
+    await expect(page.locator('.mini-shift-briefing')).toHaveClass(/is-collapsed/);
+    await page.locator('[data-shift-briefing-toggle]').click();
     await page.selectOption('[data-shift-hint-mode]', 'off');
     await expect(page.locator('.ingredient-btn.is-order')).toHaveCount(0);
     await expect(page.locator('#ticket-recipe .recipe-chip')).toHaveCount(0);
@@ -1334,5 +1337,60 @@ test.describe('ui bug fixes', () => {
     expect(layout.right).toBeGreaterThanOrEqual(12);
     expect(layout.oneRow).toBe(true);
     expect(layout.toastTop).toBeGreaterThan(layout.h / 2);
+  });
+});
+
+test.describe('phone layout', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 393, height: 852 });
+    await page.goto('/hotel/index.html');
+    await page.evaluate(() => {
+      const s = HotelState.get();
+      s.departments.bar.unlocked = true;
+      s.departments.bar.level = 1;
+      HotelState.saveNow();
+    });
+  });
+
+  test('the briefing collapses to one line and expands on tap', async ({ page }) => {
+    await page.goto('/hotel/bar/index.html');
+    const brief = page.locator('.mini-shift-briefing');
+    await expect(brief).toHaveClass(/is-collapsed/);
+    expect((await brief.boundingBox()).height).toBeLessThan(80);
+    await page.locator('[data-shift-briefing-toggle]').click();
+    await expect(brief).not.toHaveClass(/is-collapsed/);
+    await expect(page.locator('.mini-shift-mission')).toBeVisible();
+    await page.locator('[data-shift-briefing-toggle]').click();
+    await expect(page.locator('.mini-shift-mission')).toBeHidden();
+  });
+
+  test('a sticky bar offers Start, then mirrors the shift while it runs', async ({ page }) => {
+    await page.goto('/hotel/bar/index.html');
+    const bar = page.locator('#shift-status-bar');
+    await expect(bar.locator('.ssb-start')).toContainText('Start Bar Shift');
+    await bar.locator('.ssb-start').click();
+    await expect(bar).toContainText('Served');
+    const target = (await page.locator('#served-target').textContent()).trim();
+    await expect(bar).toContainText(`0/${target}`);
+    await expect(bar.locator('.ssb-next')).toHaveText((await page.locator('#bar-next-step strong').textContent()).trim());
+    // The game, not the side panel, is on screen after starting
+    await expect.poll(() => page.evaluate(() => document.querySelector('.bar-room').getBoundingClientRect().top)).toBeLessThan(400);
+  });
+
+  test('shift pages have one way back: no extra Hotel pill', async ({ page }) => {
+    for (const path of ['/hotel/bar/index.html', '/hotel/spa/index.html', '/hotel/rooms/index.html', '/hotel/restaurant/index.html', '/hotel/entertainment/index.html']) {
+      await page.goto(path);
+      await expect(page.locator('.hotel-back-link'), path).toHaveCount(0);
+    }
+  });
+
+  test('Floor Ops shows staff as a row of three and requests in two columns', async ({ page }) => {
+    await page.goto('/hotel/rooms/index.html');
+    await page.locator('#start-ops-btn').click();
+    const cols = await page.evaluate(() => ({
+      staff: getComputedStyle(document.getElementById('staff-grid')).gridTemplateColumns.split(' ').length,
+      rooms: getComputedStyle(document.getElementById('room-grid')).gridTemplateColumns.split(' ').length,
+    }));
+    expect(cols).toEqual({ staff: 3, rooms: 2 });
   });
 });

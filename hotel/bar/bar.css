@@ -837,3 +837,11 @@
 /* ── High roller visiting from the casino ── */
 .bar-seat.high-roller { border-color: #62d6ff; box-shadow: 0 0 16px rgba(98,214,255,0.3); }
 .bar-seat.high-roller .seat-name { color: #8fe3ff; }
+
+/* Phones: a slimmer back-bar shelf so the ingredient rail is closer to the fold */
+@media (max-width: 680px) {
+  .bar-room { padding-top: 84px; }
+  .bar-shelves { top: 14px; height: 60px; gap: 14px; padding-bottom: 6px; border-top-width: 3px; border-bottom-width: 3px; }
+  .bar-shelves span { width: 16px; transform: scaleY(0.55); transform-origin: bottom; }
+  .bar-seat { min-height: 112px; }
+}

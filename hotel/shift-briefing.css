@@ -281,3 +281,65 @@ body.light .mini-shift-fact strong {
 .mini-shift-twist strong { display: block; color: var(--gold-light); font-family: var(--font-display); font-size: 15px; }
 .mini-shift-twist em { display: block; font-style: normal; font-size: 12px; color: var(--text); }
 .grade-twist { color: #8fe3ff; }
+
+/* ── Collapsible briefing ── */
+.mini-shift-toggle {
+  grid-column: 1 / -1;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  width: 100%; min-height: 40px; padding: 4px 2px;
+  border: 0; background: none; color: var(--text); text-align: left;
+  font: inherit; cursor: pointer;
+}
+.mini-shift-toggle-title { font-family: var(--font-display); font-weight: 700; font-size: 16px; color: var(--gold-light, #f2d06b); }
+.mini-shift-toggle-bits { font-size: 12px; color: var(--text-dim); flex: 1 1 auto; min-width: 0; }
+.mini-shift-toggle-cta {
+  margin-left: auto; padding: 4px 10px; border: 1px solid rgba(201,168,76,0.4); border-radius: 999px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: var(--gold-light, #f2d06b);
+}
+.mini-shift-toggle:focus-visible { outline: 3px solid var(--gold-light); outline-offset: 2px; border-radius: 6px; }
+.mini-shift-briefing.is-collapsed { padding-top: 6px; padding-bottom: 6px; }
+.mini-shift-briefing.is-collapsed > :not(.mini-shift-toggle) { display: none; }
+/* On wide screens the expanded briefing between shifts needs no toggle row */
+@media (min-width: 769px) {
+  .mini-shift-briefing:not(.is-collapsed):not(.is-running) > .mini-shift-toggle { display: none; }
+}
+
+/* ── Phone status bar during a shift ── */
+.shift-status-bar { display: none; }
+@media (max-width: 768px) {
+  .shift-status-bar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 900;
+    display: grid; gap: 4px;
+    padding: 8px 14px calc(8px + env(safe-area-inset-bottom, 0px));
+    background: rgba(5, 22, 14, 0.96);
+    border-top: 1px solid rgba(201,168,76,0.45);
+    box-shadow: 0 -6px 20px rgba(0,0,0,0.45);
+    backdrop-filter: blur(6px);
+  }
+  .ssb-next {
+    font-size: 13px; font-weight: 700; color: #a7e6d7; line-height: 1.25;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .ssb-row { display: flex; gap: 14px; }
+  .ssb-stat { display: flex; align-items: baseline; gap: 5px; }
+  .ssb-stat small { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); }
+  .ssb-stat b { font-family: var(--font-display); font-size: 15px; color: var(--gold-light, #f2d06b); }
+  .ssb-latest { font-size: 12px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ssb-latest.good { color: var(--win, #6fcf97); }
+  .ssb-latest.bad { color: var(--loss, #e86b63); }
+  .ssb-latest.gold { color: var(--gold-light, #f2d06b); }
+  body.has-shift-status { padding-bottom: 120px; }
+  body.has-shift-status #shell-toasts { bottom: 128px; }
+}
+
+/* Shift pages: the header's Hotel button is the way back, so the hotel-cash pill sits alone on the right */
+.bar-topline, .tasting-topline, .ops-topline, .spa-topline, .ent-topline { justify-content: flex-end; }
+@media (max-width: 768px) {
+  .shift-status-bar.is-idle { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+  .ssb-start {
+    min-height: 44px; padding: 0 16px; border-radius: 10px;
+    border: 1px solid var(--gold); background: linear-gradient(135deg, var(--gold-light, #f2d06b), var(--gold, #c9a84c));
+    color: #1a1a2e; font: 700 14px/1 var(--font-body); white-space: nowrap; cursor: pointer;
+  }
+  .ssb-start:disabled { opacity: 0.5; cursor: default; }
+}
