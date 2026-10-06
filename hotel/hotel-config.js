@@ -145,7 +145,7 @@ const ACHIEVEMENT_CATALOG = [
     desc:'Reach 80% guest satisfaction.' },
   { id:'first_vip',           label:'Red Carpet',       icon:'⭐', repBonus:3, required:1,
     desc:'Host your first VIP guest.' },
-  { id:'ten_blackjack_wins',  label:'House Advantage',  icon:'🂡', repBonus:1, required:10,
+  { id:'ten_blackjack_wins',  label:'House Advantage',  icon:'🃏', repBonus:1, required:10,
     desc:'Win 10 blackjack hands (tracked from casino).' },
   { id:'jackpot_hit',         label:'Lucky Resort',     icon:'🎰', repBonus:2, required:1,
     desc:'Hit a slot jackpot (tracked from casino).' },

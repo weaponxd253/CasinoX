@@ -1068,6 +1068,8 @@ const HotelState = (() => {
     const result = getShiftResult(deptId, state);
     if (result) return { state:'completed', result };
     const active = state?.shifts?.active;
+    // The casino floor is always open: visiting it never leaves a shift "in progress"
+    if (deptId === 'casino') return { state:'ready', result:null };
     if (active?.deptId === deptId && active.cycleKey === shiftCycleKey(state) && Date.now() - active.startedAt < 2 * 60 * 60 * 1000) {
       return { state:'in_progress', result:null };
     }

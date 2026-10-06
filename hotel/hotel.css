@@ -1424,7 +1424,7 @@ body[data-guided-step="run_checkin"] .operation-card:not(.guide-target-control) 
   background: rgba(0,0,0,0.16);
 }
 
-.snapshot-stat span {
+.snapshot-stat > span {
   color: var(--text-dim);
   font-size: 10px;
   letter-spacing: 0.14em;
@@ -3701,8 +3701,8 @@ body.light .snapshot-stat {
   background: rgba(255,255,255,0.44);
   border-color: rgba(138,110,40,0.28);
 }
-body.light-theme .snapshot-stat span,
-body.light .snapshot-stat span,
+body.light-theme .snapshot-stat > span,
+body.light .snapshot-stat > span,
 body.light-theme .snapshot-stat small,
 body.light .snapshot-stat small,
 body.light-theme .all-shifts-intro strong,
@@ -4475,3 +4475,10 @@ body.light-theme .phase-report { background: rgba(255,255,255,0.7); }
   .hotel-menu-btn + .hotel-theme-toggle { margin-left: 0; }
   .hotel-cash-pill .cash-label { display: none; }
 }
+
+/* The stat label rule used to hit the number spans too ("31 /34" in label size) */
+.snapshot-stat strong span { font: inherit; letter-spacing: 0; text-transform: none; color: inherit; }
+/* Long "Next unlock" text ("All departments open") shouldn't wrap to three big lines */
+#snapshot-next-unlock { font-size: 15px; line-height: 1.2; }
+/* Buttons don't inherit the page font: Recent Shifts rows rendered in the system sans */
+.recent-shift-item { font-family: inherit; }

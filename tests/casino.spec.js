@@ -1497,3 +1497,47 @@ test.describe('soft launch', () => {
     await expect(page.locator('#shell-info-modal')).toContainText('Download save');
   });
 });
+
+test.describe('dashboard quick fixes', () => {
+  test('snapshot Guests and Income numbers render at full size', async ({ page }) => {
+    await page.goto('/hotel/index.html');
+    const sizes = await page.evaluate(() => ({
+      guests: parseFloat(getComputedStyle(document.getElementById('hotel-guests')).fontSize),
+      income: parseFloat(getComputedStyle(document.getElementById('snapshot-income-rate')).fontSize),
+      label: parseFloat(getComputedStyle(document.querySelector('.snapshot-stat > span')).fontSize),
+    }));
+    expect(sizes.guests).toBeGreaterThan(sizes.label + 4);
+    expect(sizes.income).toBeGreaterThan(sizes.label + 4);
+  });
+
+  test('visiting the casino never leaves it as a "Resume" shift in the featured slot', async ({ page }) => {
+    await page.goto('/hotel/index.html');
+    await page.evaluate(() => {
+      HotelState.setGuidanceMode('expert');
+      HotelState.recordShiftStart('casino', { title: 'Casino Floor' });
+      HotelUI.renderAll();
+    });
+    expect(await page.evaluate(() => HotelState.getShiftStatus('casino').state)).toBe('ready');
+    await expect(page.locator('.shift-card-featured')).not.toContainText('Casino Floor');
+    await expect(page.locator('.shift-card').filter({ hasText: 'Resume' })).toHaveCount(0);
+  });
+
+  test('applicant counts agree: the Hiring badge is the "new" count', async ({ page }) => {
+    await page.goto('/hotel/index.html');
+    const counts = await page.evaluate(() => {
+      const apps = HotelState.getStaffApplications();
+      return { total: apps.length, fresh: apps.filter(a => a.status === 'new').length };
+    });
+    test.skip(counts.total === 0, 'no applicants in a fresh save');
+    await page.evaluate(() => { HotelState.setGuidanceMode('expert'); HotelUI.renderAll(); });
+    const badge = page.locator('[data-staff-view="hiring"] span');
+    if (counts.fresh) await expect(badge).toHaveText(String(counts.fresh));
+    else await expect(badge).toHaveCount(0);
+  });
+
+  test('achievement icons avoid characters most systems cannot draw', async ({ page }) => {
+    await page.goto('/hotel/index.html');
+    const icons = await page.evaluate(() => HotelConfig.ACHIEVEMENT_CATALOG.map(a => a.icon).join(''));
+    expect(icons).not.toContain('🂡');
+  });
+});

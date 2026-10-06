@@ -640,7 +640,7 @@ function updateLeaderboard(outcome, net) {
   const list = document.getElementById('leaderboard-list');
   const time = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
   const label = outcome === 'push' ? `🂢 Push`
-              : net > 0            ? `🂡 Won +$${net.toFixed(2)}`
+              : net > 0            ? `♠️ Won +$${net.toFixed(2)}`
               :                      `🂢 Lost −$${Math.abs(net).toFixed(2)}`;
   leaderboard.unshift(`${label} — ${time}`);
   if (leaderboard.length > 10) leaderboard.pop();

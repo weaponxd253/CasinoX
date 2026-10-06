@@ -58,6 +58,9 @@ const HotelUI = (() => {
       renderIncomeDisplay();
       renderHotelCash();
       renderHotelSnapshot(HotelState.get());
+      // Staff coverage and applicants change over time (fatigue, new applications).
+      // When a count changes, redraw everything so every panel shows the same number.
+      if (staffCountsKey(HotelState.get()) !== lastStaffCountsKey) renderAll();
     });
 
     HotelBridge.on('guest_income', ({ amount }) => {
@@ -77,8 +80,18 @@ const HotelUI = (() => {
   }
 
   /* ── Full render ─────────────────────────────────────────── */
+  let lastStaffCountsKey = '';
+
+  function staffCountsKey(state) {
+    const staff = HotelState.getStaffRoster?.() ?? [...(state.staff?.roster ?? [])];
+    const gaps = staffCoverage(staff, state).filter(item => item.status === 'short').length;
+    const apps = state.staff?.applications ?? [];
+    return `${gaps}|${apps.length}|${apps.filter(app => app.status === 'new').length}`;
+  }
+
   function renderAll() {
     const state = HotelState.get();
+    lastStaffCountsKey = staffCountsKey(state);
     renderGuideFrame(state);
     renderSystemUnlocks(state);
     renderHotelCash();
@@ -718,7 +731,10 @@ const HotelUI = (() => {
       .map((op, index) => decorateShiftOp(op, state, context, index));
     const playable = ops
       .filter(op => op.enabled)
-      .sort((a, b) => Number(a.statusState === 'completed') - Number(b.statusState === 'completed') || b.score - a.score || a.sortIndex - b.sortIndex)
+      // Finished shifts sink; the casino is always open, so a real hotel shift takes the featured slot ahead of it
+      .sort((a, b) => Number(a.statusState === 'completed') - Number(b.statusState === 'completed')
+        || Number(a.dept === 'casino') - Number(b.dept === 'casino')
+        || b.score - a.score || a.sortIndex - b.sortIndex)
       .slice(0, 3)
       .map((op, index) => ({
         ...op,
@@ -1509,7 +1525,10 @@ const HotelUI = (() => {
         tone: 'neutral',
         severity: 'info',
         icon: 'fa-file-signature',
-        label: `${applications.length} applicants`,
+        label: (() => {
+          const fresh = applications.filter(app => app.status === 'new').length;
+          return `${applications.length} applicant${applications.length === 1 ? '' : 's'}${fresh ? ` · ${fresh} new` : ''}`;
+        })(),
         detail: 'Review hires before the next rush',
         action: 'hiring',
         actionLabel: 'Review applicants',
@@ -1972,7 +1991,8 @@ const HotelUI = (() => {
       { id:'coverage', label:'Coverage', icon:'fa-chart-simple', count:null },
       { id:'roster', label:'Roster', icon:'fa-users-gear', count:null },
       ...(unlocks.staffAdvanced ? [
-        { id:'hiring', label:'Hiring', icon:'fa-file-signature', count:applications.length },
+        // Badge = applicants still waiting for a look, matching the panel's "N new"
+        { id:'hiring', label:'Hiring', icon:'fa-file-signature', count:applications.filter(app => app.status === 'new').length || null },
         { id:'activity', label:'Activity', icon:'fa-clipboard-list', count:(events.length || reports.length) ? Math.max(events.length, reports.length) : null },
       ] : []),
     ];

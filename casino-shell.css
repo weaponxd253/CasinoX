@@ -522,7 +522,7 @@ kbd {
 .shell-menu-actions .btn { min-height: 42px; padding: 0 16px; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; cursor: pointer; }
 .shell-file-btn:focus-within { outline: 3px solid var(--gold-light); outline-offset: 2px; }
 .shell-debug-text { width: 100%; font: 12px/1.4 ui-monospace, monospace; background: rgba(0,0,0,0.35); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px; }
-.shell-menu-link { margin-left: 8px; }
+.shell-menu-link { margin-left: auto; margin-right: auto; }   /* centred like the shortcuts hint */
 
 /* ── "Not saving" notice ── */
 .shell-storage-notice {
