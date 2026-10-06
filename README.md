@@ -2,7 +2,7 @@
 
 A browser-based casino hub plus hotel-management sim with a shared bankroll, meta-game progression, local save data, and a modular shell system for adding new games quickly. Built with vanilla JS, no build tools or frameworks required for runtime.
 
-**Live:** `weaponxd253.github.io` · **Stack:** HTML · CSS · Vanilla JS · GSAP · Web Audio API · localStorage · Playwright tests
+**Live:** `https://weaponxd253.github.io/CasinoX/` · **Stack:** HTML · CSS · Vanilla JS · GSAP · Web Audio API · localStorage · Playwright tests
 
 ---
 
@@ -34,7 +34,8 @@ CasinoX/
 ├── wallet.js               ← Shared bankroll via localStorage
 ├── hotel-events.js         ← Casino → hotel event queue (applied by the hotel)
 ├── hotel-perks.js          ← Hotel → casino perks (limits, bonuses, comps), read-only
-├── vendor/                 ← Local copies of third-party scripts (GSAP)
+├── vendor/                 ← Local copies of GSAP, Font Awesome (solid) and the fonts: no CDN requests
+├── safe-storage.js         ← Loaded first on every page: keeps the game running if storage is blocked or full
 ├── dev-tools.js            ← Testing panel, loaded only in dev mode (?dev=1)
 ├── scripts/bump-version.js ← Stamps one ?v= cache-busting version on all pages
 │
@@ -345,3 +346,12 @@ See `coinflip/` for a complete working example in ~50 lines of JS.
 | Fonts | Playfair Display · Cormorant Garamond (Google Fonts) |
 | Icons | Font Awesome 6 |
 | Hosting | GitHub Pages |
+
+---
+
+## Soft launch notes
+
+- **Feedback link:** paste your feedback form URL into `FEEDBACK_URL` near the top of `casino-shell.js`. Until then the in-game menu (⚙ Save & feedback) offers only "Copy debug info".
+- **Saves:** the same menu downloads and loads a save file. Only the game's own keys are included, since GitHub Pages shares one origin across an account's sites.
+- **Link previews:** `og:image` and `og:url` in `index.html`, `hotel/index.html` and `casino.html` use the live address above. Update them if the site moves.
+

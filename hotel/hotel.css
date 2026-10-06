@@ -4471,3 +4471,7 @@ body.light-theme .phase-report { background: rgba(255,255,255,0.7); }
   .hotel-theme-toggle { margin-left: auto; flex: 0 0 auto; width: 40px; padding: 0; justify-content: center; }
   .hotel-theme-toggle span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 }
+@media (max-width: 768px) {
+  .hotel-menu-btn + .hotel-theme-toggle { margin-left: 0; }
+  .hotel-cash-pill .cash-label { display: none; }
+}

@@ -28,6 +28,20 @@ const CasinoShell = (function () {
   const PROFILE_KEY = 'casinoProfile';
   let cfg = {};
 
+  /* ── Soft-launch settings ──
+     FEEDBACK_URL: paste your feedback form link here (a Google Form works).
+     Until it's set, the menu asks testers to copy their debug info instead. */
+  const FEEDBACK_URL = '';
+  const BUILD = (SHELL_SRC.match(/[?&]v=([^&]+)/) || [])[1] || 'dev';
+
+  // The last few page errors, so a tester's debug info shows what went wrong
+  const recentErrors = [];
+  if (typeof window !== 'undefined') {
+    const note = msg => { recentErrors.push(`${new Date().toISOString().slice(11, 19)} ${String(msg).slice(0, 160)}`); recentErrors.splice(0, recentErrors.length - 5); };
+    window.addEventListener('error', e => note(`${e.message} (${(e.filename || '').split('/').pop()}:${e.lineno})`));
+    window.addEventListener('unhandledrejection', e => note(`Promise: ${e.reason?.message ?? e.reason}`));
+  }
+
   /* ───────── PROGRESSION DATA ───────── */
   const BONUS_TABLE = [50, 75, 100, 150, 250, 400, 750];   // streak day 1..7 (plateaus)
   const XP_PER_LEVEL = (lvl) => 50 * lvl;                   // XP to advance FROM level `lvl`
@@ -444,6 +458,7 @@ const CasinoShell = (function () {
   function info(title, html) {
     const m = document.getElementById('shell-info-modal');
     if (!m) return;
+    m.classList.remove('is-welcome');
     m.querySelector('.shell-info-title').textContent = title || '';
     m.querySelector('.shell-info-body').innerHTML = html || '';
     openModal(m);
@@ -518,6 +533,7 @@ const CasinoShell = (function () {
         <a class="shell-pill" href="${lobby}" aria-label="${lobbyLabel}"><i class="fa-solid fa-dice" aria-hidden="true"></i> <span class="pill-label" aria-hidden="true">${lobbyLabel}</span><span class="pill-label-short" aria-hidden="true">${shortLabel(lobbyLabel)}</span></a>
         ${hotel ? `<a class="shell-pill shell-hotel-link" href="${hotel}" aria-label="Hotel Lobby"><i class="fa-solid fa-hotel" aria-hidden="true"></i> <span class="pill-label" aria-hidden="true">Hotel Lobby</span><span class="pill-label-short" aria-hidden="true">Hotel</span></a>` : ''}
         <button class="shell-pill shell-icon-btn" id="shell-theme-btn" aria-label="Switch to light theme" title="Switch to light theme"><i id="shell-theme-icon" class="fa-solid fa-moon"></i></button>
+        <button class="shell-pill shell-icon-btn" type="button" data-shell-menu aria-label="Save and settings" title="Save &amp; settings"><i class="fa-solid fa-gear" aria-hidden="true"></i></button>
         <button class="shell-pill shell-icon-btn" id="shell-sound-btn" aria-label="Toggle sound"><i id="shell-sound-icon" class="fa-solid fa-volume-high"></i></button>
       </div>`;
     document.body.insertBefore(header, document.body.firstChild);
@@ -648,6 +664,198 @@ const CasinoShell = (function () {
     document.body.appendChild(f);
   }
 
+  /* ───────── SAVES, FEEDBACK & SETTINGS MENU ─────────
+     Progress lives in this browser's storage. Players can download it
+     as a file and load it back (another device, or after clearing data).
+     Only the game's own keys travel: GitHub Pages shares one origin
+     across all of an account's sites. */
+  const SAVE_KEYS = ['casinoBalance', 'casinoProfile', 'casinoMuted', 'theme', 'slotToastShown',
+    'hotelGameState', 'hotelGuestPool', 'hotelEventQueue', 'hotelShiftHints', 'casinoWelcomed'];
+  const SAVE_FORMAT = 'casino-x-save';
+
+  function exportSave() {
+    const data = {};
+    SAVE_KEYS.forEach(k => { const v = localStorage.getItem(k); if (v !== null) data[k] = v; });
+    const file = { format: SAVE_FORMAT, version: 1, build: BUILD, exportedAt: new Date().toISOString(), data };
+    const blob = new Blob([JSON.stringify(file, null, 1)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `casino-x-save-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+    toast('Save downloaded. Keep the file somewhere safe.');
+    return file;
+  }
+
+  /** Checks a save file's text; returns { ok, data } or { ok:false, error }. */
+  function parseSave(text) {
+    let file;
+    try { file = JSON.parse(text); } catch (_) { return { ok: false, error: 'That file isn\'t a Casino X save.' }; }
+    if (file?.format !== SAVE_FORMAT || typeof file.data !== 'object' || !file.data) {
+      return { ok: false, error: 'That file isn\'t a Casino X save.' };
+    }
+    const data = {};
+    for (const [k, v] of Object.entries(file.data)) {
+      if (!SAVE_KEYS.includes(k) || typeof v !== 'string') continue;   // ignore anything unexpected
+      data[k] = v;
+    }
+    if (!data.hotelGameState && !data.casinoBalance) return { ok: false, error: 'That save file is empty.' };
+    if (data.hotelGameState) {
+      try { if (!JSON.parse(data.hotelGameState)?.meta) throw new Error('no meta'); }
+      catch (_) { return { ok: false, error: 'The hotel data in that file is damaged.' }; }
+    }
+    return { ok: true, data, exportedAt: file.exportedAt };
+  }
+
+  function applySave(data) {
+    SAVE_KEYS.forEach(k => localStorage.removeItem(k));
+    Object.entries(data).forEach(([k, v]) => localStorage.setItem(k, v));
+  }
+
+  function importSave(fileObj) {
+    if (!fileObj) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const parsed = parseSave(String(reader.result));
+      if (!parsed.ok) { toast(parsed.error, 6000); return; }
+      const when = parsed.exportedAt ? new Date(parsed.exportedAt).toLocaleString() : 'an unknown date';
+      if (!window.confirm(`Load the save from ${when}? This replaces your current progress in this browser.`)) return;
+      applySave(parsed.data);
+      window.location.reload();
+    };
+    reader.readAsText(fileObj);
+  }
+
+  function debugInfo() {
+    const lines = [`Casino X build ${BUILD}`, `Page: ${location.pathname}`, `Browser: ${navigator.userAgent}`,
+      `Screen: ${window.innerWidth}×${window.innerHeight} @${window.devicePixelRatio || 1}x`,
+      `Storage: ${window.CasinoStorage?.persistent === false ? `not saving (${window.CasinoStorage.reason})` : 'saving'}`,
+      `Chips: ${localStorage.getItem('casinoBalance') ?? '?'} · Casino level ${snapshot().level}`];
+    try {
+      const h = JSON.parse(localStorage.getItem('hotelGameState') || 'null');
+      if (h) {
+        const depts = Object.entries(h.departments || {}).filter(([, d]) => d.level > 0).map(([id, d]) => `${id} ${d.level}`).join(', ');
+        lines.push(`Hotel: day ${h.calendar?.day ?? '?'} ${h.calendar?.phase ?? ''} · cash $${Math.round(h.currencies?.hotelCash ?? 0)} · ${depts}`);
+        const runs = Object.entries(h.stats?.shiftsByDept || {}).map(([k, v]) => `${k} ${v}`).join(', ');
+        if (runs) lines.push(`Shifts played: ${runs}`);
+      }
+    } catch (_) { lines.push('Hotel: save unreadable'); }
+    lines.push(recentErrors.length ? `Recent errors:\n  ${recentErrors.join('\n  ')}` : 'Recent errors: none');
+    return lines.join('\n');
+  }
+
+  async function copyDebugInfo() {
+    const text = debugInfo();
+    try {
+      await navigator.clipboard.writeText(text);
+      toast('Debug info copied. Paste it into your feedback.');
+    } catch (_) {
+      // Clipboard blocked: show it so it can be copied by hand
+      info('Debug info', `<p class="shell-menu-note">Select and copy this text into your feedback:</p><textarea class="shell-debug-text" readonly rows="9">${escapeHtml(text)}</textarea>`);
+    }
+    return text;
+  }
+
+  function escapeHtml(v) {
+    return String(v ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+  }
+
+  function storageLine() {
+    const st = window.CasinoStorage;
+    if (!st || st.persistent) return '<p class="shell-menu-note ok">✓ Progress saves automatically in this browser.</p>';
+    return `<p class="shell-menu-note warn">⚠ This browser isn't saving game data (${st.reason === 'blocked' ? 'storage is blocked' : 'storage is full'}). Progress lasts until you close the tab. Download a save to keep it.</p>`;
+  }
+
+  function openMenu() {
+    info('Save & settings', `
+      <section class="shell-menu-section">
+        <h3>Your progress</h3>
+        ${storageLine()}
+        <div class="shell-menu-actions">
+          <button type="button" class="btn primary" data-menu="export">Download save</button>
+          <label class="btn secondary shell-file-btn">Load save<input type="file" accept=".json,application/json" data-menu="import" hidden></label>
+        </div>
+        <p class="shell-menu-note">Use a save file to move to another device, or to restore progress after clearing browser data.</p>
+      </section>
+      <section class="shell-menu-section">
+        <h3>Feedback</h3>
+        <p class="shell-menu-note">${FEEDBACK_URL ? 'Found a bug or got confused? Tell us. Copy your debug info first and paste it into the form.' : 'Found a bug or got confused? Copy your debug info and send it to the developer with a note.'}</p>
+        <div class="shell-menu-actions">
+          ${FEEDBACK_URL ? `<a class="btn primary" href="${escapeHtml(FEEDBACK_URL)}" target="_blank" rel="noopener">Send feedback</a>` : ''}
+          <button type="button" class="btn secondary" data-menu="debug">Copy debug info</button>
+        </div>
+      </section>
+      <section class="shell-menu-section">
+        <h3>About</h3>
+        <p class="shell-menu-note">Casino X is a simulated casino and hotel game. No real money, no prizes, nothing to buy. Intended for adults (18+). Build ${escapeHtml(BUILD)}.</p>
+      </section>`);
+    const body = document.querySelector('#shell-info-modal .shell-info-body');
+    body?.querySelector('[data-menu="export"]')?.addEventListener('click', exportSave);
+    body?.querySelector('[data-menu="import"]')?.addEventListener('change', e => importSave(e.target.files?.[0]));
+    body?.querySelector('[data-menu="debug"]')?.addEventListener('click', copyDebugInfo);
+  }
+
+  function renderMenuLink() {
+    const footer = document.querySelector('.shell-footer, .lobby-footer');
+    if (document.getElementById('shell-menu-link') || !footer) return;
+    const link = document.createElement('button');
+    link.type = 'button';
+    link.id = 'shell-menu-link';
+    link.className = 'shell-shortcut-hint shell-menu-link';
+    link.textContent = '⚙ Save & feedback';
+    link.addEventListener('click', openMenu);
+    footer.before(link);
+  }
+
+  // A banner when this browser can't keep progress, with a way to download it
+  function renderStorageNotice() {
+    const st = window.CasinoStorage;
+    if (!st || st.persistent || document.getElementById('shell-storage-notice')) return;
+    try { if (sessionStorage.getItem('storageNoticeDismissed')) return; } catch (_) { /* ignore */ }
+    const bar = document.createElement('div');
+    bar.id = 'shell-storage-notice';
+    bar.className = 'shell-storage-notice';
+    bar.setAttribute('role', 'status');
+    bar.innerHTML = `
+      <span>⚠ This browser isn't saving your progress (${st.reason === 'blocked' ? 'storage is blocked' : 'storage is full'}). It lasts until you close the tab.</span>
+      <button type="button" data-notice="save">Download save</button>
+      <button type="button" data-notice="close" aria-label="Dismiss">✕</button>`;
+    bar.querySelector('[data-notice="save"]').addEventListener('click', exportSave);
+    bar.querySelector('[data-notice="close"]').addEventListener('click', () => {
+      bar.remove();
+      try { sessionStorage.setItem('storageNoticeDismissed', '1'); } catch (_) { /* ignore */ }
+    });
+    document.body.prepend(bar);
+  }
+
+  /* ───────── WELCOME (first visit) ─────────
+     One card on a player's first visit: what the game is, that it's
+     simulated (no real money), the age note, and where saves live. */
+  const WELCOME_KEY = 'casinoWelcomed';
+
+  function maybeWelcome() {
+    let seen = true;
+    try { seen = !!localStorage.getItem(WELCOME_KEY); } catch (_) { /* treat as seen */ }
+    if (seen) return false;
+    try { localStorage.setItem(WELCOME_KEY, String(Date.now())); } catch (_) { /* ignore */ }
+    info('Welcome to Casino X', `
+      <p class="shell-welcome-lead">Run a hotel, play its casino. Hotel shifts earn cash to grow the resort; casino wins bring in guests and high rollers.</p>
+      <div class="shell-welcome-notice" role="note">
+        <strong>Simulated casino</strong>
+        <span>No real money, no prizes, nothing to buy. Chips have no cash value. Intended for adults (18+).</span>
+      </div>
+      <p class="shell-menu-note">Progress saves in this browser. Use <b>⚙ Save &amp; feedback</b> at the bottom of any page to back it up or report a problem.</p>
+      <div class="shell-menu-actions shell-welcome-actions">
+        <button type="button" class="btn primary" data-welcome-start>Start playing</button>
+      </div>`);
+    const modal = document.getElementById('shell-info-modal');
+    modal?.classList.add('is-welcome');   // "Start playing" replaces the generic Close button
+    modal?.querySelector('[data-welcome-start]')?.addEventListener('click', () => closeModal(modal));
+    modal?.querySelector('[data-welcome-start]')?.focus();
+    return true;
+  }
+
   /* ───────── SHARED SETUP ───────── */
   function setup() {
     injectOverlays();
@@ -667,7 +875,11 @@ const CasinoShell = (function () {
     if (bonusBtn) bonusBtn.addEventListener('click', () => dailyBonus.open());
 
     renderProgression();
-    maybePromptBonus();
+    // The welcome card comes first; the daily bonus can wait for the next visit
+    if (!maybeWelcome()) maybePromptBonus();
+    renderStorageNotice();
+    window.addEventListener('casino:storage-unavailable', renderStorageNotice);
+    document.querySelectorAll('[data-shell-menu]').forEach(btn => btn.addEventListener('click', openMenu));
   }
 
   /* The gift button pulses whenever a bonus is waiting; the dialog only
@@ -686,15 +898,17 @@ const CasinoShell = (function () {
     injectHeader();
     setup();
     injectFooter();
+    renderMenuLink();
     // Casino games show what the hotel unlocks for them (not on hotel shifts)
     const hotelOperation = String(cfg.lobbyHref || '../casino.html').includes('../..');
     if (!hotelOperation) window.HotelPerks?.renderStrip?.({ hotelHref: cfg.hotelHref || '../hotel/index.html' });
     return CasinoShell;
   }
-  function standalone(config) { cfg = config || {}; setup(); return CasinoShell; }
+  function standalone(config) { cfg = config || {}; setup(); renderMenuLink(); return CasinoShell; }
 
   return {
     mount, standalone, theme, sound, toast, celebrate, gameOver, info, openCashier,
+    openMenu, exportSave, parseSave, debugInfo, copyDebugInfo,
     announce, reducedMotion, registerShortcuts, showShortcuts,
     awardXp, dailyBonus, syncBalance, renderProgression,
     get profile() { return snapshot(); },

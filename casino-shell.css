@@ -491,7 +491,7 @@ kbd {
 .shell-shortcut-list li { display: flex; align-items: center; gap: 10px; }
 /* Touch screens have no keyboard to hint at */
 @media (hover: none) and (pointer: coarse) {
-  .shell-shortcut-hint { display: none; }
+  .shell-shortcut-hint:not(.shell-menu-link) { display: none; }
 }
 
 /* ── Reduce motion ──────────────────────────────────────────
@@ -510,3 +510,40 @@ kbd {
 .hotel-perk-strip.high-roller { border-color: #62d6ff; background: rgba(98, 214, 255, 0.08); }
 .hotel-perk-strip .perk-highlight { color: #9fe6ff; font-weight: 700; }
 .hotel-perk-strip .perk-highlight i { color: #62d6ff; }
+
+/* ── Save & settings menu ── */
+.shell-menu-section { text-align: left; padding: 10px 0; border-top: 1px solid var(--border); }
+.shell-menu-section:first-child { border-top: 0; padding-top: 0; }
+.shell-info-body .shell-menu-section h3 { text-align: left; margin: 0 0 6px; font-family: var(--font-display); font-size: 17px; color: var(--gold-light); }
+.shell-info-body .shell-menu-note, .shell-menu-note { margin: 6px 0; font-size: 14px; color: var(--text-dim); line-height: 1.4; }
+.shell-info-body .shell-menu-note.ok { color: var(--win, #6fcf97); }
+.shell-info-body .shell-menu-note.warn { color: #f0b36b; }
+.shell-menu-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.shell-menu-actions .btn { min-height: 42px; padding: 0 16px; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; cursor: pointer; }
+.shell-file-btn:focus-within { outline: 3px solid var(--gold-light); outline-offset: 2px; }
+.shell-debug-text { width: 100%; font: 12px/1.4 ui-monospace, monospace; background: rgba(0,0,0,0.35); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px; }
+.shell-menu-link { margin-left: 8px; }
+
+/* ── "Not saving" notice ── */
+.shell-storage-notice {
+  position: sticky; top: 0; z-index: 1500; width: 100%;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+  padding: 10px 14px; margin-bottom: 10px;
+  background: #3a2a0c; color: #ffe2a8; border-bottom: 1px solid #f0b36b; font-size: 14px;
+}
+.shell-storage-notice span { flex: 1 1 240px; }
+.shell-storage-notice button {
+  min-height: 36px; padding: 0 12px; border-radius: 8px; cursor: pointer;
+  border: 1px solid #f0b36b; background: rgba(240,179,107,0.15); color: #ffe2a8; font: 700 13px/1 var(--font-body);
+}
+
+/* ── Welcome card ── */
+.shell-info-body .shell-welcome-lead { font-size: 1.05rem; color: var(--text); margin: 0 0 12px; }
+.shell-welcome-notice {
+  display: grid; gap: 2px; margin: 10px 0; padding: 10px 12px;
+  border: 1px solid rgba(201,168,76,0.5); border-radius: 10px; background: rgba(201,168,76,0.08);
+}
+.shell-welcome-notice strong { color: var(--gold-light); font-family: var(--font-display); }
+.shell-welcome-notice span { font-size: 14px; color: var(--text); }
+.shell-welcome-actions { justify-content: center; }
+#shell-info-modal.is-welcome .shell-info-close { display: none; }

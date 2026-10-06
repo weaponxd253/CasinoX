@@ -49,6 +49,7 @@ test.beforeEach(async ({ page }) => {
   await stubExternalDependencies(page);
   await page.addInitScript(() => {
     sessionStorage.setItem('shellBonusPrompted', '1');
+    if (!localStorage.getItem('casinoWelcomed')) localStorage.setItem('casinoWelcomed', '1');
     Math.random = () => 0.1;
   });
 });
@@ -304,7 +305,7 @@ test.describe('launch navigation', () => {
     await page.goto('/casino.html');
 
     await expect(page.locator('.game-card.live')).toHaveCount(3);
-    await expect(page.locator('.game-card.locked')).toHaveCount(2);
+    await expect(page.locator('.game-card.locked')).toHaveCount(1);   // Roulette, until hotel progress unlocks it
 
     for (const game of LIVE_GAMES) {
       const card = page.locator(`.game-card.live[href="${game.path.slice(1)}"]`);
@@ -1392,5 +1393,107 @@ test.describe('phone layout', () => {
       rooms: getComputedStyle(document.getElementById('room-grid')).gridTemplateColumns.split(' ').length,
     }));
     expect(cols).toEqual({ staff: 3, rooms: 2 });
+  });
+});
+
+test.describe('soft launch', () => {
+  test('blocked storage: pages still work and say progress is not being saved', async ({ page }) => {
+    await page.addInitScript(() => {
+      for (const name of ['localStorage', 'sessionStorage']) {
+        Object.defineProperty(window, name, { configurable: true, get() { throw new DOMException('blocked', 'SecurityError'); } });
+      }
+    });
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    for (const path of ['/hotel/index.html', '/casino.html', '/slots/index.html', '/hotel/bar/index.html']) {
+      await page.goto(path);
+      await expect(page.locator('#shell-storage-notice'), path).toContainText('isn\'t saving');
+    }
+    await expect(page.locator('#start-shift-btn')).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+
+  test('full storage: writes never throw and the notice appears', async ({ page }) => {
+    await page.addInitScript(() => {
+      const real = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (k, v) {
+        if (k === '__casino_probe__' || k === 'casinoWelcomed' || k === 'shellBonusPrompted') return real.call(this, k, v);
+        throw new DOMException('full', 'QuotaExceededError');
+      };
+    });
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    await page.goto('/hotel/index.html');
+    await page.evaluate(() => { HotelState.addHotelCash(50); HotelState.saveNow(); CasinoWallet.add(5); });
+    await expect(page.locator('#shell-storage-notice')).toContainText('storage is full');
+    expect(errors).toEqual([]);
+  });
+
+  test('a downloaded save loads back after the browser data is wiped', async ({ page }) => {
+    await page.goto('/hotel/index.html');
+    await page.evaluate(() => { HotelState.addHotelCash(5000); HotelState.saveNow(); CasinoWallet.set(321); });
+    const cashBefore = await page.evaluate(() => HotelState.getCash());
+    await page.locator('[data-shell-menu]').first().click();
+    const [download] = await Promise.all([page.waitForEvent('download'), page.locator('[data-menu="export"]').click()]);
+    expect(download.suggestedFilename()).toMatch(/^casino-x-save-\d{4}-\d{2}-\d{2}\.json$/);
+    const file = await download.path();
+
+    await page.evaluate(() => localStorage.clear());
+    await page.goto('/hotel/index.html');
+    expect(await page.evaluate(() => CasinoWallet.get())).toBe(100);
+
+    page.once('dialog', d => d.accept());
+    await page.locator('[data-shell-menu]').first().click();
+    await page.locator('[data-menu="import"]').setInputFiles(file);
+    await expect.poll(() => page.evaluate(() => window.HotelState && HotelState.getCash()), { timeout: 8000 }).toBeGreaterThanOrEqual(cashBefore);
+    expect(await page.evaluate(() => CasinoWallet.get())).toBe(321);
+  });
+
+  test('save files are checked: junk is rejected and unknown keys are ignored', async ({ page }) => {
+    await page.goto('/casino.html');
+    const results = await page.evaluate(() => ({
+      junk: CasinoShell.parseSave('not json'),
+      wrong: CasinoShell.parseSave(JSON.stringify({ format: 'other', data: {} })),
+      broken: CasinoShell.parseSave(JSON.stringify({ format: 'casino-x-save', data: { hotelGameState: '{oops' } })),
+      mixed: CasinoShell.parseSave(JSON.stringify({ format: 'casino-x-save', data: { casinoBalance: '50', otherSite: 'x' } })),
+    }));
+    expect(results.junk.ok).toBe(false);
+    expect(results.wrong.ok).toBe(false);
+    expect(results.broken.error).toContain('damaged');
+    expect(results.mixed.ok).toBe(true);
+    expect(Object.keys(results.mixed.data)).toEqual(['casinoBalance']);
+  });
+
+  test('first visit shows the welcome card once, with the no-real-money note', async ({ page }) => {
+    await page.addInitScript(() => { if (!sessionStorage.getItem('welcomeTestRan')) { localStorage.removeItem('casinoWelcomed'); sessionStorage.setItem('welcomeTestRan', '1'); } });
+    await page.goto('/hotel/index.html');
+    const modal = page.locator('#shell-info-modal');
+    await expect(modal).toContainText('Welcome to Casino X');
+    await expect(modal).toContainText('No real money');
+    await expect(modal).toContainText('18+');
+    await page.locator('[data-welcome-start]').click();
+    await expect(modal).toBeHidden();
+    await page.reload();
+    await expect(page.locator('#shell-info-modal')).toBeHidden();
+  });
+
+  test('pages load nothing from other sites, and guests have no remote photos', async ({ page }) => {
+    const foreign = [];
+    page.on('request', r => { const host = new URL(r.url()).hostname; if (!['127.0.0.1', 'localhost'].includes(host)) foreign.push(r.url()); });
+    for (const path of ['/hotel/index.html', '/casino.html', '/slots/index.html', '/hotel/checkin/index.html']) await page.goto(path);
+    const photos = await page.evaluate(() => { HotelGuestPool.init(); return HotelGuestPool.previewArrival(HotelState.get())?.photo ?? null; });
+    expect(foreign).toEqual([]);
+    expect(photos).toBeNull();
+  });
+
+  test('menu offers debug info, the lobby has no "Soon" game, and pages have an icon', async ({ page }) => {
+    await page.goto('/casino.html');
+    await expect(page.locator('[data-game-id="texasHoldem"]')).toHaveCount(0);
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', 'favicon.svg');
+    const info = await page.evaluate(() => CasinoShell.debugInfo());
+    expect(info).toContain('Casino X build');
+    expect(info).toContain('Storage: saving');
+    await page.locator('#shell-menu-link').click();
+    await expect(page.locator('#shell-info-modal')).toContainText('Download save');
   });
 });
