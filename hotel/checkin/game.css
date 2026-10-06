@@ -408,3 +408,17 @@ body.light .countdown-ring  { background: rgba(255,255,255,0.1); }
 .room-clean-fill { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #f39c12, var(--gold-light)); }
 .diff-dirty { color: #f0b36b; }
 .diff-twist { color: #8fe3ff; }
+
+/* Room tiles are <button>s now (keyboard + screen readers): reset button chrome */
+.ci-room-tile {
+  display: block; width: 100%; text-align: left;
+  font: inherit; color: inherit;
+}
+.ci-room-tile:focus-visible { outline: 3px solid var(--gold-light); outline-offset: 2px; }
+.ci-room-tile .room-tile-top,
+.ci-room-tile .room-tile-body,
+.ci-room-tile .room-feats { display: flex; }
+.ci-room-tile .room-num,
+.ci-room-tile .room-type,
+.ci-room-tile .room-status { display: block; }
+.ci-room-tile:disabled { cursor: not-allowed; }

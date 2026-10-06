@@ -1,8 +1,8 @@
 /* ============================================================
    HOTEL MANAGER — GUEST POOL  (hotel-guest-pool.js)
    ------------------------------------------------------------
-   Fetches real guest profiles from randomuser.me and manages
-   the full guest lifecycle: arriving → checked-in → staying
+   Generates guest profiles locally (no network, no photos: guests
+   show initials) and manages the full guest lifecycle: arriving → checked-in → staying
    → checking-out → history.
 
    Depends on: hotel-config.js
@@ -21,14 +21,30 @@ const HotelGuestPool = (() => {
   const MAX_ACTIVE           = 30;    // cap on simultaneously tracked named guests
   const MAX_HISTORY          = 50;    // guest history kept in storage
 
-  /* ── Nationalities for diverse guest roster ─────────────── */
-  const NAT_LIST = 'us,gb,fr,de,au,ca,jp,kr,br,mx,in,za,se,no,nl,es,it,nz,dk,fi';
-
-  /* ── API endpoint ───────────────────────────────────────── */
-  const API_URL = (n) =>
-    `https://randomuser.me/api/?results=${n}` +
-    `&inc=name,location,dob,picture,nat,gender` +
-    `&nat=${NAT_LIST}`;
+  /* ── Name and hometown pools for generated guests ───────── */
+  const FIRST_NAMES = [
+    ['Alex','female'],['James','male'],['Sarah','female'],['David','male'],['Maria','female'],['Robert','male'],
+    ['Yuki','female'],['Ahmed','male'],['Emma','female'],['Carlos','male'],['Priya','female'],['Luca','male'],
+    ['Sophie','female'],['Michael','male'],['Hana','female'],['Noah','male'],['Olivia','female'],['Mateo','male'],
+    ['Aisha','female'],['Kenji','male'],['Ingrid','female'],['Omar','male'],['Chloe','female'],['Diego','male'],
+    ['Leila','female'],['Felix','male'],['Mei','female'],['Arjun','male'],['Elena','female'],['Samuel','male'],
+    ['Zara','female'],['Tomás','male'],['Grace','female'],['Ravi','male'],['Nora','female'],['Hugo','male'],
+    ['Amara','female'],['Erik','male'],['Lucía','female'],['Jonah','male'],
+  ];
+  const LAST_NAMES = ['Morgan','Chen','Williams','Kim','Santos','Taylor','Tanaka','Hassan','Johnson','Mendez',
+    'Sharma','Ferrari','Leblanc','Anderson','Nguyen','Okafor','Larsen','Rossi','Novak','Silva','Haddad','Park',
+    'Dubois','Kowalski','Singh','Moreau','Ito','Fischer','Costa','Murphy','Ali','Jensen','Romero','Byrne',
+    'Schmidt','Patel','Lindqvist','Alvarez','Mensah','Clarke'];
+  const HOMETOWNS = [
+    ['Chicago','United States','US'],['San Francisco','United States','US'],['London','United Kingdom','GB'],
+    ['Seoul','South Korea','KR'],['São Paulo','Brazil','BR'],['New York','United States','US'],['Tokyo','Japan','JP'],
+    ['Cairo','Egypt','EG'],['Sydney','Australia','AU'],['Mexico City','Mexico','MX'],['Mumbai','India','IN'],
+    ['Milan','Italy','IT'],['Paris','France','FR'],['Dallas','United States','US'],['Ho Chi Minh','Vietnam','VN'],
+    ['Toronto','Canada','CA'],['Berlin','Germany','DE'],['Stockholm','Sweden','SE'],['Madrid','Spain','ES'],
+    ['Lagos','Nigeria','NG'],['Auckland','New Zealand','NZ'],['Dublin','Ireland','IE'],['Amsterdam','Netherlands','NL'],
+    ['Cape Town','South Africa','ZA'],['Vancouver','Canada','CA'],
+  ];
+  const pick = list => list[Math.floor(Math.random() * list.length)];
 
   /* ── Fallback profiles (used when API is unavailable) ───── */
   const FALLBACKS = [
@@ -83,6 +99,8 @@ const HotelGuestPool = (() => {
 
   function init() {
     _data = _load();
+    // Older saves kept randomuser.me photo links; drop them so nothing loads from outside
+    ['pool', 'activeGuests', 'guestHistory'].forEach(list => (_data[list] ?? []).forEach(g => { if (g) g.photo = null; }));
     // Expire old pool entries (older than TTL)
     const now = Date.now();
     if (now - _data.poolFetchedAt > POOL_TTL_MS) {
@@ -102,6 +120,7 @@ const HotelGuestPool = (() => {
      API FETCH
      ─────────────────────────────────────────────────────────── */
 
+  // Kept async so callers that await or .catch() it keep working
   async function maybeRefetch() {
     if (_fetching) return;
     if (!_data) return;
@@ -109,35 +128,29 @@ const HotelGuestPool = (() => {
     if (needed <= 0) return;
     _fetching = true;
     try {
-      const profiles = await _fetchFromApi(Math.min(needed, 15));
-      _data.pool.push(...profiles);
+      _data.pool.push(..._generateProfiles(Math.min(needed, 15)));
       _data.poolFetchedAt = Date.now();
       _save();
     } catch (_) {
-      // API unavailable — top up from fallbacks
       const shuffled = [...FALLBACKS].sort(() => Math.random() - 0.5);
-      const usable   = shuffled.slice(0, needed).map(_normaliseFallback);
-      _data.pool.push(...usable);
+      _data.pool.push(...shuffled.slice(0, needed).map(_normaliseFallback));
       _save();
     } finally {
       _fetching = false;
     }
   }
 
-  async function _fetchFromApi(count) {
-    const res  = await fetch(API_URL(count));
-    if (!res.ok) throw new Error(`randomuser API ${res.status}`);
-    const json = await res.json();
-    return json.results.map(r => ({
-      firstName: r.name.first,
-      lastName:  r.name.last,
-      gender:    r.gender,
-      age:       r.dob.age,
-      city:      r.location.city,
-      country:   r.location.country,
-      nat:       r.nat,
-      photo:     r.picture.medium,   // ~70px HTTPS URL
-    }));
+  function _generateProfiles(count) {
+    return Array.from({ length: count }, () => {
+      const [firstName, gender] = pick(FIRST_NAMES);
+      const [city, country, nat] = pick(HOMETOWNS);
+      return {
+        firstName, lastName: pick(LAST_NAMES), gender,
+        age: 21 + Math.floor(Math.random() * 50),
+        city, country, nat,
+        photo: null,               // guests show initials
+      };
+    });
   }
 
   function _normaliseFallback(fb) {

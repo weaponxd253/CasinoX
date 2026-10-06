@@ -637,7 +637,7 @@ const RestaurantGame = (() => {
       ? 'Open service to compose tasting flights for guests with shifting moods.'
       : 'Build the Restaurant department to open a tasting room shift.';
     $('table-persona').textContent = level > 0 ? 'Ready' : 'Closed';
-    $('tables-target').textContent = Math.min(7, 3 + Math.max(1, level));
+    $('tables-target').textContent = Math.min(7, 3 + Math.max(1, level)) + (window.HotelShiftBriefing?.twistFor?.('restaurant')?.effects.extraGuests ?? 0);
     renderFlight();
     // Draw empty radar with no wants
     radarCurrent = { comfort:0, bright:0, luxury:0, surprise:0 };
@@ -651,7 +651,7 @@ const RestaurantGame = (() => {
 
   function updateStats() {
     $('tables-served').textContent = service?.served ?? 0;
-    $('tables-target').textContent = service?.target ?? Math.min(7, 3 + Math.max(1, HotelState.get().departments.restaurant?.level ?? 0));
+    $('tables-target').textContent = service?.target ?? Math.min(7, 3 + Math.max(1, HotelState.get().departments.restaurant?.level ?? 0)) + (window.HotelShiftBriefing?.twistFor?.('restaurant')?.effects.extraGuests ?? 0);
     $('tasting-earned').textContent = fmt(service?.earned ?? 0);
     $('signature-count').textContent = service?.signatures ?? 0;
     $('room-mood').textContent = (service?.signatures ?? 0) >= 2 ? 'Electric' : (service?.lastHarmony ?? 0) >= 70 ? 'Warm' : 'Quiet';

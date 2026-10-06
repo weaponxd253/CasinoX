@@ -3,32 +3,44 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Run a hotel and play its casino: slots, blackjack, roulette and six hotel shifts. A free browser game. Simulated, no real money.">
+  <meta name="theme-color" content="#0e4a2c">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Casino X">
+  <meta property="og:title" content="Casino X: run a hotel, play its casino">
+  <meta property="og:description" content="Run a hotel and play its casino: slots, blackjack, roulette and six hotel shifts. A free browser game. Simulated, no real money.">
+  <meta property="og:url" content="https://weaponxd253.github.io/CasinoX/hotel/index.html">
+  <meta property="og:image" content="https://weaponxd253.github.io/CasinoX/social-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
   <title>Hotel Manager — Casino X</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="../vendor/fonts/fonts.css?v=2026.10.6-s1">
+  <link rel="stylesheet" href="../vendor/fontawesome/css/fa.min.css?v=2026.10.6-s1">
 
   <!-- Shell + mobile + hotel styles -->
-  <link rel="stylesheet" href="../casino-shell.css?v=2026.10.2-g4">
-  <link rel="stylesheet" href="../casino-mobile.css?v=2026.10.2-g4">
-  <link rel="stylesheet" href="hotel.css?v=2026.10.2-g4">
+  <link rel="stylesheet" href="../casino-shell.css?v=2026.10.6-s1">
+  <link rel="stylesheet" href="../casino-mobile.css?v=2026.10.6-s1">
+  <link rel="stylesheet" href="hotel.css?v=2026.10.6-s1">
 
   <!-- Game data + state + engine — MUST load before hotel-ui.js -->
-  <script src="../wallet.js?v=2026.10.2-g4"></script>
-  <script src="../casino-shell.js?v=2026.10.2-g4"></script>
-  <script src="hotel-config.js?v=2026.10.2-g4"></script>
-  <script src="hotel-state.js?v=2026.10.2-g4"></script>
-  <script src="hotel-engine.js?v=2026.10.2-g4"></script>
-  <script src="hotel-goals.js?v=2026.10.2-g4"></script>
-  <script src="hotel-guests.js?v=2026.10.2-g4"></script>
-  <script src="hotel-guest-pool.js?v=2026.10.2-g4"></script>
-  <script src="../hotel-events.js?v=2026.10.2-g4"></script>
-  <script src="../hotel-perks.js?v=2026.10.2-g4"></script>
-  <script src="hotel-bridge.js?v=2026.10.2-g4"></script>
-  <script src="shift-twists.js?v=2026.10.2-g4"></script>
-  <script src="hotel-ui.js?v=2026.10.2-g4"></script>
+  <script src="../safe-storage.js?v=2026.10.6-s1"></script>
+  <script src="../wallet.js?v=2026.10.6-s1"></script>
+  <script src="../casino-shell.js?v=2026.10.6-s1"></script>
+  <script src="hotel-config.js?v=2026.10.6-s1"></script>
+  <script src="hotel-state.js?v=2026.10.6-s1"></script>
+  <script src="hotel-engine.js?v=2026.10.6-s1"></script>
+  <script src="hotel-goals.js?v=2026.10.6-s1"></script>
+  <script src="hotel-guests.js?v=2026.10.6-s1"></script>
+  <script src="hotel-guest-pool.js?v=2026.10.6-s1"></script>
+  <script src="../hotel-events.js?v=2026.10.6-s1"></script>
+  <script src="../hotel-perks.js?v=2026.10.6-s1"></script>
+  <script src="hotel-bridge.js?v=2026.10.6-s1"></script>
+  <script src="shift-twists.js?v=2026.10.6-s1"></script>
+  <script src="hotel-ui.js?v=2026.10.6-s1"></script>
 </head>
 
 <body>
@@ -49,6 +61,10 @@
       <span>$<span id="income-rate-value">125</span><span class="ipm">/min</span></span>
       <span class="income-boost-badge" id="income-boost-badge" style="display:none"></span>
     </div>
+    <button class="hotel-theme-toggle hotel-menu-btn" type="button" data-shell-menu aria-label="Save and settings" title="Save &amp; settings">
+      <i class="fa-solid fa-gear" aria-hidden="true"></i>
+      <span>Save</span>
+    </button>
     <button class="hotel-theme-toggle" id="shell-theme-btn" type="button" aria-label="Switch to light theme" title="Switch to light theme">
       <i id="shell-theme-icon" class="fa-solid fa-moon"></i>
       <span>Theme</span>
@@ -216,7 +232,7 @@
 
   <!-- ── Footer ── -->
   <footer class="shell-footer">
-    Casino X · Hotel Manager · Phase 1 · For entertainment only
+    Casino X · Hotel Manager · Simulated casino, no real money
   </footer>
 
   <script>

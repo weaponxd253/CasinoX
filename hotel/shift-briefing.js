@@ -34,17 +34,56 @@ const HotelShiftBriefing = (() => {
     casino: { title:'Casino Floor', department:'Casino Floor', icon:'fa-dice' },
   };
 
+  /* ── Collapsing ──────────────────────────────────────────
+     The full briefing is ~430px tall on a phone, which pushed every
+     game below the fold. It collapses to a one-line summary on phones,
+     and on every screen while a shift is running; tap to expand. */
+  const PHONE_QUERY = '(max-width: 768px)';
+  let running = false;
+  let expandedPref = null;      // null = automatic, true/false = player's choice this shift
+
+  const isPhone = () => typeof window !== 'undefined' && !!window.matchMedia?.(PHONE_QUERY).matches;
+  const isCollapsed = () => (expandedPref === null ? (running || isPhone()) : !expandedPref);
+
+  function setExpanded(deptId, expanded) {
+    expandedPref = expanded;
+    mount(deptId);
+  }
+
+  function renderToggle(briefing, deptId) {
+    const twist = twistFor(deptId);
+    const hints = deptId === 'entertainment' || deptId === 'casino' ? null : hintStatus(deptId);
+    const bits = [
+      briefing.riskLabel ?? riskLabel(briefing.risk),
+      twist ? `${twist.emoji} ${twist.title}` : null,
+      hints ? (hints.on ? 'Hints on' : 'Hints off') : null,
+    ].filter(Boolean);
+    const collapsed = isCollapsed();
+    return `
+      <button type="button" class="mini-shift-toggle" data-shift-briefing-toggle aria-expanded="${!collapsed}">
+        <span class="mini-shift-toggle-title">${escapeHtml(briefing.title)}</span>
+        <span class="mini-shift-toggle-bits">${bits.map(escapeHtml).join(' · ')}</span>
+        <span class="mini-shift-toggle-cta">${collapsed ? 'Briefing ▾' : 'Hide ▴'}</span>
+      </button>`;
+  }
+
   function mount(deptId, options = {}) {
     if (!deptId || typeof document === 'undefined') return null;
     const briefing = briefingFor(deptId, options);
     const existing = document.querySelector(`[data-mini-shift-briefing="${deptId}"]`);
     const section = existing ?? document.createElement('section');
-    section.className = `mini-shift-briefing risk-${briefing.risk ?? 'medium'} ${briefing.prepared ? 'is-prepared' : 'needs-prep'}`;
+    section.className = `mini-shift-briefing risk-${briefing.risk ?? 'medium'} ${briefing.prepared ? 'is-prepared' : 'needs-prep'}${isCollapsed() ? ' is-collapsed' : ''}${running ? ' is-running' : ''}`;
     section.dataset.miniShiftBriefing = deptId;
     section.setAttribute('aria-label', `${briefing.title} shift briefing`);
-    section.innerHTML = renderBriefing(briefing, options) + renderTwist(deptId) + renderHintControl(deptId);
+    section.innerHTML = renderToggle(briefing, deptId) + renderBriefing(briefing, options) + renderTwist(deptId) + renderHintControl(deptId);
     section.querySelector('[data-shift-hint-mode]')?.addEventListener('change', e => setHintMode(e.target.value));
+    section.querySelector('[data-shift-briefing-toggle]')?.addEventListener('click', () => setExpanded(deptId, isCollapsed()));
+    if (!section.dataset.mediaBound && window.matchMedia) {
+      section.dataset.mediaBound = '1';
+      window.matchMedia(PHONE_QUERY).addEventListener?.('change', () => { if (expandedPref === null) mount(deptId); });
+    }
 
+    if (!existing && STATUS_SOURCES[deptId] && !running) setTimeout(() => startStatusBar(deptId), 0);
     if (!existing) {
       const header = document.querySelector('.shell-header');
       if (header?.parentNode) header.insertAdjacentElement('afterend', section);
@@ -56,7 +95,13 @@ const HotelShiftBriefing = (() => {
   function start(deptId, title = null) {
     if (!deptId || !window.HotelState?.recordShiftStart) return null;
     const briefing = briefingFor(deptId);
-    mount(deptId);
+    running = deptId !== 'entertainment';    // booking a show isn't a timed shift
+    expandedPref = null;
+    const section = mount(deptId);
+    if (running) {
+      startStatusBar(deptId);
+      scrollToEl(section);
+    }
     const rewardMult = HotelState.shiftRewardMultiplier?.(deptId) ?? 1;
     const twist = twistFor(deptId);
     if (twist) window.CasinoShell?.announce?.(`Shift twist: ${twist.title}. ${twist.summary}`);
@@ -198,6 +243,12 @@ const HotelShiftBriefing = (() => {
   /* Grade a finished run, record the personal best, and show the grade
      at the top of the game's results panel. Returns the grade info. */
   function finishRun(deptId, score, panel = null) {
+    running = false;
+    expandedPref = null;
+    stopStatusBar();
+    mount(deptId);
+    startStatusBar(deptId);          // back to the idle bar (Start again)
+    setTimeout(() => scrollToEl(panel), 60);
     const grade = gradeFor(score);
     const hints = hintsOn(deptId);
     const best = window.HotelState?.recordShiftBest?.(deptId, grade.score, grade.letter)
@@ -262,6 +313,78 @@ const HotelShiftBriefing = (() => {
           <option value="off" ${status.mode === 'off' ? 'selected' : ''}>Hints: off</option>
         </select>
       </label>`;
+  }
+
+  /* ── Phone status bar ────────────────────────────────────
+     On phones the side panel (next step, score, latest result) ends up
+     below the game. While a shift runs, a slim bar pinned to the bottom
+     mirrors it so feedback stays in view. Hidden on wider screens. */
+  const STATUS_SOURCES = {
+    bar:        { next: '#bar-next-step strong', log: '#shift-log', start: '#start-shift-btn',
+                  stats: [['Served', '#served-count', '#served-target'], ['Tips', '#tips-total', null, '$'], ['Streak', '#streak-count']] },
+    spa:        { next: '#spa-next-step strong', log: '#spa-log', start: '#start-spa-btn',
+                  stats: [['Guests', '#spa-served', '#spa-target'], ['Cash', '#spa-earned', null, '$'], ['Time', '#spa-time']] },
+    rooms:      { next: '#ops-next-step strong', log: '#ops-log', start: '#start-ops-btn',
+                  stats: [['Done', '#ops-resolved', '#ops-target'], ['Cash', '#ops-earned', null, '$'], ['Time', '#ops-time']] },
+    restaurant: { next: '#tasting-next-step strong', log: '#tasting-log', start: '#start-tasting-btn',
+                  stats: [['Tables', '#tables-served', '#tables-target'], ['Revenue', '#tasting-earned', null, '$'], ['Harmony', '#harmony-score', null, '', '%']] },
+  };
+  let statusTimer = null;
+
+  function startStatusBar(deptId) {
+    const src = STATUS_SOURCES[deptId];
+    if (!src || typeof document === 'undefined') return;
+    let bar = document.getElementById('shift-status-bar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'shift-status-bar';
+      bar.className = 'shift-status-bar';
+      bar.setAttribute('aria-hidden', 'true');   // mirrors on-page text that screen readers already get
+      document.body.appendChild(bar);
+    }
+    document.body.classList.add('has-shift-status');
+    const text = sel => document.querySelector(sel)?.textContent?.trim() ?? '';
+    const paint = () => {
+      bar.classList.toggle('is-idle', !running);
+      if (!running) {
+        // Between shifts: the Start button lives in the panel below the game, so mirror it here
+        const startBtn = document.querySelector(src.start);
+        const html = `
+          <div class="ssb-next">${escapeHtml(text(src.next))}</div>
+          ${startBtn ? `<button type="button" class="ssb-start" tabindex="-1" ${startBtn.disabled ? 'disabled' : ''}>${escapeHtml(startBtn.textContent.trim())}</button>` : ''}`;
+        if (bar.dataset.html === html) return;      // only repaint on change, so a tap is never lost mid-render
+        bar.dataset.html = html;
+        bar.innerHTML = html;
+        bar.querySelector('.ssb-start')?.addEventListener('click', () => document.querySelector(src.start)?.click());
+        return;
+      }
+      const stats = src.stats.map(([label, value, total, pre = '', post = '']) =>
+        `<span class="ssb-stat"><small>${escapeHtml(label)}</small><b>${escapeHtml(pre + text(value) + (total ? `/${text(total)}` : '') + post)}</b></span>`).join('');
+      const latest = document.querySelector(`${src.log} p`);
+      const html = `
+        <div class="ssb-next">${escapeHtml(text(src.next))}</div>
+        <div class="ssb-row">${stats}</div>
+        ${latest ? `<div class="ssb-latest ${escapeHtml(latest.className)}">${escapeHtml(latest.textContent)}</div>` : ''}`;
+      if (bar.dataset.html === html) return;
+      bar.dataset.html = html;
+      bar.innerHTML = html;
+    };
+    paint();
+    clearInterval(statusTimer);
+    statusTimer = setInterval(paint, running ? 300 : 700);
+  }
+
+  function stopStatusBar() {
+    clearInterval(statusTimer);
+    statusTimer = null;
+  }
+
+  /* On phones the game sits above the side panel: bring the game into
+     view when a shift starts, and the results into view when it ends. */
+  function scrollToEl(el) {
+    if (!el || !isPhone()) return;
+    const reduce = window.CasinoShell?.reducedMotion?.() ?? false;
+    el.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
   }
 
   function escapeHtml(value) {

@@ -49,6 +49,7 @@ test.beforeEach(async ({ page }) => {
   await stubExternalDependencies(page);
   await page.addInitScript(() => {
     sessionStorage.setItem('shellBonusPrompted', '1');
+    if (!localStorage.getItem('casinoWelcomed')) localStorage.setItem('casinoWelcomed', '1');
     Math.random = () => 0.1;
   });
 });
@@ -304,7 +305,7 @@ test.describe('launch navigation', () => {
     await page.goto('/casino.html');
 
     await expect(page.locator('.game-card.live')).toHaveCount(3);
-    await expect(page.locator('.game-card.locked')).toHaveCount(2);
+    await expect(page.locator('.game-card.locked')).toHaveCount(1);   // Roulette, until hotel progress unlocks it
 
     for (const game of LIVE_GAMES) {
       const card = page.locator(`.game-card.live[href="${game.path.slice(1)}"]`);
@@ -969,6 +970,9 @@ test.describe('shift hints and grades', () => {
     await page.locator('#start-shift-btn').click();
     await expect(page.locator('.ingredient-btn.is-order')).toHaveCount(1);   // beer = lager
     await expect(page.locator('#ticket-recipe .recipe-chip')).toHaveCount(1);
+    // Mid-shift the briefing is collapsed; expand it to reach the hints control
+    await expect(page.locator('.mini-shift-briefing')).toHaveClass(/is-collapsed/);
+    await page.locator('[data-shift-briefing-toggle]').click();
     await page.selectOption('[data-shift-hint-mode]', 'off');
     await expect(page.locator('.ingredient-btn.is-order')).toHaveCount(0);
     await expect(page.locator('#ticket-recipe .recipe-chip')).toHaveCount(0);
@@ -1282,5 +1286,214 @@ test.describe('calendar twists', () => {
     await expect.poll(() => page.evaluate(() => SpaRush.debugSession().guests.length), { timeout: 5000 }).toBeGreaterThan(1);
     const needs = await page.evaluate(() => SpaRush.debugSession().guests.map(g => g.needs));
     needs.forEach(pair => expect(pair).toContain('tired'));
+  });
+});
+
+test.describe('ui bug fixes', () => {
+  test('shift stat numbers render at full size, not as tiny labels', async ({ page }) => {
+    await page.goto('/hotel/index.html');
+    await page.evaluate(() => {
+      const s = HotelState.get();
+      ['bar', 'spa', 'restaurant'].forEach(d => { s.departments[d].unlocked = true; s.departments[d].level = 1; });
+      HotelState.saveNow();
+    });
+    for (const [path, number, label] of [
+      ['/hotel/spa/index.html', '#spa-served', '.spa-stats > div > span'],
+      ['/hotel/rooms/index.html', '#ops-resolved', '.ops-stats > div > span'],
+      ['/hotel/bar/index.html', '#tips-total', '.shift-stats > div > span'],
+      ['/hotel/restaurant/index.html', '#tables-served', '.tasting-stats > div > span'],
+    ]) {
+      await page.goto(path);
+      const sizes = await page.evaluate(([n, l]) => ({
+        number: parseFloat(getComputedStyle(document.querySelector(n)).fontSize),
+        label: parseFloat(getComputedStyle(document.querySelector(l)).fontSize),
+      }), [number, label]);
+      expect(sizes.number, path).toBeGreaterThan(sizes.label + 4);
+    }
+  });
+
+  test('Check-In room tiles are buttons you can pick with the keyboard', async ({ page }) => {
+    await page.goto('/hotel/checkin/index.html');
+    await page.locator('#ci-start-btn').click();
+    const tile = page.locator('button.ci-room-tile:not([disabled])').first();
+    await expect(tile).toBeVisible({ timeout: 6000 });
+    await expect(page.locator('div.ci-room-tile')).toHaveCount(0);
+    await tile.focus();
+    await page.keyboard.press('Enter');
+    await expect(tile).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#ci-confirm-btn')).toBeEnabled();
+  });
+
+  test('phone dashboard keeps a side gutter and toasts sit at the bottom', async ({ page }) => {
+    await page.setViewportSize({ width: 393, height: 852 });
+    await page.goto('/hotel/index.html');
+    const layout = await page.evaluate(() => {
+      CasinoShell.toast('hello');
+      const bar = document.querySelector('.hotel-cash-bar').getBoundingClientRect();
+      const theme = document.querySelector('.hotel-theme-toggle').getBoundingClientRect();
+      const toast = document.querySelector('.shell-toast').getBoundingClientRect();
+      return { left: bar.left, right: innerWidth - bar.right, oneRow: Math.abs(theme.top - bar.top) < 30, toastTop: toast.top, h: innerHeight };
+    });
+    expect(layout.left).toBeGreaterThanOrEqual(12);
+    expect(layout.right).toBeGreaterThanOrEqual(12);
+    expect(layout.oneRow).toBe(true);
+    expect(layout.toastTop).toBeGreaterThan(layout.h / 2);
+  });
+});
+
+test.describe('phone layout', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 393, height: 852 });
+    await page.goto('/hotel/index.html');
+    await page.evaluate(() => {
+      const s = HotelState.get();
+      s.departments.bar.unlocked = true;
+      s.departments.bar.level = 1;
+      HotelState.saveNow();
+    });
+  });
+
+  test('the briefing collapses to one line and expands on tap', async ({ page }) => {
+    await page.goto('/hotel/bar/index.html');
+    const brief = page.locator('.mini-shift-briefing');
+    await expect(brief).toHaveClass(/is-collapsed/);
+    expect((await brief.boundingBox()).height).toBeLessThan(80);
+    await page.locator('[data-shift-briefing-toggle]').click();
+    await expect(brief).not.toHaveClass(/is-collapsed/);
+    await expect(page.locator('.mini-shift-mission')).toBeVisible();
+    await page.locator('[data-shift-briefing-toggle]').click();
+    await expect(page.locator('.mini-shift-mission')).toBeHidden();
+  });
+
+  test('a sticky bar offers Start, then mirrors the shift while it runs', async ({ page }) => {
+    await page.goto('/hotel/bar/index.html');
+    const bar = page.locator('#shift-status-bar');
+    await expect(bar.locator('.ssb-start')).toContainText('Start Bar Shift');
+    await bar.locator('.ssb-start').click();
+    await expect(bar).toContainText('Served');
+    const target = (await page.locator('#served-target').textContent()).trim();
+    await expect(bar).toContainText(`0/${target}`);
+    await expect(bar.locator('.ssb-next')).toHaveText((await page.locator('#bar-next-step strong').textContent()).trim());
+    // The game, not the side panel, is on screen after starting
+    await expect.poll(() => page.evaluate(() => document.querySelector('.bar-room').getBoundingClientRect().top)).toBeLessThan(400);
+  });
+
+  test('shift pages have one way back: no extra Hotel pill', async ({ page }) => {
+    for (const path of ['/hotel/bar/index.html', '/hotel/spa/index.html', '/hotel/rooms/index.html', '/hotel/restaurant/index.html', '/hotel/entertainment/index.html']) {
+      await page.goto(path);
+      await expect(page.locator('.hotel-back-link'), path).toHaveCount(0);
+    }
+  });
+
+  test('Floor Ops shows staff as a row of three and requests in two columns', async ({ page }) => {
+    await page.goto('/hotel/rooms/index.html');
+    await page.locator('#start-ops-btn').click();
+    const cols = await page.evaluate(() => ({
+      staff: getComputedStyle(document.getElementById('staff-grid')).gridTemplateColumns.split(' ').length,
+      rooms: getComputedStyle(document.getElementById('room-grid')).gridTemplateColumns.split(' ').length,
+    }));
+    expect(cols).toEqual({ staff: 3, rooms: 2 });
+  });
+});
+
+test.describe('soft launch', () => {
+  test('blocked storage: pages still work and say progress is not being saved', async ({ page }) => {
+    await page.addInitScript(() => {
+      for (const name of ['localStorage', 'sessionStorage']) {
+        Object.defineProperty(window, name, { configurable: true, get() { throw new DOMException('blocked', 'SecurityError'); } });
+      }
+    });
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    for (const path of ['/hotel/index.html', '/casino.html', '/slots/index.html', '/hotel/bar/index.html']) {
+      await page.goto(path);
+      await expect(page.locator('#shell-storage-notice'), path).toContainText('isn\'t saving');
+    }
+    await expect(page.locator('#start-shift-btn')).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+
+  test('full storage: writes never throw and the notice appears', async ({ page }) => {
+    await page.addInitScript(() => {
+      const real = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (k, v) {
+        if (k === '__casino_probe__' || k === 'casinoWelcomed' || k === 'shellBonusPrompted') return real.call(this, k, v);
+        throw new DOMException('full', 'QuotaExceededError');
+      };
+    });
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    await page.goto('/hotel/index.html');
+    await page.evaluate(() => { HotelState.addHotelCash(50); HotelState.saveNow(); CasinoWallet.add(5); });
+    await expect(page.locator('#shell-storage-notice')).toContainText('storage is full');
+    expect(errors).toEqual([]);
+  });
+
+  test('a downloaded save loads back after the browser data is wiped', async ({ page }) => {
+    await page.goto('/hotel/index.html');
+    await page.evaluate(() => { HotelState.addHotelCash(5000); HotelState.saveNow(); CasinoWallet.set(321); });
+    const cashBefore = await page.evaluate(() => HotelState.getCash());
+    await page.locator('[data-shell-menu]').first().click();
+    const [download] = await Promise.all([page.waitForEvent('download'), page.locator('[data-menu="export"]').click()]);
+    expect(download.suggestedFilename()).toMatch(/^casino-x-save-\d{4}-\d{2}-\d{2}\.json$/);
+    const file = await download.path();
+
+    await page.evaluate(() => localStorage.clear());
+    await page.goto('/hotel/index.html');
+    expect(await page.evaluate(() => CasinoWallet.get())).toBe(100);
+
+    page.once('dialog', d => d.accept());
+    await page.locator('[data-shell-menu]').first().click();
+    await page.locator('[data-menu="import"]').setInputFiles(file);
+    await expect.poll(() => page.evaluate(() => window.HotelState && HotelState.getCash()), { timeout: 8000 }).toBeGreaterThanOrEqual(cashBefore);
+    expect(await page.evaluate(() => CasinoWallet.get())).toBe(321);
+  });
+
+  test('save files are checked: junk is rejected and unknown keys are ignored', async ({ page }) => {
+    await page.goto('/casino.html');
+    const results = await page.evaluate(() => ({
+      junk: CasinoShell.parseSave('not json'),
+      wrong: CasinoShell.parseSave(JSON.stringify({ format: 'other', data: {} })),
+      broken: CasinoShell.parseSave(JSON.stringify({ format: 'casino-x-save', data: { hotelGameState: '{oops' } })),
+      mixed: CasinoShell.parseSave(JSON.stringify({ format: 'casino-x-save', data: { casinoBalance: '50', otherSite: 'x' } })),
+    }));
+    expect(results.junk.ok).toBe(false);
+    expect(results.wrong.ok).toBe(false);
+    expect(results.broken.error).toContain('damaged');
+    expect(results.mixed.ok).toBe(true);
+    expect(Object.keys(results.mixed.data)).toEqual(['casinoBalance']);
+  });
+
+  test('first visit shows the welcome card once, with the no-real-money note', async ({ page }) => {
+    await page.addInitScript(() => { if (!sessionStorage.getItem('welcomeTestRan')) { localStorage.removeItem('casinoWelcomed'); sessionStorage.setItem('welcomeTestRan', '1'); } });
+    await page.goto('/hotel/index.html');
+    const modal = page.locator('#shell-info-modal');
+    await expect(modal).toContainText('Welcome to Casino X');
+    await expect(modal).toContainText('No real money');
+    await expect(modal).toContainText('18+');
+    await page.locator('[data-welcome-start]').click();
+    await expect(modal).toBeHidden();
+    await page.reload();
+    await expect(page.locator('#shell-info-modal')).toBeHidden();
+  });
+
+  test('pages load nothing from other sites, and guests have no remote photos', async ({ page }) => {
+    const foreign = [];
+    page.on('request', r => { const host = new URL(r.url()).hostname; if (!['127.0.0.1', 'localhost'].includes(host)) foreign.push(r.url()); });
+    for (const path of ['/hotel/index.html', '/casino.html', '/slots/index.html', '/hotel/checkin/index.html']) await page.goto(path);
+    const photos = await page.evaluate(() => { HotelGuestPool.init(); return HotelGuestPool.previewArrival(HotelState.get())?.photo ?? null; });
+    expect(foreign).toEqual([]);
+    expect(photos).toBeNull();
+  });
+
+  test('menu offers debug info, the lobby has no "Soon" game, and pages have an icon', async ({ page }) => {
+    await page.goto('/casino.html');
+    await expect(page.locator('[data-game-id="texasHoldem"]')).toHaveCount(0);
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', 'favicon.svg');
+    const info = await page.evaluate(() => CasinoShell.debugInfo());
+    expect(info).toContain('Casino X build');
+    expect(info).toContain('Storage: saving');
+    await page.locator('#shell-menu-link').click();
+    await expect(page.locator('#shell-info-modal')).toContainText('Download save');
   });
 });

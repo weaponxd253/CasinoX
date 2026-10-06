@@ -31,9 +31,9 @@
 .ops-kicker,
 .ops-section-title,
 .ops-session-meter span,
-.ops-stats span,
-.ops-boost-top span,
-.results-grid span,
+.ops-stats > div > span,
+.ops-boost-top > span,
+.results-grid > div > span,
 .selected-brief span,
 .dispatch-preview > span,
 .dispatch-preview-grid span,
@@ -720,3 +720,23 @@
 .ops-dirty-note { margin-top: 10px; padding: 8px 10px; border: 1px dashed rgba(232,140,64,0.6); border-radius: 8px; font-size: 13px; color: #f0b36b; }
 .ops-dirty-note[hidden] { display: none; }
 .ops-dirty-note.good { border-color: rgba(111,207,151,0.6); color: var(--win); }
+
+/* ── Phones: see staff and requests together ──
+   Staff become a row of three compact chips; requests a two-column grid. */
+@media (max-width: 560px) {
+  .staff-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .staff-card { min-height: 0; padding: 8px 6px; gap: 3px; }
+  .staff-card i { font-size: 18px; }
+  .staff-card span { font-size: 13px; }
+  .staff-card strong { font-size: 10px; text-align: center; }
+  .staff-card em { display: none; }
+  .staff-card .staff-fit-label { font-size: 9px; }
+
+  .room-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .room-tile { min-height: 0; padding: 8px; }
+  .room-tile strong { font-size: 13px; line-height: 1.2; }
+  .room-tile .room-risk { font-size: 11px; }
+  .room-tile .room-meta { flex-wrap: wrap; gap: 4px; }
+  .room-tile.empty { min-height: 0; padding: 6px 8px; grid-auto-flow: column; justify-content: space-between; opacity: 0.5; }
+  .ops-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

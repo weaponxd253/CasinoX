@@ -4,22 +4,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Run a hotel and play its casino: slots, blackjack, roulette and six hotel shifts. A free browser game. Simulated, no real money.">
+  <meta name="theme-color" content="#0e4a2c">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Casino X">
+  <meta property="og:title" content="Casino X: run a hotel, play its casino">
+  <meta property="og:description" content="Run a hotel and play its casino: slots, blackjack, roulette and six hotel shifts. A free browser game. Simulated, no real money.">
+  <meta property="og:url" content="https://weaponxd253.github.io/CasinoX/casino.html">
+  <meta property="og:image" content="https://weaponxd253.github.io/CasinoX/social-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
   <title>Casino X — Lobby</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="vendor/fonts/fonts.css?v=2026.10.6-s1">
+  <link rel="stylesheet" href="vendor/fontawesome/css/fa.min.css?v=2026.10.6-s1">
 
   <!-- Shell first, lobby styles second, mobile last -->
-  <link rel="stylesheet" href="casino-shell.css?v=2026.10.2-g4">
-  <link rel="stylesheet" href="lobby.css?v=2026.10.2-g4">
-  <link rel="stylesheet" href="casino-mobile.css?v=2026.10.2-g4">
+  <link rel="stylesheet" href="casino-shell.css?v=2026.10.6-s1">
+  <link rel="stylesheet" href="lobby.css?v=2026.10.6-s1">
+  <link rel="stylesheet" href="casino-mobile.css?v=2026.10.6-s1">
 
-  <script src="wallet.js?v=2026.10.2-g4"></script>
-  <script src="hotel-events.js?v=2026.10.2-g4"></script>
-  <script src="hotel-perks.js?v=2026.10.2-g4"></script>
-  <script src="casino-shell.js?v=2026.10.2-g4"></script>
+  <script src="safe-storage.js?v=2026.10.6-s1"></script>
+  <script src="wallet.js?v=2026.10.6-s1"></script>
+  <script src="hotel-events.js?v=2026.10.6-s1"></script>
+  <script src="hotel-perks.js?v=2026.10.6-s1"></script>
+  <script src="casino-shell.js?v=2026.10.6-s1"></script>
 </head>
 
 <body>
@@ -45,6 +57,9 @@
       </a>
       <button class="pill-btn" id="cashier-btn" aria-label="Cashier — refills and hotel comps">
         <i class="fa-solid fa-coins"></i> Cashier
+      </button>
+      <button class="pill-btn" type="button" data-shell-menu aria-label="Save and settings" title="Save &amp; settings">
+        <i class="fa-solid fa-gear" aria-hidden="true"></i> <span class="pill-label">Save</span>
       </button>
       <button class="pill-btn" id="theme-toggle" aria-label="Toggle theme">
         <i id="theme-icon" class="fa-solid fa-moon" aria-hidden="true"></i> <span class="pill-label">Theme</span>
@@ -89,22 +104,13 @@
       <span class="enter-btn">Play</span>
     </a>
 
-    <!-- Coming soon -->
+    <!-- Unlocked through hotel progress (Texas Hold'em returns when it exists) -->
     <div class="game-card locked" data-game-id="roulette" aria-disabled="true">
-      <span class="ribbon">Soon</span>
+      <span class="ribbon">Locked</span>
       <div class="game-emblem">🎡</div>
       <div class="game-name">Roulette Royale</div>
       <p class="game-tag">Red, black, or a number of your own. The wheel decides.</p>
-      <div class="game-meta">Table · Coming soon</div>
-      <span class="enter-btn">Locked</span>
-    </div>
-
-    <div class="game-card locked" data-game-id="texasHoldem" aria-disabled="true">
-      <span class="ribbon">Soon</span>
-      <div class="game-emblem">🃏</div>
-      <div class="game-name">Texas Hold'em</div>
-      <p class="game-tag">Read the table, bluff the room, take the pot.</p>
-      <div class="game-meta">Poker · Coming soon</div>
+      <div class="game-meta">Table · Unlocks with hotel progress</div>
       <span class="enter-btn">Locked</span>
     </div>
 

@@ -4451,3 +4451,27 @@ body.light-theme .phase-report { background: rgba(255,255,255,0.7); }
   color: var(--gold-light);
 }
 .shift-best-badge.grade-S { background: linear-gradient(135deg, var(--gold-dark), var(--gold)); color: #132113; }
+
+/* ── Phone gutter + one-row cash bar ──
+   casino-mobile.css drops the body's side padding on phones (games
+   handle their own), so the dashboard keeps a 16px gutter itself. */
+@media (max-width: 768px) {
+  .hotel-cash-bar,
+  .hotel-calendar-strip,
+  .hotel-command-strip,
+  .hotel-manager-layout,
+  body > .shell-footer {
+    width: calc(100% - 32px);
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .hotel-cash-bar { flex-wrap: nowrap; gap: 10px; }
+  .hotel-cash-pill { flex: 0 1 auto; min-width: 0; }
+  .income-rate-display .income-label { display: none; }
+  .hotel-theme-toggle { margin-left: auto; flex: 0 0 auto; width: 40px; padding: 0; justify-content: center; }
+  .hotel-theme-toggle span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+}
+@media (max-width: 768px) {
+  .hotel-menu-btn + .hotel-theme-toggle { margin-left: 0; }
+  .hotel-cash-pill .cash-label { display: none; }
+}

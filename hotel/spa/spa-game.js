@@ -481,7 +481,7 @@ const SpaRush = (() => {
     const spaLevel = HotelState.get().departments.spa?.level ?? 0;
     const tier = HotelConfig.UPGRADE_CATALOG.spa?.[Math.max(0, spaLevel - 1)];
     $('spa-tier-label').textContent = tier?.label ?? 'Spa not built';
-    $('spa-target').textContent = 7 + Math.max(1, spaLevel);
+    $('spa-target').textContent = 7 + Math.max(1, spaLevel) + (window.HotelShiftBriefing?.twistFor?.('spa')?.effects.extraGuests ?? 0);
     $('spa-time').textContent = '1:00';
     $('spa-session-fill').style.width = '0%';
     log(spaLevel > 0 ? 'Spa is ready for guests.' : 'Spa & Wellness is not built yet.', spaLevel > 0 ? 'gold' : 'bad', true);
@@ -728,7 +728,7 @@ const SpaRush = (() => {
 
   function updateStats() {
     const treated = session?.treated ?? 0;
-    const target = session?.target ?? 8;
+    const target = session?.target ?? 7 + Math.max(1, HotelState.get().departments.spa?.level ?? 1) + (window.HotelShiftBriefing?.twistFor?.('spa')?.effects.extraGuests ?? 0);
     const earned = session?.earned ?? 0;
     const perfect = session?.perfect ?? 0;
     const walkouts = session?.walkouts ?? 0;

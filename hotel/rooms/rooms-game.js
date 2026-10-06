@@ -520,7 +520,7 @@ const RoomsGame = (() => {
     const roomsLevel = HotelState.get().departments.rooms?.level ?? 1;
     const tier = HotelConfig.UPGRADE_CATALOG.rooms?.[Math.max(0, roomsLevel - 1)];
     $('rooms-tier-label').textContent = tier?.label ?? 'Guest Rooms';
-    $('ops-target').textContent = 8 + roomsLevel * 2;
+    $('ops-target').textContent = 8 + roomsLevel * 2 + (window.HotelShiftBriefing?.twistFor?.('rooms')?.effects.extraGuests ?? 0);
     $('ops-time').textContent = '1:10';
     $('ops-session-fill').style.width = '0%';
     const dirty = HotelState.getDirtyRooms?.() ?? 0;
@@ -761,7 +761,7 @@ const RoomsGame = (() => {
 
   function updateStats() {
     const resolved = shift?.resolved ?? 0;
-    const target = shift?.target ?? 10;
+    const target = shift?.target ?? 8 + Math.max(1, HotelState.get().departments.rooms?.level ?? 1) * 2 + (window.HotelShiftBriefing?.twistFor?.('rooms')?.effects.extraGuests ?? 0);
     const earned = shift?.earned ?? 0;
     const perfect = shift?.perfect ?? 0;
     const complaints = shift?.complaints ?? 0;

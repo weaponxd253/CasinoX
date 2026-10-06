@@ -297,3 +297,19 @@
   .coin               { width: 110px; height: 110px; }
   .bet-buttons .front { padding: 10px 0; font-size: 0.82rem; }
 }
+
+/* ── Hotel shift pages keep a 16px gutter ──
+   The body loses its side padding on phones (casino tables go
+   edge to edge), but hotel shifts are panels and need the margin,
+   matching the Bar and Tasting Room pages. */
+@media (max-width: 768px) {
+  .spa-rush-shell,
+  .floor-ops-shell,
+  .entertainment-shell,
+  .ci-hud,
+  .ci-game-area {
+    width: calc(100% - 32px);
+    margin-left: auto;
+    margin-right: auto;
+  }
+}

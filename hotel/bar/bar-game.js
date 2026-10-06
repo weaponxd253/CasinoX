@@ -454,7 +454,7 @@ const BarGame = (() => {
 
   function updateStats() {
     const served = shift?.served ?? 0;
-    const target = shift?.target ?? Math.min(8, 4 + Math.max(1, HotelState.get().departments.bar?.level ?? 1));
+    const target = shift?.target ?? Math.min(8, 4 + Math.max(1, HotelState.get().departments.bar?.level ?? 1)) + (window.HotelShiftBriefing?.twistFor?.('bar')?.effects.extraGuests ?? 0);
     const misses = shift?.misses ?? 0;
     const streak = shift?.streak ?? 0;
     document.getElementById('served-count').textContent = served - misses;
