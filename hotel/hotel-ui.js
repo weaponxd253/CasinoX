@@ -445,6 +445,7 @@ const HotelUI = (() => {
         ${renderGuideConfirmation()}
         ${onboardingDebugVisible ? renderOnboardingDebugPanel(state, unlocks) : ''}
         ${focus ? renderFocusCard(primary, state, { guided }) : ''}
+        ${onboarding ? '' : renderRightNow(rightNowItems(state, priorities, shiftSet))}
         <div class="command-strip-head">
           <div>
             <span>Playable Now</span>
@@ -456,9 +457,8 @@ const HotelUI = (() => {
           ${renderGuidanceModeControl()}
         </div>
         ${renderTodayShifts(state, shiftSet.playable)}
-        ${onboarding ? '' : renderNextRewardRail(shiftSet.preview, state)}
-        ${primary && !focus ? renderCommandPrimary(primary, onboarding) : ''}
-        ${summary.length ? `
+        ${onboarding && primary && !focus ? renderCommandPrimary(primary, onboarding) : ''}
+        ${onboarding && summary.length ? `
           <div class="command-chips">
             ${summary.map(item => `
               <button type="button" class="command-chip ${item.tone} ${severityClass(item)}" data-command-action="${item.action}" ${item.dept ? `data-command-dept="${item.dept}"` : ''}>
@@ -480,6 +480,11 @@ const HotelUI = (() => {
           e.stopPropagation();
           dismissShiftResultBanner(btn.dataset.shiftResultDismiss);
         });
+      });
+      strip.querySelector('[data-right-now-toggle]')?.addEventListener('click', () => {
+        rightNowExpanded = !rightNowExpanded;
+        renderCommandCenter(HotelState.get());
+        strip.querySelector('[data-right-now-toggle]')?.focus();
       });
       wireShiftLaunchLinks(strip);
       wireCommandActions(strip);
@@ -504,6 +509,118 @@ const HotelUI = (() => {
       `;
       wireCommandActions(feed);
     }
+  }
+
+  /* ── Right now ───────────────────────────────────────────
+     One ranked list of what deserves attention, instead of separate
+     "Next best move", chips and reward rails that disagreed. Problems
+     first, then time-limited chances (twists, a visiting high roller),
+     then warnings, opportunities and the next unlock. */
+  const RIGHT_NOW_RANK = { critical: 0, timed: 1, warning: 2, opportunity: 3, info: 4, progress: 5 };
+
+  function rightNowItems(state, priorities, shiftSet) {
+    const items = priorities
+      .filter(item => item.action !== 'operations')        // "All Shifts ready" is filler
+      .map(item => ({ ...item }));
+    const enabledOp = dept => { const op = decoratedShiftByDept(dept, state); return op?.enabled ? op : null; };
+
+    // Calendar twists on shifts that are open and not yet done this phase
+    operationCatalog().forEach(base => {
+      const twist = window.HotelTwists?.active?.(base.dept, state);
+      const op = twist && enabledOp(base.dept);
+      if (!op || op.statusState === 'completed') return;
+      items.push({
+        tone: 'good', severity: 'timed', icon: op.icon,
+        label: `${twist.title} · ${op.title}`,
+        detail: `${twist.summary} Only this phase.`,
+        action: 'play_shift', dept: op.dept, actionLabel: shiftCta(op),
+      });
+    });
+
+    // A high roller staying at the hotel
+    if (HotelState.highRollerInHouse?.()) {
+      const minutes = Math.max(1, Math.ceil(((state.guests?.highRollerUntil ?? 0) - Date.now()) / 60_000));
+      const casino = enabledOp('casino');
+      items.push({
+        tone: 'good', severity: 'timed', icon: 'fa-gem',
+        label: 'High roller in the house',
+        detail: `${minutes} min left. The high-stakes table is open, and they'll drop by the Bar and Spa. Treat them well to keep them longer.`,
+        action: casino ? 'play_shift' : 'operations', dept: 'casino', actionLabel: casino ? 'Open Casino' : 'All Shifts',
+      });
+    }
+
+    // Rooms Floor Ops left dirty for Check-In
+    const dirty = HotelState.getDirtyRooms?.() ?? 0;
+    if (dirty && enabledOp('rooms')) {
+      items.push({
+        tone: 'warn', severity: 'warning', icon: 'fa-broom',
+        label: `${dirty} dirty room${dirty === 1 ? '' : 's'}`,
+        detail: `Check-In can't use ${dirty === 1 ? 'it' : 'them'} until Floor Ops cleans up.`,
+        action: 'play_shift', dept: 'rooms', actionLabel: 'Run Floor Ops',
+      });
+    }
+
+    // The next shift to unlock (what the old reward rail showed)
+    const next = shiftSet.preview;
+    if (next) {
+      items.push({
+        tone: 'neutral', severity: 'progress', icon: next.icon ?? 'fa-lock',
+        label: `Next unlock: ${next.title}`,
+        detail: `${nextRewardNeed(next, state)} · ${nextRewardValue(next, state)}`,
+        action: 'dept', dept: next.dept, actionLabel: next.deptState?.unlocked ? 'Build' : 'View path',
+      });
+    }
+
+    items.sort((a, b) => (RIGHT_NOW_RANK[a.severity] ?? 4) - (RIGHT_NOW_RANK[b.severity] ?? 4));
+
+    // Nothing pressing: point at the best shift to play
+    if (!items.length || (RIGHT_NOW_RANK[items[0].severity] ?? 4) >= RIGHT_NOW_RANK.info) {
+      const best = shiftSet.playable.find(op => op.statusState !== 'completed') ?? shiftSet.playable[0];
+      if (best) {
+        items.unshift({
+          tone: 'good', severity: 'opportunity', icon: best.icon,
+          label: `Run ${best.title}`,
+          detail: best.reason ?? best.impact ?? 'The best shift to play right now.',
+          action: 'play_shift', dept: best.dept, actionLabel: shiftCta(best),
+        });
+      }
+    }
+    return items;
+  }
+
+  let rightNowExpanded = false;
+
+  function renderRightNow(items) {
+    if (!items.length) return '';
+    const [main, ...rest] = items;
+    const more = rightNowExpanded ? rest : rest.slice(0, 2);
+    const hiddenCount = rest.length - more.length;
+    const actionAttrs = item => `data-command-action="${item.action}" ${item.dept ? `data-command-dept="${escapeHtml(item.dept)}"` : ''}`;
+    return `
+      <section class="right-now ${main.tone} ${severityClass(main)}" aria-labelledby="right-now-title">
+        <div class="right-now-head">
+          <span id="right-now-title">Right now</span>
+          ${rest.length > 2 ? `<button type="button" class="right-now-toggle" data-right-now-toggle aria-expanded="${rightNowExpanded}">${rightNowExpanded ? 'Show less' : `Show all ${items.length}`}</button>` : ''}
+        </div>
+        <div class="right-now-main">
+          <span class="right-now-icon" aria-hidden="true"><i class="fa-solid ${escapeHtml(main.icon)}"></i></span>
+          <div class="right-now-copy">
+            <strong>${escapeHtml(main.label)}</strong>
+            <span>${escapeHtml(main.detail)}</span>
+          </div>
+          <button type="button" class="right-now-cta" ${actionAttrs(main)}>${escapeHtml(main.actionLabel ?? 'Open')}</button>
+        </div>
+        ${more.length ? `
+          <ul class="right-now-more">
+            ${more.map(item => `
+              <li class="${item.tone} ${severityClass(item)}">
+                <i class="fa-solid ${escapeHtml(item.icon)}" aria-hidden="true"></i>
+                <span class="right-now-more-copy"><strong>${escapeHtml(item.label)}</strong> <span>${escapeHtml(item.detail)}</span></span>
+                <button type="button" ${actionAttrs(item)}>${escapeHtml(item.actionLabel ?? 'Open')}</button>
+              </li>`).join('')}
+          </ul>` : ''}
+        ${hiddenCount ? `<p class="right-now-hidden">+${hiddenCount} more</p>` : ''}
+      </section>`;
   }
 
   function commandPrimaryForDashboard(priorities = [], { guided = false, onboarding = false } = {}) {
@@ -1449,8 +1566,9 @@ const HotelUI = (() => {
       ? HotelState.getStaffApplications()
       : [...(state.staff?.applications ?? [])];
     const coverage = staffCoverage(staff, state);
-    const shortCoverage = coverage.filter(item => item.status === 'short');
-    const thinCoverage = coverage.filter(item => item.status === 'thin');
+    // Worst first, so "Lobby needs coverage" and the staff alert name the same department
+    const shortCoverage = coverage.filter(item => item.status === 'short').sort((a, b) => a.score - b.score);
+    const thinCoverage = coverage.filter(item => item.status === 'thin').sort((a, b) => a.score - b.score);
     const upgrade = bestAffordableUpgrade(state, cash);
     const guestSummary = window.HotelGuests?.uiSummary?.(state);
     const unlocks = systemUnlocks(state);
@@ -1624,14 +1742,24 @@ const HotelUI = (() => {
       }];
     }
 
-    const events = priorities.slice(1).map(item => ({
-      tone: item.tone,
-      severity: item.severity,
-      icon: item.icon,
-      text: `${item.label}: ${item.detail}`,
-      action: item.action,
-      dept: item.dept,
+    // What happened, not what to do: the to-do list lives in "Right now"
+    const events = (HotelState.getStaffEvents?.() ?? []).slice(0, 2).map(ev => ({
+      tone: ev.tone ?? 'neutral',
+      severity: 'info',
+      icon: 'fa-user-tie',
+      text: ev.detail ? `${ev.title}: ${ev.detail}` : ev.title,
+      action: 'staff',
     }));
+    const report = state.calendar?.reports?.[0];
+    if (report) {
+      events.push({
+        tone: 'neutral',
+        severity: 'info',
+        icon: 'fa-calendar-check',
+        text: `${report.weekday ?? 'Day ' + report.day} ${phaseLabel(report.phase).toLowerCase()}: +$${fmt(report.income ?? 0)} income, ${report.guestPopulation ?? 0} guests`,
+        action: 'operations',
+      });
+    }
     const ipm = HotelEngine.currentIpm(state);
     events.push({
       tone: 'good',
@@ -1640,14 +1768,7 @@ const HotelUI = (() => {
       text: `Hotel income is $${fmt(ipm)}/min`,
       action: 'departments',
     });
-    events.push({
-      tone: 'neutral',
-      severity: 'info',
-      icon: 'fa-calendar-day',
-      text: `${phaseLabel(state.calendar?.phase ?? 'morning')} phase is active`,
-      action: 'operations',
-    });
-    return events;
+    return events;   // (the current phase is already on the calendar strip)
   }
 
   function bestAffordableUpgrade(state, cash) {
@@ -2133,7 +2254,8 @@ const HotelUI = (() => {
     if (!warnings.length) return '';
     const onboarding = isPhaseOneOnboarding();
     const unlocks = systemUnlocks();
-    const visibleWarnings = onboarding ? warnings.slice(0, 1) : warnings.slice(0, 3);
+    const sorted = [...warnings].sort((a, b) => (a.status === 'short' ? 0 : 1) - (b.status === 'short' ? 0 : 1) || (a.score ?? 0) - (b.score ?? 0));
+    const visibleWarnings = onboarding ? sorted.slice(0, 1) : sorted.slice(0, 3);
     return `
       <div class="staff-warning-panel ${onboarding ? 'onboarding-warning-panel' : ''}">
         ${visibleWarnings.map(warning => `

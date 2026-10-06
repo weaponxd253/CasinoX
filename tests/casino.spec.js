@@ -80,8 +80,10 @@ test.describe('launch navigation', () => {
     await expect(page.locator('.shift-card-state')).toHaveCount(3);
     await expect(page.locator('.shift-card-featured .shift-card-prep')).toBeVisible();
     await expect(page.locator('.shift-card-featured')).toContainText('Risk:');
-    await expect(page.locator('.next-reward-rail')).toContainText('Next Reward');
-    await expect(page.locator('.command-primary')).toContainText('staff gaps');
+    // One "Right now" block replaces the reward rail, Next best move and chips
+    await expect(page.locator('.right-now')).toHaveCount(1);
+    await expect(page.locator('.right-now-main')).toContainText('staff gaps');
+    await expect(page.locator('.next-reward-rail, .command-primary, .command-chips')).toHaveCount(0);
 
     await page.locator('.shift-card-prepare').first().click();
     await expect(page.locator('.mgmt-tab[data-tab="staff"]')).toHaveAttribute('aria-selected', 'true');
@@ -123,11 +125,6 @@ test.describe('launch navigation', () => {
       HotelUI.renderAll();
     });
 
-    const featuredTitle = await page.locator('.shift-card-featured .shift-card-copy strong').textContent();
-    if (await page.locator('.command-primary').count()) {
-      const primaryText = await page.locator('.command-primary').textContent();
-      expect(primaryText).not.toContain(featuredTitle);
-    }
     const dept = await page.locator('.shift-card-featured .shift-card-cta').getAttribute('data-shift-dept');
     await page.locator('.shift-card-featured .shift-card-cta').click();
     await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('hotelGameState'))?.shifts?.active?.deptId)).toBe(dept);
@@ -1539,5 +1536,55 @@ test.describe('dashboard quick fixes', () => {
     await page.goto('/hotel/index.html');
     const icons = await page.evaluate(() => HotelConfig.ACHIEVEMENT_CATALOG.map(a => a.icon).join(''));
     expect(icons).not.toContain('🂡');
+  });
+});
+
+test.describe('right now block', () => {
+  async function setup(page, fn) {
+    await page.goto('/hotel/index.html');
+    await page.evaluate(fn);
+    await page.reload();
+  }
+
+  test('one ranked block: the worst staffing gap leads, twists and situations follow', async ({ page }) => {
+    await setup(page, () => {
+      HotelState.setGuidanceMode('expert');
+      const s = HotelState.get();
+      ['bar', 'spa', 'restaurant', 'entertainment'].forEach(d => { s.departments[d].unlocked = true; s.departments[d].level = 1; });
+      Object.assign(s.calendar, { day: 3, weekday: 2, phase: 'evening' });
+      HotelState.setHighRollerFlag();
+      HotelState.addDirtyRooms(2);
+      HotelState.saveNow();
+    });
+    const block = page.locator('.right-now');
+    await expect(block).toHaveCount(1);
+    await expect(page.locator('.next-reward-rail, .command-primary, .command-chips')).toHaveCount(0);
+    await expect(page.locator('.right-now-main')).toContainText('staff gaps');
+    await expect(page.locator('.right-now-more li')).toHaveCount(2);
+    await expect(page.locator('.right-now-more')).toContainText('Happy Hour');
+
+    await page.locator('[data-right-now-toggle]').click();
+    await expect(page.locator('.right-now-more')).toContainText('High roller in the house');
+    await expect(page.locator('.right-now-more')).toContainText('2 dirty rooms');
+
+    // The staff alert and the Right now block name the same department (the worst one)
+    const named = (await page.locator('.right-now-main span').last().textContent()).split(' needs')[0].trim();
+    await page.locator('.right-now-cta').click();
+    await expect(page.locator('.mgmt-tab[data-tab="staff"]')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('#staff-panel, #mgmt-staff, body').first()).toContainText(`${named} is short staffed`);
+  });
+
+  test('Recent Activity reports what happened instead of repeating the to-do list', async ({ page }) => {
+    await setup(page, () => { HotelState.setGuidanceMode('expert'); HotelState.saveNow(); });
+    const rightNow = await page.locator('.right-now').innerText();
+    const feed = await page.locator('.activity-feed-item').allInnerTexts();
+    expect(feed.some(text => text.includes('Hotel income is'))).toBe(true);
+    for (const text of feed) expect(rightNow).not.toContain(text.split(':')[0]);
+  });
+
+  test('new players keep the single guided next step, without the Right now block', async ({ page }) => {
+    await page.goto('/hotel/index.html');
+    await expect(page.locator('.dashboard-focus')).toHaveCount(1);
+    await expect(page.locator('.right-now')).toHaveCount(0);
   });
 });
