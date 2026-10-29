@@ -1,0 +1,3 @@
+/* Only the optional floor host changes the page chrome. The table stays HTML/CSS. */
+html[data-floor-embed] .shell-header a,
+html[data-floor-embed] .shell-footer { display: none; }

@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="hotel.css?v=phase5-prepare-v1">
 
   <!-- Game data + state + engine — MUST load before hotel-ui.js -->
+  <script src="../save-safety.js"></script>
   <script src="../wallet.js"></script>
   <script src="../casino-shell.js?v=theme-controls"></script>
   <script src="hotel-config.js"></script>
@@ -33,6 +34,10 @@
     It inserts above this comment's sibling elements.
   -->
 
+  <nav aria-label="Owner navigation" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+    <a class="shell-pill" href="../world/index.html">Return to Central Lobby</a>
+    <a class="shell-pill" href="../index.html">Title Screen</a>
+  </nav>
   <!-- ── Hotel cash pill (separate from casino chips) ── -->
   <div class="hotel-cash-bar">
     <div class="hotel-cash-pill" id="hotel-cash-pill" title="Hotel Cash — separate from casino chips">

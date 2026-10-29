@@ -19,6 +19,7 @@ function renderBet() { betValEl.textContent = `$${bet.toFixed(2)}`; }
 // Hotel event helper — safe cross-page hotel state write
 function hotelEvent(type, data) {
   try {
+    CasinoSaveSafety.assertReadable('hotelGameState');
     const raw = localStorage.getItem('hotelGameState');
     if (!raw) return;
     const state = JSON.parse(raw);

@@ -6,6 +6,7 @@
 
    Link in every page (lobby + each game) BEFORE the page's
    own script:
+       <script src="save-safety.js"></script>
        <script src="wallet.js"></script>
 
    API:
@@ -26,6 +27,7 @@ const CasinoWallet = (() => {
   function round(n) { return Math.max(0, parseFloat(Number(n).toFixed(2))); }
 
   function get() {
+    CasinoSaveSafety.assertReadable(KEY);
     const raw = localStorage.getItem(KEY);
     const val = parseFloat(raw);
     if (isNaN(val)) { localStorage.setItem(KEY, STARTING); return STARTING; }
@@ -37,6 +39,7 @@ const CasinoWallet = (() => {
   }
 
   function set(amount) {
+    CasinoSaveSafety.assertReadable(KEY);
     const val = round(amount);
     localStorage.setItem(KEY, val);
     emit(val);

@@ -1,6 +1,6 @@
 # Casino X — Royale Collection
 
-A browser-based casino hub plus hotel-management sim with a shared bankroll, meta-game progression, local save data, and a modular shell system for adding new games quickly. Built with vanilla JS, no build tools or frameworks required for runtime.
+A browser-based casino resort with a Phaser owner world, existing HTML/CSS casino games, hotel management, and separate chip and hotel-cash economies. No build step is required for static hosting.
 
 **Live:** `weaponxd253.github.io` · **Stack:** HTML · CSS · Vanilla JS · GSAP · Web Audio API · localStorage · Playwright tests
 
@@ -24,7 +24,10 @@ A browser-based casino hub plus hotel-management sim with a shared bankroll, met
 ```
 CasinoX/
 │
-├── index.html              ← Lobby (site entry point)
+├── index.html              ← Owner title screen (site entry point)
+├── world/                  ← Central Lobby, hotel preview, interactions, shared controls and world metadata
+├── floor/                  ← Existing Blackjack Lounge and persistent table overlay
+├── save-safety.js          ← Read-only validation for existing saves
 ├── lobby.css               ← Lobby layout + light-theme overrides
 │
 ├── casino-shell.css        ← Shared design system (tokens, header, modals)
@@ -105,6 +108,41 @@ npm test
 ```
 
 `npm test` runs `playwright test`. If you see `playwright is not recognized`, install dependencies with `npm install` first.
+
+### Explorable blackjack lounge
+
+The root now opens the owner title screen. **Continue Resort** checks existing
+save availability without initializing the hotel. **New Game** is a nondestructive
+exploration placeholder: it never resets a resort or bankroll. The Central Lobby
+connects to the existing lounge within one Phaser game, retaining the blackjack
+iframe across room visits. Hotel Management remains one click away (or press M).
+
+Only `casinoWorldState` stores the versioned lobby position and facing. Existing
+hotel saves and chips remain authoritative in their original modules. Malformed
+or unsupported saves show an error and are preserved rather than reset. See
+[Phase 1 routes and save behavior](docs/STATE_AND_ROUTES.md) for exact boundaries,
+remaining decisions and a manual checklist. Run `npm run test:world` for Phase 1.
+
+Phase 2 adds a receptionist conversation, a manager’s office shortcut to the
+original dashboard, and an explorable hotel interior preview. Doors, NPCs and the
+hotel directory use the same declarative interaction system. E activates the
+nearby prompt; Esc closes dialogue or returns from an interior; M still opens
+management from anywhere. The HUD reads the saved hotel snapshot without starting
+another simulation. Reload/Continue uses the existing Central Lobby checkpoint.
+See [Phase 2 behavior, file inventory and safe follow-up recommendations](docs/PHASE_2.md).
+Run `npx playwright test tests/interactions.spec.js tests/resort-lobby.spec.js --workers=2`
+for the new coverage, or `npm test -- --workers=2` for all tests.
+
+Open `floor/index.html`, or choose **Explore the Blackjack Lounge** in the casino
+game lobby. Move with WASD or arrows, walk to the blackjack table, and press E.
+The existing blackjack page opens as a modal overlay; Escape or **Return to floor**
+resumes the room at the same location. The table and floor share `CasinoWallet`.
+Closing the overlay keeps an active hand alive for the next visit.
+
+Phaser 3.90.0 is served locally from `floor/vendor/`; the existing game rules and
+HTML/CSS table are retained. Run `npm run test:floor` for deterministic browser
+coverage of the full interaction. See [the integration notes](floor/README.md)
+for the architecture review, module boundaries, manual checks and debug controls.
 
 ---
 
@@ -247,6 +285,7 @@ Every game is a folder with three files. Full details in `SHELL-GUIDE.md`. The s
   <!-- your game markup -->
 </main>
 
+<script src="../save-safety.js"></script>
 <script src="../wallet.js"></script>
 <script src="../casino-shell.js"></script>
 <script src="game.js"></script>

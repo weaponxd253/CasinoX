@@ -8,6 +8,8 @@
    .logo / .pill-btn) rather than the shell-injected header.
    These rules were in casino-theme.css; they live here now
    so that file can be retired.                              */
+.floor-entry { margin-top: 20px; }
+
 .casino-header {
   width: 100%;
   max-width: var(--maxw);

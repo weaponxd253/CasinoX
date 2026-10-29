@@ -55,7 +55,9 @@ const CheckInGame = (() => {
     CasinoShell.mount({
       name:     'Check-In Rush',
       subtitle: 'Lobby · Mini-Game',
-      lobbyHref:'../../index.html',
+      lobbyHref:'../index.html',
+      lobbyLabel:'Hotel Lobby',
+      hotelHref:'',
     });
 
     HotelState.init();

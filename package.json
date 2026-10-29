@@ -5,9 +5,15 @@
   "scripts": {
     "test": "npm run test:e2e",
     "test:e2e": "playwright test",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "playwright test --headed",
+    "test:floor": "playwright test tests/floor.spec.js --workers=2",
+    "test:world": "playwright test tests/world.spec.js --workers=2",
+    "vendor:phaser": "node scripts/vendor-phaser.cjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.44.0"
+  },
+  "dependencies": {
+    "phaser": "3.90.0"
   }
 }

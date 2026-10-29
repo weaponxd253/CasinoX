@@ -18,6 +18,7 @@ const wallet = () => (window.CasinoShell && CasinoShell.wallet) || window.Casino
 // Writes directly to hotel localStorage — no hotel scripts needed on this page.
 function hotelEvent(type, data) {
   try {
+    CasinoSaveSafety.assertReadable('hotelGameState');
     const raw = localStorage.getItem('hotelGameState');
     if (!raw) return;
     const state = JSON.parse(raw);

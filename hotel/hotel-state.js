@@ -303,19 +303,20 @@ const HotelState = (() => {
 
   /* ── Persistence ─────────────────────────────────────────── */
   function load() {
+    CasinoSaveSafety.assertReadable(STORAGE_KEY);
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return createNewSave();
       const parsed = JSON.parse(raw);
       return migrate(parsed);
     } catch (e) {
-      console.warn('[HotelState] Corrupt save — starting fresh.', e);
-      return createNewSave();
+      throw CasinoSaveSafety.fail('Hotel save could not be loaded. Its original data has been preserved.');
     }
   }
 
   function save() {
     if (!_state) return;
+    CasinoSaveSafety.assertReadable(STORAGE_KEY);
     _state.meta.lastSaved = Date.now();
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(_state));

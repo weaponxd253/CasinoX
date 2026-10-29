@@ -3,17 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="refresh" content="0; url=hotel/index.html">
-  <title>Casino X Hotel</title>
-  <script>
-    window.location.replace('hotel/index.html');
-  </script>
+  <title>Casino X — Your Resort</title>
+  <link rel="stylesheet" href="casino-shell.css">
+  <link rel="stylesheet" href="world/world.css">
 </head>
-<body>
-  <main>
-    <h1>Casino X Hotel</h1>
-    <p>Opening the hotel lobby...</p>
-    <p><a href="hotel/index.html">Enter the hotel lobby</a></p>
+<body class="title-page">
+  <header class="title-header"><span class="title-brand">Casino X</span><span>Royale Collection</span></header>
+  <main class="title-layout">
+    <section class="title-copy">
+      <p class="owner-kicker">Welcome, resort owner</p>
+      <h1>The resort<br>is yours.</h1>
+      <p class="title-intro">Walk the floor. Take your seat. Keep your resort moving.</p>
+      <div class="title-actions">
+        <button id="continue-resort" class="owner-primary" disabled>Continue Resort <span aria-hidden="true">→</span></button>
+        <button id="new-game" class="owner-secondary" disabled>New Game</button>
+        <button id="settings-button" class="owner-secondary">Settings</button>
+      </div>
+      <p id="save-status" role="status">Checking saved resort…</p>
+      <p id="save-errors" role="alert" hidden></p>
+    </section>
+    <aside class="title-card" aria-label="Your resort awaits">
+      <span class="owner-kicker">Your next stop</span><h2>Central Lobby</h2>
+      <div class="title-map" aria-hidden="true"><span class="map-casino">BLACKJACK LOUNGE</span><span class="map-desk">RECEPTION</span><span class="map-owner">●<small>OWNER</small></span></div>
+      <p><kbd>W A S D</kbd> / arrows to explore<br><kbd>E</kbd> to enter the casino</p>
+    </aside>
   </main>
+  <nav class="title-legacy" aria-label="Existing resort pages"><a href="hotel/index.html">Hotel Management</a><a href="casino.html">Classic Casino Games</a></nav>
+  <footer class="owner-footer">Casino X · Virtual chips only · For entertainment</footer>
+
+  <dialog id="new-game-dialog" aria-labelledby="new-game-title">
+    <h2 id="new-game-title">Explore without resetting</h2>
+    <p>New resort creation is not available in this first world release. Your existing resort, chips and progress will stay intact.</p>
+    <p>You can explore the Central Lobby using your saved location, or start at reception if this is your first visit.</p>
+    <div class="owner-dialog-actions"><button id="explore-resort" class="owner-primary">Explore Central Lobby</button><button class="owner-secondary" data-dialog-close>Cancel</button></div>
+  </dialog>
+  <dialog id="settings-dialog" aria-labelledby="settings-title">
+    <form id="settings-form">
+      <h2 id="settings-title">Settings</h2>
+      <label for="theme-setting">Appearance</label><select id="theme-setting"><option value="dark">Evening</option><option value="light">Daylight</option></select>
+      <label for="sound-setting">Casino sound</label><select id="sound-setting"><option value="on">On</option><option value="off">Muted</option></select>
+      <p>Move with WASD or arrows. Press E near an entrance or table. Escape returns from blackjack.</p>
+      <div class="owner-dialog-actions"><button type="submit" class="owner-primary">Save settings</button><button type="button" class="owner-secondary" data-dialog-close>Cancel</button></div>
+    </form>
+  </dialog>
+  <script src="save-safety.js"></script>
+  <script src="casino-shell.js"></script>
+  <script type="module" src="world/start.js"></script>
 </body>
 </html>

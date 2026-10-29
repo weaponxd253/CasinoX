@@ -39,6 +39,12 @@
   .shell-logo .sub           { font-size: 9px; letter-spacing: 0.2em; margin-top: 2px; }
   .shell-controls            { grid-column: 2; grid-row: 1; gap: 5px; flex-wrap: nowrap; }
 
+  /* Hotel operation titles and return links need their own rows so long names
+     cannot overlap the canonical Hotel Lobby link on small screens. */
+  .shell-header-hotel { grid-template-columns: minmax(0, 1fr); }
+  .shell-header-hotel .shell-logo { grid-column: 1; grid-row: 1; }
+  .shell-header-hotel .shell-controls { grid-column: 1; grid-row: 2; min-width: 0; flex-wrap: wrap; justify-content: flex-start; }
+
   /* Balance pill */
   .shell-balance             { font-size: 13px; padding: 5px 10px; gap: 5px; }
   .shell-balance .chip       { width: 11px; height: 11px; }

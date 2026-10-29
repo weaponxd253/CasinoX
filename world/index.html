@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Central Lobby — Casino X</title>
+  <link rel="stylesheet" href="../casino-shell.css">
+  <link rel="stylesheet" href="../floor/floor.css">
+  <link rel="stylesheet" href="world.css">
+</head>
+<body class="world-page">
+  <header class="floor-header">
+    <a class="floor-brand" href="../index.html" data-leave-world>Casino X <span>Resort Owner</span></a>
+    <nav aria-label="Resort navigation"><div class="floor-wallet">Virtual chips <strong id="world-balance">—</strong></div><a class="shell-pill" href="../index.html" data-leave-world>Title</a></nav>
+  </header>
+  <main class="floor-main">
+    <div class="floor-intro"><div><p class="floor-kicker">Your resort · on foot</p><h1 id="world-location">Central Lobby</h1></div><p>The next move is yours.</p></div>
+    <nav class="world-links" aria-label="Quick access"><a id="management-link" href="../hotel/index.html" data-leave-world>Hotel Management (M)</a><a href="../casino.html" data-leave-world>Classic Casino Games</a></nav>
+    <aside class="world-hud" aria-label="Resort status"><span>Owner of <strong id="world-resort">Your resort</strong></span><span>Hotel cash <strong id="world-hotel-cash">—</strong></span><span>Saved hotel snapshot · M opens management</span></aside>
+    <p id="world-errors" role="alert" hidden></p>
+    <p id="world-migration" class="world-limit" role="status" hidden></p>
+    <button id="world-collisions" class="shell-pill" hidden>Toggle collision debug</button>
+    <div id="floor-canvas" aria-busy="true"></div>
+    <div class="floor-toolbar world-toolbar"><p id="world-status" role="status">Opening your resort…</p><button id="world-interact" class="shell-pill" disabled><kbd>E</kbd> Interact</button><button id="world-return" class="shell-pill" hidden>Return to Central Lobby</button></div>
+    <p class="floor-help">Click the room to focus · WASD or arrows to walk · E to interact · M for management · Esc closes dialogue or returns from an interior</p>
+    <p class="world-limit">Your lobby location is saved. Blackjack hands stay at the table during visits in this page. Reloading or leaving during a hand loses it; its wager stays deducted.</p>
+  </main>
+  <footer class="floor-footer">Casino X · Virtual chips only · For entertainment</footer>
+  <dialog id="world-dialogue" aria-labelledby="dialogue-title" aria-describedby="dialogue-text">
+    <p class="owner-kicker">Casino X · Resort conversation</p><h2 id="dialogue-title">Receptionist</h2>
+    <p id="dialogue-text" data-dialogue-text aria-live="polite"></p>
+    <div data-dialogue-choices class="dialogue-choices"></div>
+    <button class="owner-primary" data-dialogue-close autofocus>Back to exploring</button>
+  </dialog>
+  <dialog id="blackjack-overlay" aria-labelledby="blackjack-title" aria-describedby="blackjack-status">
+    <div class="overlay-header"><div><h2 id="blackjack-title">Blackjack X</h2><p id="blackjack-status" role="status">Loading the table…</p></div><button class="shell-pill" data-close autofocus>Return to floor <span aria-hidden="true">×</span></button></div>
+    <iframe id="blackjack-frame" title="Blackjack X game" allow="autoplay" inert></iframe>
+  </dialog>
+  <script src="../save-safety.js"></script>
+  <script src="../wallet.js"></script>
+  <script src="../floor/vendor/phaser.min.js"></script>
+  <script type="module" src="main.js"></script>
+</body>
+</html>

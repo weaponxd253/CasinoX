@@ -68,6 +68,7 @@ const HotelGuestPool = (() => {
   }
 
   function _load() {
+    CasinoSaveSafety.assertReadable(STORAGE_KEY);
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return _blank();
@@ -77,6 +78,7 @@ const HotelGuestPool = (() => {
 
   function _save() {
     if (!_data) return;
+    CasinoSaveSafety.assertReadable(STORAGE_KEY);
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(_data)); }
     catch (_) { /* storage full — trim history and retry */ _data.guestHistory = _data.guestHistory.slice(0, 20); }
   }

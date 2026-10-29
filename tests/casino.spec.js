@@ -54,8 +54,10 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('launch navigation', () => {
-  test('root sends visitors to the hotel lobby', async ({ page }) => {
+  test('root opens the owner title and keeps hotel management reachable', async ({ page }) => {
     await page.goto('/');
+    await expect(page.locator('#new-game')).toBeEnabled();
+    await page.getByRole('link', { name: 'Hotel Management', exact: true }).click();
     await expect(page).toHaveURL(/\/hotel\/index\.html$/);
     await expect(page.locator('#hotel-name-display')).toContainText('Grand Casino Resort');
   });

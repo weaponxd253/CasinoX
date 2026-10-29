@@ -8,7 +8,7 @@ the game.
 
 1. **Make a folder:** `casino/yourgame/`
 2. **Create `index.html`** — copy `coinflip/index.html` as a starting point. The
-   only required pieces are the four `<link>`/`<script>` tags and a
+   required pieces are the shared `<link>`/`<script>` tags and a
    `<main class="game-stage">` for your markup:
 
    ```html
@@ -16,6 +16,7 @@ the game.
    <link rel="stylesheet" href="styles.css">
    ...
    <main class="game-stage"> <!-- your game --> </main>
+   <script src="../save-safety.js"></script>
    <script src="../wallet.js"></script>
    <script src="../casino-shell.js"></script>
    <script src="game.js"></script>

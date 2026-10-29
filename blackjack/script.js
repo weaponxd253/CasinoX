@@ -12,6 +12,7 @@
    scripts loaded on this page.                              */
 function hotelEvent(type, data) {
   try {
+    CasinoSaveSafety.assertReadable('hotelGameState');
     const raw = localStorage.getItem('hotelGameState');
     if (!raw) return;
     const state = JSON.parse(raw);

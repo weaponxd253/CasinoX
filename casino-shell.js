@@ -4,6 +4,7 @@
    Chrome + meta-game for every page.
 
    Game pages:
+       <script src="../save-safety.js"></script>
        <script src="../wallet.js"></script>
        <script src="../casino-shell.js"></script>
        <script src="game.js"></script>
@@ -34,11 +35,12 @@ const CasinoShell = (function () {
   const profile = {
     data: { xp: 0, lastClaim: null, streak: 0 },
     load() {
+      CasinoSaveSafety.assertReadable(PROFILE_KEY);
       try { Object.assign(this.data, JSON.parse(localStorage.getItem(PROFILE_KEY)) || {}); }
       catch (e) { /* fresh profile */ }
       return this.data;
     },
-    save() { localStorage.setItem(PROFILE_KEY, JSON.stringify(this.data)); }
+    save() { CasinoSaveSafety.assertReadable(PROFILE_KEY); localStorage.setItem(PROFILE_KEY, JSON.stringify(this.data)); }
   };
 
   function levelFromXp(xp) {
@@ -293,13 +295,13 @@ const CasinoShell = (function () {
 
   function injectHeader() {
     const lobby = cfg.lobbyHref || '../casino.html';
-    const hotelOperation = String(lobby).includes('../..');
+    const hotelOperation = cfg.lobbyLabel === 'Hotel Lobby' || String(lobby).includes('../..');
     const lobbyLabel = cfg.lobbyLabel || (hotelOperation ? 'Hotel Lobby' : 'Casino Floor');
     const hotel = cfg.hotelHref === undefined
       ? (hotelOperation ? '' : '../hotel/index.html')
       : cfg.hotelHref;
     const header = document.createElement('header');
-    header.className = 'shell-header';
+    header.className = hotelOperation ? 'shell-header shell-header-hotel' : 'shell-header';
     header.innerHTML = `
       <div class="shell-logo">
         <span class="name">${cfg.name || 'Casino X'}</span>
@@ -321,7 +323,7 @@ const CasinoShell = (function () {
 
   function injectOverlays() {
     const lobby = cfg.lobbyHref || '../casino.html';
-    const hotelOperation = String(lobby).includes('../..');
+    const hotelOperation = cfg.lobbyLabel === 'Hotel Lobby' || String(lobby).includes('../..');
     const lobbyLabel = cfg.lobbyLabel || (hotelOperation ? 'Hotel Lobby' : 'Casino Floor');
     const html = `
       <div id="shell-toasts"></div>
@@ -382,6 +384,7 @@ const CasinoShell = (function () {
 
   /* ───────── SHARED SETUP ───────── */
   function setup() {
+    CasinoSaveSafety.assertLegacy();
     injectOverlays();
     theme.apply(theme.get());
     wireThemeControls();

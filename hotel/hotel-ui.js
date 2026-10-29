@@ -19,7 +19,7 @@ const HotelUI = (() => {
 
   /* ── Bootstrap ───────────────────────────────────────────── */
   function init() {
-    CasinoShell.standalone({ lobbyHref: '../index.html' });
+    CasinoShell.standalone({ lobbyHref: '../casino.html', lobbyLabel: 'Casino Floor' });
 
     const bootResult = HotelEngine.processBootTick();
     if (bootResult.isOffline && bootResult.amount > 0) {

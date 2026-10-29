@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="rooms.css?v=one-click-dispatch-v1">
   <link rel="stylesheet" href="../shift-briefing.css?v=phase9-shifts-v1">
 
+  <script src="../../save-safety.js"></script>
   <script src="../../wallet.js"></script>
   <script src="../../casino-shell.js?v=theme-controls"></script>
   <script src="../hotel-config.js"></script>
@@ -135,7 +136,9 @@
       CasinoShell.mount({
         name: 'Floor Ops',
         subtitle: 'Hotel Department',
-        lobbyHref: '../../index.html',
+        lobbyHref: '../index.html',
+        lobbyLabel: 'Hotel Lobby',
+        hotelHref: '',
         footer: 'Casino X - Floor Ops - Guest Rooms'
       });
       RoomsGame.init();

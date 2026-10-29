@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="restaurant.css">
   <link rel="stylesheet" href="../shift-briefing.css?v=phase9-shifts-v1">
 
+  <script src="../../save-safety.js"></script>
   <script src="../../wallet.js"></script>
   <script src="../../casino-shell.js?v=theme-controls"></script>
   <script src="../hotel-config.js"></script>
@@ -154,7 +155,9 @@
       CasinoShell.mount({
         name: 'Tasting Room',
         subtitle: 'Hotel Department',
-        lobbyHref: '../../index.html',
+        lobbyHref: '../index.html',
+        lobbyLabel: 'Hotel Lobby',
+        hotelHref: '',
         footer: 'Casino X · Tasting Room · Hotel Department'
       });
       RestaurantGame.init();

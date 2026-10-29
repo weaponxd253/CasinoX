@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blackjack Lounge — Casino X</title>
+  <link rel="stylesheet" href="../casino-shell.css">
+  <link rel="stylesheet" href="floor.css">
+</head>
+<body>
+  <header class="floor-header">
+    <a class="floor-brand" href="../casino.html">Casino X <span>Royale Collection</span></a>
+    <nav aria-label="Casino navigation">
+      <div class="floor-wallet">Virtual chips <strong id="floor-balance">—</strong></div>
+      <a class="shell-pill" href="../casino.html">Game lobby</a>
+    </nav>
+  </header>
+  <main class="floor-main">
+    <div class="floor-intro">
+      <div><p class="floor-kicker">Explore the floor</p><h1>The Blackjack Lounge</h1></div>
+      <p>One room. Take a walk. Take a seat.</p>
+    </div>
+    <div id="floor-canvas" aria-busy="true"></div>
+    <div class="floor-toolbar">
+      <p id="floor-status" role="status">Loading the casino room…</p>
+      <button id="interact-button" class="shell-pill" disabled><kbd>E</kbd> Play blackjack</button>
+    </div>
+    <p class="floor-help">Click the room to focus · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrow keys to move · <kbd>E</kbd> at the table · <kbd>Esc</kbd> to return</p>
+    <p class="floor-help">Prefer the classic table? <a href="../blackjack/index.html">Open Blackjack X</a></p>
+  </main>
+  <footer class="floor-footer">Casino X · Virtual chips only · For entertainment</footer>
+  <dialog id="blackjack-overlay" aria-labelledby="blackjack-title" aria-describedby="blackjack-status">
+    <div class="overlay-header">
+      <div><h2 id="blackjack-title">Blackjack X</h2><p id="blackjack-status" role="status">Loading the table…</p></div>
+      <button class="shell-pill" data-close autofocus>Return to floor <span aria-hidden="true">×</span></button>
+    </div>
+    <iframe id="blackjack-frame" title="Blackjack X game" allow="autoplay" inert></iframe>
+  </dialog>
+  <script src="../save-safety.js"></script>
+  <script src="../wallet.js"></script>
+  <script src="vendor/phaser.min.js"></script>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
