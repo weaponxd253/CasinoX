@@ -2,7 +2,7 @@
 
 A browser-based casino resort with a Phaser owner world, existing HTML/CSS casino games, hotel management, and separate chip and hotel-cash economies. No build step is required for static hosting.
 
-**Live:** `weaponxd253.github.io` · **Stack:** HTML · CSS · Vanilla JS · GSAP · Web Audio API · localStorage · Playwright tests
+**Live:** `https://weaponxd253.github.io/CasinoX/` · **Stack:** HTML · CSS · Vanilla JS · GSAP · Web Audio API · localStorage · Playwright tests
 
 ---
 
@@ -10,11 +10,11 @@ A browser-based casino resort with a Phaser owner world, existing HTML/CSS casin
 
 | Game / Mode | Status | Min Bet | Notes |
 |---|---|---|---|
-| Lucky Reels | ✅ Live | $0.60 | Slots · 8 symbols · jackpot 50× |
-| Blackjack X | ✅ Live | $1 | 3:2 payout · dealer stands on 17 |
-| Coin Flip | ✅ Live | $1 | Double or nothing |
+| Lucky Reels | ✅ Live | $0.60 | Slots · 8 symbols · jackpot 50× · auto-spin |
+| Blackjack X | ✅ Live | $1 | 3:2 payout · dealer stands on 17 · double, split, insurance |
+| Coin Flip | ✅ Live | $1 | Double or nothing · let it ride (up to 32×) |
 | Hotel Manager | ✅ Live / in UX tuning | — | Idle hotel sim · staff, guests, operations, guided onboarding |
-| Roulette Royale | 🔒 Soon | — | |
+| Roulette Royale | 🔓 Unlock | $1 | European wheel · unlocks at Casino Floor Lv 2 + reputation 5 |
 | Texas Hold'em | 🔒 Soon | — | |
 
 ---
@@ -24,19 +24,29 @@ A browser-based casino resort with a Phaser owner world, existing HTML/CSS casin
 ```
 CasinoX/
 │
+<<<<<<< HEAD
 ├── index.html              ← Owner title screen (site entry point)
 ├── world/                  ← Central Lobby, hotel preview, interactions, shared controls and world metadata
 ├── floor/                  ← Existing Blackjack Lounge and persistent table overlay
 ├── save-safety.js          ← Read-only validation for existing saves
+=======
+├── index.html              ← Site entry point (redirects to hotel/index.html)
+├── casino.html             ← Casino lobby (game cards + unlock gates)
+>>>>>>> 152942c07eeffbbadba72f112b8c9ed9366bebb6
 ├── lobby.css               ← Lobby layout + light-theme overrides
 │
 ├── casino-shell.css        ← Shared design system (tokens, header, modals)
 ├── casino-shell.js         ← Shared chrome + meta-game engine
 ├── casino-mobile.css       ← Full mobile layout pass (link last on every page)
 ├── wallet.js               ← Shared bankroll via localStorage
+├── hotel-events.js         ← Casino → hotel event queue (applied by the hotel)
+├── hotel-perks.js          ← Hotel → casino perks (limits, bonuses, comps), read-only
+├── vendor/                 ← Local copies of GSAP, Font Awesome (solid) and the fonts: no CDN requests
+├── safe-storage.js         ← Loaded first on every page: keeps the game running if storage is blocked or full
+├── dev-tools.js            ← Testing panel, loaded only in dev mode (?dev=1)
+├── scripts/bump-version.js ← Stamps one ?v= cache-busting version on all pages
 │
-├── casino-theme.css        ← Legacy stylesheet retained for older theme rules
-├── package.json            ← Playwright test scripts
+├── package.json            ← Playwright test + bump-version scripts
 ├── playwright.config.js    ← E2E test config
 ├── tests/                  ← Browser tests
 ├── SHELL-GUIDE.md          ← How to add a new game
@@ -52,9 +62,12 @@ CasinoX/
 │   ├── index.html          ← On the shell ✓
 │   ├── styles.css          ← Blackjack-specific table styles
 │   ├── betting.css         ← Chip + wager UI
-│   ├── script.js           ← Game logic + betting system + XP
-│   └── sounds/
-│       └── README.txt      ← Drop card-draw.mp3 · win.wav · lose.wav here
+│   └── script.js           ← Game logic + local deck + betting system
+│
+├── roulette/
+│   ├── index.html          ← On the shell ✓ (gated by hotel progress)
+│   ├── styles.css          ← Wheel + table
+│   └── script.js           ← European single-zero roulette
 │
 ├── coinflip/
 │   ├── index.html          ← On the shell ✓
@@ -71,6 +84,7 @@ CasinoX/
     ├── hotel-bridge.js     ← Casino-to-hotel sync hooks
     ├── hotel-guests.js     ← Guest simulation helpers
     ├── hotel-guest-pool.js ← Guest profile pool
+    ├── hotel-goals.js      ← Three daily goals + reward chest
     ├── checkin/            ← Check-In Rush operation
     ├── rooms/              ← Rooms operation
     ├── restaurant/         ← Restaurant operation
@@ -96,7 +110,21 @@ npx http-server . -p 8000
 
 Then open `http://localhost:8000`.
 
-Blackjack pulls cards from `deckofcardsapi.com`, so it needs an internet connection to deal. Every other game works fully offline.
+Every game works offline. Blackjack deals from a local deck and Lucky Reels loads GSAP from `vendor/`; only the Google Fonts and Font Awesome stylesheets come from a CDN.
+
+### Dev mode
+
+Add `?dev=1` to any page URL to turn on dev mode (it persists until you visit a page with `?dev=0`). A red **DEV MODE** badge appears bottom-left; click it for the dev tools panel (chips, casino level, daily bonus, hotel cash, build/max all departments, reset the hotel save). Dev mode also skips the economy limits: no Advance Time cooldown, full 6-hour phase payouts, full rewards on repeat shifts, and the Cashier refills at any balance.
+
+### Releasing
+
+Browsers cache scripts by URL, so after changing any JS or CSS run:
+
+```bash
+npm run bump-version
+```
+
+It stamps one `?v=<date-time>` version on every local script and stylesheet in every HTML page, so players get the new files together instead of a mix of cached old and new ones.
 
 ### Testing
 
@@ -328,9 +356,6 @@ See `coinflip/` for a complete working example in ~50 lines of JS.
 
 **Blackjack is now on the shell.** It mounts `CasinoShell`, shares the same bankroll/header controls as the other live casino games, and awards XP when a hand is dealt. Its table and chip UI still keep their own game-specific styles.
 
-**`casino-theme.css` is legacy.** It remains in the repo for older theme/header rules, but the active casino pages use `casino-shell.css`, per-game styles, and `casino-mobile.css`. Future cleanup can confirm whether anything still references it and remove it if not.
-
-**Blackjack needs audio files.** The deck API call and card animations work; sounds don't play until you add `card-draw.mp3`, `win.wav`, and `lose.wav` to `blackjack/sounds/`. Shell-based games use synthesised Web Audio and need no files.
 
 **No backend.** Everything is `localStorage`. This means the bankroll is device-specific and can be edited by the user. Fine for the current scope; a backend + accounts would be needed for shared leaderboards, cross-device play, or anti-cheat.
 
@@ -344,7 +369,7 @@ See `coinflip/` for a complete working example in ~50 lines of JS.
 - [ ] Expand Hotel Manager reports, late-game goals, and prestige hooks
 - [ ] Persistent player profile page (lifetime stats, achievements)
 - [ ] Daily bonus timer (free-chip refill every N hours)
-- [ ] Roulette Royale (simplified red/black/number board, GSAP wheel spin)
+- [x] Roulette Royale (European wheel, unlocked through the hotel)
 - [ ] Mines (high-tension push-your-luck format)
 - [ ] Video Poker — Jacks or Better
 - [ ] PWA / installable (manifest + service worker)
@@ -364,3 +389,12 @@ See `coinflip/` for a complete working example in ~50 lines of JS.
 | Fonts | Playfair Display · Cormorant Garamond (Google Fonts) |
 | Icons | Font Awesome 6 |
 | Hosting | GitHub Pages |
+
+---
+
+## Soft launch notes
+
+- **Feedback link:** paste your feedback form URL into `FEEDBACK_URL` near the top of `casino-shell.js`. Until then the in-game menu (⚙ Save & feedback) offers only "Copy debug info".
+- **Saves:** the same menu downloads and loads a save file. Only the game's own keys are included, since GitHub Pages shares one origin across an account's sites.
+- **Link previews:** `og:image` and `og:url` in `index.html`, `hotel/index.html` and `casino.html` use the live address above. Update them if the site moves.
+

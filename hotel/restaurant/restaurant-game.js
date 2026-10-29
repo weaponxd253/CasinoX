@@ -25,6 +25,9 @@ const RestaurantGame = (() => {
     { id:'family',      name:'Celebration Table', guests:6, brief:'A lively group wants comfort, sparkle, and nothing too severe.', wants:{ comfort:3, bright:2, luxury:2, surprise:1 }, keywords:['warm','festive','safe'], traits:['warm','festive','safe','comfort'], coursePrefs:{ open:'warm', turn:'comfort', finish:'festive' }, bonus:'comfort', reactions:{ great:'The whole table finds something to toast.', good:'Comfort carries the room, with enough sparkle to keep it festive.', weak:'Too severe for a celebration table looking for easy joy.' } },
   ];
 
+  // Calendar twist (weekends): a wedding party books one table mid-service
+  const WEDDING_TABLE = { id:'wedding', name:'Wedding Party', guests:10, payMult:2.5, special:true, brief:'The whole wedding party. Warm and festive to open, something luxurious, then a showpiece finale.', wants:{ comfort:3, bright:1, luxury:4, surprise:1 }, keywords:['festive','luxury','showpiece'], traits:['festive','warm','luxury','showpiece'], coursePrefs:{ open:'festive', turn:'luxury', finish:'showpiece' }, bonus:'luxury', reactions:{ great:'The toasts start before dessert lands. A night they will talk about.', good:'The party is happy, though the finale could have been grander.', weak:'The wedding party was polite, but this was not the meal they planned for.' } };
+
   const FLAVORS = ['comfort', 'bright', 'luxury', 'surprise'];
   const COURSES = [
     { key:'open', label:'Open', prompt:'Set the first impression' },
@@ -45,6 +48,9 @@ const RestaurantGame = (() => {
   let radarWants   = null;
 
   let service = null;
+
+  function hintsOn() { return window.HotelShiftBriefing?.hintsOn?.('restaurant') ?? true; }
+  document.addEventListener('shift-hints-changed', () => renderDishes());
 
   function init() {
     syncHotelCash();
@@ -72,11 +78,13 @@ const RestaurantGame = (() => {
     }
 
     window.HotelShiftBriefing?.start?.('restaurant', 'Tasting Room');
+    const twist = window.HotelShiftBriefing?.twistFor?.('restaurant') ?? null;
     service = {
       active: true,
       restaurantLevel,
+      twist,
       staffEffect: HotelState.getStaffEffect?.('restaurant') ?? null,
-      target: Math.min(7, 3 + restaurantLevel),
+      target: Math.min(7, 3 + restaurantLevel) + (twist?.effects.extraGuests ?? 0),
       served: 0,
       earned: 0,
       signatures: 0,
@@ -92,13 +100,14 @@ const RestaurantGame = (() => {
 
     $('start-tasting-btn').disabled = true;
     $('start-tasting-btn').innerHTML = '<i class="fa-solid fa-spinner"></i> In Service';
-    setReturnLink('Back to Hotel', 'fa-arrow-left');
+    setReturnLink('Back to Hotel Lobby', 'fa-arrow-left');
     setNextStep('Choose 3 dishes for the first table.');
     hideResults();
     clearLog();
     nextTable();
     updateStats();
     log(`Service opened. Restaurant staff coverage: ${service.staffEffect?.score ?? 0}% ${service.staffEffect?.label ?? 'Short'}.`, 'gold');
+    if (twist) log(`${twist.emoji} ${twist.title}: ${twist.summary}`, 'gold');
   }
 
   function nextTable() {
@@ -107,7 +116,13 @@ const RestaurantGame = (() => {
       finishService();
       return;
     }
-    service.table = TABLES[Math.floor(Math.random() * TABLES.length)];
+    service.firing = false;
+    const weddingDue = service.twist?.effects.bigTable === 'wedding' && service.served === Math.floor(service.target / 2);
+    service.table = weddingDue ? WEDDING_TABLE : TABLES[Math.floor(Math.random() * TABLES.length)];
+    if (weddingDue) {
+      log('💍 The wedding party has arrived. This table pays 2.5×.', 'gold');
+      CasinoShell.announce?.('The wedding party has arrived.');
+    }
     service.selected = [];
     service.lastHarmony = 0;
     hideFlightFeedback();
@@ -118,7 +133,7 @@ const RestaurantGame = (() => {
   }
 
   function addDish(dishId) {
-    if (!service?.active || service.selected.length >= MAX_COURSES) return;
+    if (!service?.active || service.firing || service.selected.length >= MAX_COURSES) return;
     const dish = DISHES.find(d => d.id === dishId);
     if (!dish || service.selected.some(d => d.id === dishId)) return;
     service.selected.push(dish);
@@ -128,7 +143,7 @@ const RestaurantGame = (() => {
   }
 
   function clearFlight() {
-    if (!service?.active) return;
+    if (!service?.active || service.firing) return;
     service.selected = [];
     renderFlight();
     renderDishes();
@@ -136,7 +151,11 @@ const RestaurantGame = (() => {
   }
 
   function fireFlight() {
-    if (!service?.active || service.selected.length !== MAX_COURSES) return;
+    if (!service?.active || service.firing || service.selected.length !== MAX_COURSES) return;
+    // Lock until the next table is seated so a double-click can't score twice.
+    service.firing = true;
+    const fireBtn = $('fire-course-btn');
+    if (fireBtn) fireBtn.disabled = true;
     const score = scoreFlight(service.selected, service.table);
     score.harmony = Math.min(100, score.harmony + Math.round((service.staffEffect?.qualityBonus ?? 0) * 4));
     score.signature = score.signature || (score.harmony >= 88 && score.matchedTraits.length >= 3);
@@ -144,7 +163,7 @@ const RestaurantGame = (() => {
     const base = service.selected.reduce((sum, dish) => sum + dish.value, 0);
     const tableBonus = service.table.guests * 8;
     const levelBonus = service.restaurantLevel * 14;
-    const earned = Math.round((base + tableBonus + levelBonus) * (0.55 + score.harmony / 180) * (service.staffEffect?.incomeMult ?? 1));
+    const earned = Math.round((base + tableBonus + levelBonus) * (0.55 + score.harmony / 180) * (service.staffEffect?.incomeMult ?? 1) * (service.table.payMult ?? 1) * (service.twist?.effects.cashMult ?? 1));
 
     service.served++;
     service.earned += earned;
@@ -172,22 +191,28 @@ const RestaurantGame = (() => {
   }
 
   function finishService() {
+    const rewardMult = HotelState.shiftRewardMultiplier?.('restaurant') ?? 1;
+    service.earned = Math.round(service.earned * rewardMult);
     const cash = service.earned;
     const signatures = service.signatures;
     const served = service.served;
     const avgHarmony = served ? Math.round(service.harmonyTotal / served) : 0;
-    const satBonus = Math.max(0, Math.min(8, signatures * 2 + Math.round(avgHarmony / 35) - 1 + (service.staffEffect?.satisfactionBonus ?? 0)));
-    const currentSat = HotelState.getSatisfaction();
-
+    // Grade: average harmony, plus a lift for signature flights
+    const grade = window.HotelShiftBriefing?.finishRun?.('restaurant',
+      avgHarmony + (served ? (signatures / served) * 15 : 0), $('tasting-results'));
+    const satBonus = Math.round(Math.max(0, Math.min(8, signatures * 2 + Math.round(avgHarmony / 35) - 1 + (service.staffEffect?.satisfactionBonus ?? 0))) * rewardMult);
     HotelState.addHotelCash(cash);
-    HotelState.setSatisfaction(currentSat + satBonus);
+    HotelState.addSatisfactionBonus(satBonus);
     HotelState.applyStaffFatigue?.('restaurant', served ? 4 : 1);
     HotelEngine.recalculateReputation(HotelState.get());
     HotelBridge.applyHotelToCasino(HotelState.get());
     HotelState.recordShiftResult?.('restaurant', {
-      title: 'Tasting Room complete',
+      title: `Tasting Room complete${service.twist ? ` · ${service.twist.title}` : ''}`,
       cash,
       satisfaction: satBonus,
+      rewardMult,
+      grade: grade?.letter,
+      score: grade?.score,
       primaryLabel: 'Tables',
       primaryValue: served,
       summary: `${served} tables served with ${signatures} signature flights.`,
@@ -203,16 +228,17 @@ const RestaurantGame = (() => {
     service.active = false;
     $('start-tasting-btn').disabled = false;
     $('start-tasting-btn').innerHTML = '<i class="fa-solid fa-rotate-right"></i> Open Service Again';
-    setReturnLink('Return to Hotel', 'fa-building');
+    setReturnLink('Back to Hotel Lobby', 'fa-building');
     $('fire-course-btn').disabled = true;
     $('fire-course-btn').innerHTML = '<i class="fa-solid fa-bell-concierge"></i> Service Complete';
     $('clear-flight-btn').disabled = true;
-    setNextStep('Return to Hotel with the result, or open service again.');
+    setNextStep('Head back to the Hotel Lobby with the result, or open service again.');
     syncHotelCash();
     updateStats();
     showResults({ cash, served, signatures, satBonus, avgHarmony, bestTable: service.bestTable, weakTable: service.weakTable });
     log(`Service complete. Hotel earned $${fmt(cash)}. Satisfaction +${satBonus}.`, 'gold');
-    CasinoShell.celebrate(cash);
+    if (rewardMult < 1) log(`Repeat run this phase: ${Math.round(rewardMult * 100)}% rewards. Full rewards return next phase.`, 'bad');
+    CasinoShell.celebrate(cash, { currency: 'hotel' });
     CasinoShell.toast(`Tasting room complete: +$${fmt(cash)} hotel cash`);
   }
 
@@ -342,11 +368,11 @@ const RestaurantGame = (() => {
     $('harmony-score').textContent = score.harmony;
     $('harmony-fill').style.width = `${score.harmony}%`;
     $('harmony-fill').className = score.harmony >= 82 ? 'high' : score.harmony >= 58 ? 'mid' : 'low';
-    $('fire-course-btn').disabled = !ready;
+    $('fire-course-btn').disabled = !ready || !!service?.firing;
     $('fire-course-btn').innerHTML = ready
       ? '<i class="fa-solid fa-bell-concierge"></i> Fire Flight'
       : `<i class="fa-solid fa-utensils"></i> ${selected.length ? `Choose ${MAX_COURSES - selected.length} More` : 'Choose 3 Dishes'}`;
-    $('clear-flight-btn').disabled = !service?.active || selected.length === 0;
+    $('clear-flight-btn').disabled = !service?.active || !!service.firing || selected.length === 0;
     updateNextStep();
     if (ready) {
       renderFlightFeedback(score, 'preview');
@@ -540,11 +566,11 @@ const RestaurantGame = (() => {
     const table = service?.table;
     if (!table) return;
     $('table-number').textContent = `Table ${service.served + 1}`;
-    $('table-persona').textContent = table.name;
+    $('table-persona').textContent = table.special ? `💍 ${table.name}` : table.name;
     $('brief-title').textContent = table.name;
     $('brief-copy').textContent = table.brief;
     $('craving-tags').innerHTML = table.keywords.map(tag => `<span>${tag}</span>`).join('');
-    $('table-guests').innerHTML = Array.from({ length: table.guests }, (_, i) =>
+    $('table-guests').innerHTML = Array.from({ length: Math.min(8, table.guests) }, (_, i) =>
       `<span style="--i:${i}"><i class="fa-solid fa-user"></i></span>`
     ).join('');
   }
@@ -575,7 +601,8 @@ const RestaurantGame = (() => {
       const nextCourse = COURSES[service?.selected?.length ?? 0];
       const courseFit = service?.active && nextCourse ? (dish.courseBonus?.[nextCourse.key] ?? 0) >= 7 : false;
       const tableFit = service?.active && service.table ? dishFitsTable(dish, service.table) : false;
-      const suggested = unlocked && !selectedIds.has(dish.id) && (courseFit || tableFit);
+      // Training hint: flag dishes that fit (HotelShiftBriefing decides when)
+      const suggested = hintsOn() && unlocked && !selectedIds.has(dish.id) && (courseFit || tableFit);
       const hint = courseFit ? 'Course Fit' : tableFit ? 'Table Fit' : '';
 
       // Build mini flavor bars (4 axes, each 0–3)
@@ -610,7 +637,7 @@ const RestaurantGame = (() => {
       ? 'Open service to compose tasting flights for guests with shifting moods.'
       : 'Build the Restaurant department to open a tasting room shift.';
     $('table-persona').textContent = level > 0 ? 'Ready' : 'Closed';
-    $('tables-target').textContent = Math.min(7, 3 + Math.max(1, level));
+    $('tables-target').textContent = Math.min(7, 3 + Math.max(1, level)) + (window.HotelShiftBriefing?.twistFor?.('restaurant')?.effects.extraGuests ?? 0);
     renderFlight();
     // Draw empty radar with no wants
     radarCurrent = { comfort:0, bright:0, luxury:0, surprise:0 };
@@ -618,13 +645,13 @@ const RestaurantGame = (() => {
     radarWants   = null;
     drawRadar(radarCurrent, null);
     log(level > 0 ? 'Dining room is ready.' : 'Restaurant is not built yet.', level > 0 ? 'gold' : 'bad', true);
-    setReturnLink('Back to Hotel', 'fa-arrow-left');
+    setReturnLink('Back to Hotel Lobby', 'fa-arrow-left');
     setNextStep(level > 0 ? 'Open service to see the first table.' : 'Build the Restaurant to unlock service.');
   }
 
   function updateStats() {
     $('tables-served').textContent = service?.served ?? 0;
-    $('tables-target').textContent = service?.target ?? Math.min(7, 3 + Math.max(1, HotelState.get().departments.restaurant?.level ?? 0));
+    $('tables-target').textContent = service?.target ?? Math.min(7, 3 + Math.max(1, HotelState.get().departments.restaurant?.level ?? 0)) + (window.HotelShiftBriefing?.twistFor?.('restaurant')?.effects.extraGuests ?? 0);
     $('tasting-earned').textContent = fmt(service?.earned ?? 0);
     $('signature-count').textContent = service?.signatures ?? 0;
     $('room-mood').textContent = (service?.signatures ?? 0) >= 2 ? 'Electric' : (service?.lastHarmony ?? 0) >= 70 ? 'Warm' : 'Quiet';

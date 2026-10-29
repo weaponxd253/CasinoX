@@ -3,25 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Run a hotel and play its casino: slots, blackjack, roulette and six hotel shifts. A free browser game. Simulated, no real money.">
+  <meta name="theme-color" content="#0e4a2c">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
   <title>Blackjack X — Casino X</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="../vendor/fonts/fonts.css?v=2026.10.6-s1">
+  <link rel="stylesheet" href="../vendor/fontawesome/css/fa.min.css?v=2026.10.6-s1">
 
   <!-- Shell first, game styles second, mobile last -->
+<<<<<<< HEAD
   <link rel="stylesheet" href="../casino-shell.css?v=casino-nav-v1">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="betting.css">
   <link rel="stylesheet" href="floor-embed.css">
   <link rel="stylesheet" href="../casino-mobile.css">
+=======
+  <link rel="stylesheet" href="../casino-shell.css?v=2026.10.6-s1">
+  <link rel="stylesheet" href="styles.css?v=2026.10.6-s1">
+  <link rel="stylesheet" href="betting.css?v=2026.10.6-s1">
+  <link rel="stylesheet" href="../casino-mobile.css?v=2026.10.6-s1">
+>>>>>>> 152942c07eeffbbadba72f112b8c9ed9366bebb6
 </head>
 <body>
   <!-- Shell injects the header. Game content starts here. -->
 
   <p class="instruction-strip">
     Stack chips below to place a bet, then Deal.
-    Hit for another card — Stand to let the dealer play. Blackjack pays 3:2.
+    Hit for another card — Stand to let the dealer play. Double on any two cards,
+    split pairs, and insure when the dealer shows an Ace. Blackjack pays 3:2.
   </p>
 
   <!-- Speed control — moved out of header, lives near the table -->
@@ -55,6 +65,9 @@
       <button class="chip-btn chip-5"  data-value="5"  aria-label="Bet $5">$5</button>
       <button class="chip-btn chip-10" data-value="10" aria-label="Bet $10">$10</button>
       <button class="chip-btn chip-25" data-value="25" aria-label="Bet $25">$25</button>
+      <!-- High-limit chips appear with the hotel's Casino Floor upgrades -->
+      <button class="chip-btn chip-50"  data-value="50"  aria-label="Bet $50"  hidden>$50</button>
+      <button class="chip-btn chip-100" data-value="100" aria-label="Bet $100" hidden>$100</button>
     </div>
     <div class="bet-readout">
       <span class="bet-label">Bet</span>
@@ -71,6 +84,10 @@
     <button class="action-btn primary"   onclick="deal()"        id="deal-button">Deal</button>
     <button class="action-btn secondary" onclick="playerHit()"   id="hit-button"   disabled>Hit</button>
     <button class="action-btn secondary" onclick="playerStand()" id="stand-button" disabled>Stand</button>
+    <button class="action-btn secondary" id="double-button" disabled title="Double your bet, take one card, then stand">Double</button>
+    <button class="action-btn secondary" id="split-button" disabled title="Split a pair into two hands">Split</button>
+    <button class="action-btn primary"   id="insurance-yes" hidden>Insure</button>
+    <button class="action-btn secondary" id="insurance-no" hidden>No insurance</button>
     <button class="action-btn danger"    onclick="resetTable()"  id="reset-button">Clear Table</button>
   </div>
 
@@ -94,10 +111,19 @@
     </ul>
   </div>
 
+<<<<<<< HEAD
   <script src="../save-safety.js"></script>
   <script src="../wallet.js"></script>
 <script src="../casino-shell.js?v=casino-nav-v1"></script>
   <script src="script.js"></script>
   <script src="floor-bridge.js"></script>
+=======
+  <script src="../safe-storage.js?v=2026.10.6-s1"></script>
+  <script src="../wallet.js?v=2026.10.6-s1"></script>
+<script src="../casino-shell.js?v=2026.10.6-s1"></script>
+  <script src="../hotel-events.js?v=2026.10.6-s1"></script>
+  <script src="../hotel-perks.js?v=2026.10.6-s1"></script>
+  <script src="script.js?v=2026.10.6-s1"></script>
+>>>>>>> 152942c07eeffbbadba72f112b8c9ed9366bebb6
 </body>
 </html>

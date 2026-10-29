@@ -8,6 +8,7 @@
 
 const HotelState = (() => {
   const STORAGE_KEY = 'hotelGameState';
+  const BACKUP_KEY  = 'hotelGameState.corruptBackup';
   const SCHEMA_VERSION = 9;
 
   let _state = null;
@@ -90,6 +91,7 @@ const HotelState = (() => {
         vipDepartsAt:        null,
         roster:              [],
         checkInBoostRemaining: 0,
+        dirtyRooms:          0,
         rosterIdCounter:     0,
         stats: { totalHosted:0, vipsHosted:0, highRollersHosted:0, totalSpent:0 },
       },
@@ -140,16 +142,11 @@ const HotelState = (() => {
       achievements: {
         reputationBonus: 0,
         unlocked:        [],
-        progress: {
-          'first_upgrade':      { current:0, required:1  },
-          'five_upgrades':      { current:0, required:5  },
-          'satisfaction_80':    { current:0, required:1  },
-          'first_vip':          { current:0, required:1  },
-          'ten_blackjack_wins': { current:0, required:10 },
-          'jackpot_hit':        { current:0, required:1  },
-          'full_house':         { current:0, required:1  },
-          'all_depts_unlocked': { current:0, required:7  },
-        },
+        // One entry per catalog achievement (hotel-config.js)
+        progress: Object.fromEntries(HotelConfig.ACHIEVEMENT_CATALOG.map(entry =>
+          [entry.id, { current: 0, required: entry.required ?? 1 }])),
+        unlockedAt: {},
+        unseen: [],
       },
       casinoBridge: {
         activeMultiplier:  1.0,
@@ -187,6 +184,15 @@ const HotelState = (() => {
       state.guests        = state.guests        ?? createNewSave().guests;
       state.achievements  = state.achievements  ?? createNewSave().achievements;
     }
+    // Every catalog achievement has a progress entry (new ones join old saves)
+    state.achievements = state.achievements ?? createNewSave().achievements;
+    state.achievements.progress = state.achievements.progress ?? {};
+    state.achievements.unlockedAt = state.achievements.unlockedAt ?? {};
+    if (!Array.isArray(state.achievements.unseen)) state.achievements.unseen = [];
+    HotelConfig.ACHIEVEMENT_CATALOG.forEach(entry => {
+      state.achievements.progress[entry.id] = state.achievements.progress[entry.id]
+        ?? { current: 0, required: entry.required ?? 1 };
+    });
     const fresh = createNewSave();
     const hadOnboarding = !!state.onboarding;
     const hadGuidedStep = typeof state.onboarding?.guidedStep === 'string';
@@ -221,6 +227,7 @@ const HotelState = (() => {
     state.guests.stats = state.guests.stats ?? fresh.guests.stats;
     if (!Array.isArray(state.guests.roster)) state.guests.roster = [];
     if (typeof state.guests.checkInBoostRemaining !== 'number') state.guests.checkInBoostRemaining = 0;
+    if (typeof state.guests.dirtyRooms !== 'number') state.guests.dirtyRooms = 0;
     if (typeof state.guests.rosterIdCounter !== 'number') {
       state.guests.rosterIdCounter = state.guests.roster.length;
     }
@@ -303,18 +310,64 @@ const HotelState = (() => {
 
   /* ── Persistence ─────────────────────────────────────────── */
   function load() {
+<<<<<<< HEAD
     CasinoSaveSafety.assertReadable(STORAGE_KEY);
+=======
+    let raw = null;
+>>>>>>> 152942c07eeffbbadba72f112b8c9ed9366bebb6
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return createNewSave();
       const parsed = JSON.parse(raw);
       return migrate(parsed);
     } catch (e) {
+<<<<<<< HEAD
       throw CasinoSaveSafety.fail('Hotel save could not be loaded. Its original data has been preserved.');
+=======
+      // Keep the unreadable save so it can be recovered by hand, rather
+      // than letting the fresh save overwrite it on the next write.
+      console.warn(`[HotelState] Corrupt save — backed up to "${BACKUP_KEY}" and starting fresh.`, e);
+      try { if (raw) localStorage.setItem(BACKUP_KEY, raw); } catch (_) { /* storage full */ }
+      _recoveredFromCorruptSave = true;
+      return createNewSave();
+>>>>>>> 152942c07eeffbbadba72f112b8c9ed9366bebb6
     }
   }
 
+  /* Another tab (hotel page or a mini-game) saved: adopt its state so this
+     tab's next save builds on it instead of overwriting it. */
+  let _watchingOtherTabs = false;
+  function watchOtherTabs() {
+    if (typeof window === 'undefined' || _watchingOtherTabs) return;
+    _watchingOtherTabs = true;
+    window.addEventListener('storage', e => {
+      if (e.key !== STORAGE_KEY || !e.newValue) return;
+      try {
+        _state = migrate(JSON.parse(e.newValue));
+        window.dispatchEvent(new CustomEvent('hotel:state-synced'));
+      } catch (err) {
+        console.warn('[HotelState] Ignored unreadable save from another tab.', err);
+      }
+    });
+  }
+
+  let _recoveredFromCorruptSave = false;
+  function didRecoverFromCorruptSave() { return _recoveredFromCorruptSave; }
+
+  /* Mutators call save() constantly (a single live tick used to write the
+     whole state ~5 times). save() now only marks the state dirty and one
+     write happens at the end of the current task, before any navigation
+     or other tab can observe it. saveNow() writes immediately. */
+  let _savePending = false;
+
   function save() {
+    if (!_state || _savePending) return;
+    _savePending = true;
+    queueMicrotask(saveNow);
+  }
+
+  function saveNow() {
+    _savePending = false;
     if (!_state) return;
     CasinoSaveSafety.assertReadable(STORAGE_KEY);
     _state.meta.lastSaved = Date.now();
@@ -325,6 +378,11 @@ const HotelState = (() => {
     }
   }
 
+  // Belt and braces: flush anything pending when the page is hidden.
+  if (typeof window !== 'undefined') {
+    window.addEventListener('pagehide', () => { if (_savePending) saveNow(); });
+  }
+
   /* ── Init ────────────────────────────────────────────────── */
   function init() {
     _state = load();
@@ -333,6 +391,7 @@ const HotelState = (() => {
     ensureMoraleHistory(_state);
     _state.staff.payrollPerDay = calculatePayrollPerDay(_state.staff.roster);
     save();
+    watchOtherTabs();
     return _state;
   }
 
@@ -541,6 +600,28 @@ const HotelState = (() => {
     save();
   }
 
+  /* Mini-game satisfaction bonus: a stacking modifier that wears off over
+     real time. recalculateSatisfaction() adds it on top of the department
+     baseline, so a shift's reward survives the next tick. */
+  function getSatisfactionBonus(now = Date.now()) {
+    const bonus = _state?.satisfaction?.shiftBonus;
+    if (!bonus || !(bonus.value > 0)) return 0;
+    const hours = Math.max(0, now - (bonus.updatedAt ?? now)) / 3_600_000;
+    return Math.max(0, bonus.value - hours * HotelConfig.ECONOMY.SHIFT_SAT_DECAY_PER_HOUR);
+  }
+
+  function addSatisfactionBonus(amount) {
+    const add = Math.max(0, Number(amount) || 0);
+    if (!add) return getSatisfactionBonus();
+    const now = Date.now();
+    const before = getSatisfactionBonus(now);
+    const value = Math.min(HotelConfig.ECONOMY.SHIFT_SAT_MAX, before + add);
+    _state.satisfaction.shiftBonus = { value, updatedAt: now };
+    // Reflect it right away; the engine keeps applying it from here on.
+    setSatisfaction(_state.satisfaction.current + Math.round(value - before));
+    return value;
+  }
+
   function upgradeDept(deptId) {
     const dept    = _state.departments[deptId];
     const catalog = HotelConfig.UPGRADE_CATALOG[deptId];
@@ -594,8 +675,32 @@ const HotelState = (() => {
     if (!entry) return;
     _state.achievements.unlocked.push(id);
     _state.achievements.reputationBonus += entry.repBonus;
+    _state.achievements.unlockedAt = _state.achievements.unlockedAt ?? {};
+    _state.achievements.unlockedAt[id] = Date.now();
+    // Announced by the hotel UI (works for unlocks on shift pages too)
+    _state.achievements.unseen = [...(_state.achievements.unseen ?? []), id];
     save();
     return entry;
+  }
+
+  /* Set progress to an absolute value (for counters such as upgrades). */
+  function setAchievementProgress(id, value) {
+    const prog = _state.achievements.progress[id];
+    if (!prog || _state.achievements.unlocked.includes(id)) return null;
+    const next = Math.min(prog.required, Math.max(prog.current, Math.floor(value)));
+    if (next === prog.current) return null;
+    prog.current = next;
+    if (prog.current >= prog.required) return unlockAchievement(id);
+    save();
+    return null;
+  }
+
+  function takeUnseenAchievements() {
+    const ids = _state.achievements.unseen ?? [];
+    if (!ids.length) return [];
+    _state.achievements.unseen = [];
+    save();
+    return ids.map(id => HotelConfig.ACHIEVEMENT_CATALOG.find(a => a.id === id)).filter(Boolean);
   }
 
   function tickAchievementProgress(id, increment = 1) {
@@ -607,8 +712,16 @@ const HotelState = (() => {
     return null;
   }
 
+  /* A high roller stays for a fixed visit; while they're in the house the
+     casino opens a high-stakes table (hotel-perks.js reads highRollerUntil).
+     A second arrival during a visit extends it. */
   function setHighRollerFlag() {
-    _state.guests.highRollerPresent = true;
+    const g = _state.guests;
+    const now = Date.now();
+    if (!g.highRollerPresent || !(g.highRollerUntil > now)) g.stats.highRollersHosted = (g.stats.highRollersHosted ?? 0) + 1;
+    setAchievementProgress('high_roller_host', g.stats.highRollersHosted);
+    g.highRollerPresent = true;
+    g.highRollerUntil = now + HotelConfig.ECONOMY.HIGH_ROLLER_VISIT_MS;
     save();
   }
 
@@ -630,8 +743,33 @@ const HotelState = (() => {
     save();
   }
 
+  /** Is a high roller in the house right now? */
+  function highRollerInHouse() {
+    const g = _state.guests;
+    return !!(g.highRollerPresent && g.highRollerUntil > Date.now());
+  }
+
+  /** Great service from a shift keeps the high roller around longer. */
+  function extendHighRoller(ms = HotelConfig.ECONOMY.HIGH_ROLLER_SERVICE_BONUS_MS) {
+    if (!highRollerInHouse()) return false;
+    _state.guests.highRollerUntil += ms;
+    save();
+    return true;
+  }
+
+  /** A shift served the visiting high roller: pleased → they stay longer,
+      botched → they check out early and the high-stakes table closes. */
+  function settleHighRollerService(pleased) {
+    if (!highRollerInHouse()) return { pleased, inHouse: false, minutesLeft: 0 };
+    if (pleased) extendHighRoller();
+    else clearHighRollerFlag();
+    const until = _state.guests.highRollerUntil ?? 0;
+    return { pleased, inHouse: pleased, minutesLeft: pleased ? Math.ceil((until - Date.now()) / 60_000) : 0 };
+  }
+
   function clearHighRollerFlag() {
     _state.guests.highRollerPresent = false;
+    _state.guests.highRollerUntil = null;
     save();
   }
 
@@ -693,13 +831,14 @@ const HotelState = (() => {
   function shiftGoalForDept(deptId, state = _state) {
     const guests = Math.max(0, state?.guests?.population ?? 0);
     const level = Math.max(1, state?.departments?.[deptId]?.level ?? 1);
+    const extra = (typeof window !== 'undefined' && window.HotelTwists?.active?.(deptId, state)?.effects.extraGuests) || 0;
     if (deptId === 'lobby') return guests ? 'Match arrivals quickly and grow the guest roster.' : 'Fill open rooms and start guest revenue.';
     if (deptId === 'rooms') return `Resolve guest requests for ${guests || 'incoming'} in-house guests.`;
     if (deptId === 'casino') return 'Push casino floor progress and keep VIP energy high.';
-    if (deptId === 'restaurant') return `Serve ${Math.min(7, 3 + level)} tables with strong harmony.`;
-    if (deptId === 'bar') return `Serve ${Math.min(8, 4 + level)} lounge guests before patience drops.`;
+    if (deptId === 'restaurant') return `Serve ${Math.min(7, 3 + level) + extra} tables with strong harmony.`;
+    if (deptId === 'bar') return `Serve ${Math.min(8, 4 + level) + extra} lounge guests before patience drops.`;
     if (deptId === 'entertainment') return 'Book the best show slot for traffic and mood.';
-    if (deptId === 'spa') return `Treat ${7 + level} wellness guests before walkouts.`;
+    if (deptId === 'spa') return `Treat ${7 + level + extra} wellness guests before walkouts.`;
     return 'Complete the shift and return with hotel progress.';
   }
 
@@ -848,10 +987,15 @@ const HotelState = (() => {
     const cycleKey = shiftCycleKey();
     const active = shifts.active?.deptId === deptId ? shifts.active : null;
     const briefing = normalizeShiftBriefing(result.briefing) ?? normalizeShiftBriefing(active?.briefing) ?? getShiftBriefing(deptId);
+    const runInCycle = shiftRunsThisCycle(deptId) + 1;
     const entry = {
       id: `shift_result_${now}_${deptId}`,
       deptId,
       cycleKey,
+      runInCycle,
+      rewardMult: result.rewardMult ?? 1,
+      grade: result.grade ?? null,
+      score: result.score ?? null,
       completedAt: now,
       title: result.title ?? `${briefing?.title ?? deptLabel(deptId)} complete`,
       cash: Math.max(0, Math.round(Number(result.cash ?? 0))),
@@ -875,9 +1019,30 @@ const HotelState = (() => {
     shifts.history = shifts.history.slice(0, 20);
     shifts.completions[cycleKey] = shifts.completions[cycleKey] ?? {};
     shifts.completions[cycleKey][deptId] = entry;
+    // Lifetime counters (daily goals measure progress against these)
+    _state.stats.shiftsCompleted = (_state.stats.shiftsCompleted ?? 0) + 1;
+    _state.stats.shiftsByDept = _state.stats.shiftsByDept ?? {};
+    _state.stats.shiftsByDept[deptId] = (_state.stats.shiftsByDept[deptId] ?? 0) + 1;
+    setAchievementProgress('ten_shifts', _state.stats.shiftsCompleted);
     if (shifts.active?.deptId === deptId) shifts.active = null;
     save();
     return entry;
+  }
+
+  /* Personal best grade per shift (HotelShiftBriefing.finishRun). */
+  function recordShiftBest(deptId, score, letter) {
+    if (!_state || !deptId) return { isNewBest: false, previous: null, best: null };
+    const shifts = ensureShiftState();
+    shifts.best = shifts.best ?? {};
+    const previous = shifts.best[deptId] ?? null;
+    const isNewBest = !previous || score > previous.score;
+    if (isNewBest) shifts.best[deptId] = { score, letter, at: Date.now() };
+    save();
+    return { isNewBest, previous, best: shifts.best[deptId] };
+  }
+
+  function getShiftBest(deptId, state = _state) {
+    return state?.shifts?.best?.[deptId] ?? null;
   }
 
   function dismissShiftResult(resultId = _state?.shifts?.lastResult?.id) {
@@ -886,6 +1051,21 @@ const HotelState = (() => {
     shifts.dismissedResultId = resultId;
     save();
     return true;
+  }
+
+  /* Runs of this shift already completed in the current phase. */
+  function shiftRunsThisCycle(deptId, state = _state) {
+    const prev = getShiftResult(deptId, state);
+    return prev ? (prev.runInCycle ?? 1) : 0;
+  }
+
+  /* Share of rewards the next run of this shift pays: full on the first run
+     each phase, reduced on repeats so replaying can't farm hotel cash.
+     Dev mode always pays in full. */
+  function shiftRewardMultiplier(deptId, state = _state) {
+    if (HotelConfig.isDevMode?.()) return 1;
+    const steps = HotelConfig.ECONOMY.SHIFT_REPEAT_REWARD;
+    return steps[Math.min(shiftRunsThisCycle(deptId, state), steps.length - 1)];
   }
 
   function getShiftResult(deptId, state = _state) {
@@ -995,6 +1175,24 @@ const HotelState = (() => {
 
   function getCheckInBoost() {
     return _state.guests.checkInBoostRemaining ?? 0;
+  }
+
+  /* Dirty rooms: Floor Ops leaves them when cleaning requests escalate, and
+     cleans them when it finishes cleaning requests. Check-In Rush can't
+     assign a dirty room until it calls housekeeping. */
+  function getDirtyRooms() {
+    return _state.guests.dirtyRooms ?? 0;
+  }
+
+  function addDirtyRooms(n) {
+    const cap = HotelConfig.ECONOMY.DIRTY_ROOM_CAP ?? 6;
+    _state.guests.dirtyRooms = Math.max(0, Math.min(cap, getDirtyRooms() + Math.round(n || 0)));
+    save();
+    return _state.guests.dirtyRooms;
+  }
+
+  function cleanDirtyRooms(n) {
+    return addDirtyRooms(-Math.abs(Math.round(n || 0)));
   }
 
   function getStaffRoster() {
@@ -2012,7 +2210,7 @@ const HotelState = (() => {
   }
 
   return {
-    init, get, save, resetSave, createNewSave,
+    init, get, save, saveNow, resetSave, createNewSave, didRecoverFromCorruptSave,
     getDept, getCash, getReputation, getSatisfaction,
     getOnboarding, isOnboardingActive, isGuidedOnboardingActive,
     getGuidanceMode, setGuidanceMode, isExpertMode,
@@ -2020,13 +2218,16 @@ const HotelState = (() => {
     completeOnboarding, advanceGuidedOnboarding, setGuidedReport, dismissOnboarding,
     addHotelCash, spendHotelCash,
     setReputation, setSatisfaction, setSatisfactionComponents, setTrend,
+    getSatisfactionBonus, addSatisfactionBonus,
     upgradeDept, unlockDept, updateTicker,
-    updateCasinoBridge, setHighRollerFlag, clearHighRollerFlag,
+    updateCasinoBridge, setHighRollerFlag, clearHighRollerFlag, highRollerInHouse, extendHighRoller, settleHighRollerService,
+    getDirtyRooms, addDirtyRooms, cleanDirtyRooms,
     setGuestData, setVipPresent,
     bookEntertainmentShow, cancelEntertainmentShow,
     setCalendar, addCalendarReport,
     recordShiftStart, recordShiftResult, dismissShiftResult,
     getShiftStatus, getShiftResult, getLatestShiftResult, getShiftBriefing, shiftCycleKey,
+    shiftRunsThisCycle, shiftRewardMultiplier, recordShiftBest, getShiftBest,
     addGuestToRoster, removeGuestFromRoster, pruneExpiredFromRoster,
     getRoster, getRosterCount,
     applyCheckInBoost, consumeCheckInBoost, getCheckInBoost,
@@ -2037,7 +2238,7 @@ const HotelState = (() => {
     assignStaff, restStaff, adjustStaffStamina, trainStaff, promoteStaff, getFireStaffImpact, fireStaff, processStaffPayroll, applyStaffFatigue,
     getStaffApplications, reviewStaffApplication, shortlistStaffApplication, rejectStaffApplication, hireStaffApplication,
     departmentFitScore,
-    unlockAchievement, tickAchievementProgress,
+    unlockAchievement, tickAchievementProgress, setAchievementProgress, takeUnseenAchievements,
   };
 })();
 

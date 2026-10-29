@@ -31,9 +31,9 @@
 .tasting-cash span,
 .brief-label,
 .next-step-panel span,
-.balance-top span,
-.tasting-stats span,
-.results-grid span,
+.balance-top > span,
+.tasting-stats > div > span,
+.results-grid > div > span,
 .pantry-head span,
 .course-slot span,
 .flight-feedback > span {

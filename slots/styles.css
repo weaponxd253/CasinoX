@@ -59,6 +59,12 @@ h2 { font-size: 22px; text-align: center; margin: 30px 0 12px; letter-spacing: 0
   transform: translateY(-4px); transition: transform 0.15s ease;
 }
 .bet-buttons .pushable:disabled { opacity: 0.4; cursor: not-allowed; }
+.bet-buttons .pushable.selected .front {
+  background: linear-gradient(135deg, var(--gold), var(--gold-light, #e8cb80));
+  box-shadow: 0 0 0 2px var(--cream, #f5ead5), 0 0 14px rgba(201,168,76,0.6);
+}
+.bet-buttons .pushable.unaffordable { opacity: 0.35; }
+.bet-buttons .pushable.unaffordable .front { text-decoration: line-through; }
 
 /* ── Round action buttons ── */
 .button-container { display: flex; justify-content: center; align-items: center; gap: 22px; margin-top: 14px; }
@@ -95,6 +101,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .history-amount { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; }
 .history-amount.win { color: var(--win); }
 .history-amount.loss { color: var(--loss); }
+.history-amount.push { color: var(--text-dim); }
 .history-item.history-win { border-color: rgba(111,207,151,0.4); }
 .history-item.history-loss { border-color: rgba(224,121,109,0.4); }
 
@@ -117,3 +124,19 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
   .digital-screen, .small-screen { width: 100%; font-size: 1rem; }
   .bet-buttons .front { padding: 9px 18px; font-size: 0.9rem; }
 }
+.winning-chart .jackpot-row td { color: var(--gold-light); font-weight: 700; }
+.paytable-note { text-align: center; color: var(--text-dim); font-size: 0.9rem; margin: 0 auto 16px; max-width: 90%; }
+.bet-buttons .pushable.high-limit .front { box-shadow: inset 0 0 0 2px var(--hotel-cash, #6fcf97); }
+
+/* ── Auto-spin ── */
+.autospin-row { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; margin: 4px 0 8px; }
+.autospin-label { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-dim); }
+.autospin-btn, .autospin-stop {
+  min-height: 34px; min-width: 46px; padding: 0 12px;
+  border: 1px solid var(--border); border-radius: 999px;
+  background: rgba(0,0,0,0.2); color: var(--gold-light);
+  font-family: var(--font-display); font-weight: 700; cursor: pointer;
+}
+.autospin-btn:hover { border-color: var(--gold); }
+.autospin-btn[hidden], .autospin-stop[hidden] { display: none; }
+.autospin-stop { border-color: var(--loss); color: #ffb4ab; background: rgba(192,57,43,0.18); }

@@ -137,22 +137,28 @@ const UPGRADE_CATALOG = {
 
 /* ── Achievement catalog ── */
 const ACHIEVEMENT_CATALOG = [
-  { id:'first_upgrade',       label:'Room Service',     icon:'🔨', repBonus:1,
+  { id:'first_upgrade',       label:'Room Service',     icon:'🔨', repBonus:1, required:1,
     desc:'Upgrade any department for the first time.' },
-  { id:'five_upgrades',       label:'Expansion Mode',   icon:'📐', repBonus:2,
+  { id:'five_upgrades',       label:'Expansion Mode',   icon:'📐', repBonus:2, required:5,
     desc:'Perform 5 department upgrades total.' },
-  { id:'satisfaction_80',     label:'Guest Favourite',  icon:'😊', repBonus:2,
-    desc:'Maintain 80%+ satisfaction for 1 hour.' },
-  { id:'first_vip',           label:'Red Carpet',       icon:'⭐', repBonus:3,
+  { id:'satisfaction_80',     label:'Guest Favourite',  icon:'😊', repBonus:2, required:1,
+    desc:'Reach 80% guest satisfaction.' },
+  { id:'first_vip',           label:'Red Carpet',       icon:'⭐', repBonus:3, required:1,
     desc:'Host your first VIP guest.' },
-  { id:'ten_blackjack_wins',  label:'House Advantage',  icon:'🂡', repBonus:1,
+  { id:'ten_blackjack_wins',  label:'House Advantage',  icon:'🂡', repBonus:1, required:10,
     desc:'Win 10 blackjack hands (tracked from casino).' },
-  { id:'jackpot_hit',         label:'Lucky Resort',     icon:'🎰', repBonus:2,
+  { id:'jackpot_hit',         label:'Lucky Resort',     icon:'🎰', repBonus:2, required:1,
     desc:'Hit a slot jackpot (tracked from casino).' },
-  { id:'full_house',          label:'No Vacancy',       icon:'🏨', repBonus:2,
+  { id:'full_house',          label:'No Vacancy',       icon:'🏨', repBonus:2, required:1,
     desc:'Fill all room capacity.' },
-  { id:'all_depts_unlocked',  label:'Full Service',     icon:'🏆', repBonus:5,
+  { id:'all_depts_unlocked',  label:'Full Service',     icon:'🏆', repBonus:5, required:7,
     desc:'Unlock every department.' },
+  { id:'ten_shifts',          label:'Floor Manager',    icon:'📋', repBonus:2, required:10,
+    desc:'Complete 10 hotel shifts.' },
+  { id:'high_roller_host',    label:'Whale Watching',   icon:'💎', repBonus:2, required:1,
+    desc:'Host a high roller (they open the high-stakes table).' },
+  { id:'first_chest',         label:'Goal Getter',      icon:'🎁', repBonus:1, required:1,
+    desc:'Finish a day of goals and open the reward chest.' },
 ];
 
 /* ── Economy constants ── */
@@ -162,7 +168,26 @@ const ECONOMY = {
   INCOME_TICK_MS:      60_000,  // income calculated every 60s
   SAT_TICK_MS:         30_000,  // satisfaction recalculated every 30s
   SAT_BASE:            50,      // base satisfaction before dept bonuses
+  ADVANCE_COOLDOWN_MS: 10 * 60_000, // real time between manual Advance Time clicks
+  SHIFT_SAT_MAX:       20,      // cap on stacked mini-game satisfaction bonus
+  SHIFT_SAT_DECAY_PER_HOUR: 10, // bonus points that wear off per real hour
+  ADVANCE_PHASE_INCOME_MINUTES: 20, // income paid by one Advance Time (dev mode: 360)
+  // Reward share for the 1st, 2nd, 3rd+ run of the same shift in one phase
+  SHIFT_REPEAT_REWARD: [1, 0.5, 0.25],
+  // High-roller visits open a high-stakes casino table for this long
+  HIGH_ROLLER_VISIT_MS: 45 * 60_000,
+  // A high roller pampered at the bar or spa stays this much longer; a botched one checks out
+  HIGH_ROLLER_SERVICE_BONUS_MS: 15 * 60_000,
+  // Rooms Floor Ops leaves uncleaned; Check-In can't use them until they're cleaned
+  DIRTY_ROOM_CAP:      6,
 };
+
+/* ── Dev mode ── (?dev=1 / ?dev=0 — defined in wallet.js)
+   Skips the Advance Time cooldown, pays full shift and phase rewards,
+   and lets the Cashier refill at any balance. */
+function isDevMode() {
+  return !!window.CasinoWallet?.devMode?.();
+}
 
 /* ── Guest types (Phase 2 — defined now, activated in Phase 2) ── */
 const GUEST_TYPES = {
@@ -298,5 +323,6 @@ if (typeof window !== 'undefined') {
     ROOM_TYPES, GUEST_ROOM_PREFS, GUEST_PARTY_SIZE,
     STAY_PREFERENCES, SPECIAL_REQUESTS,
     CASINO_GAME_UNLOCKS,
+    isDevMode,
   };
 }

@@ -3,17 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Run a hotel and play its casino: slots, blackjack, roulette and six hotel shifts. A free browser game. Simulated, no real money.">
+  <meta name="theme-color" content="#0e4a2c">
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
   <title>Bar Shift — Casino X Hotel</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="../../vendor/fonts/fonts.css?v=2026.10.6-s1">
+  <link rel="stylesheet" href="../../vendor/fontawesome/css/fa.min.css?v=2026.10.6-s1">
 
-  <link rel="stylesheet" href="../../casino-shell.css?v=theme-controls">
-  <link rel="stylesheet" href="bar.css">
-  <link rel="stylesheet" href="../shift-briefing.css?v=phase9-shifts-v1">
+  <link rel="stylesheet" href="../../casino-shell.css?v=2026.10.6-s1">
+  <link rel="stylesheet" href="bar.css?v=2026.10.6-s1">
+  <link rel="stylesheet" href="../shift-briefing.css?v=2026.10.6-s1">
 
+<<<<<<< HEAD
   <script src="../../save-safety.js"></script>
   <script src="../../wallet.js"></script>
   <script src="../../casino-shell.js?v=theme-controls"></script>
@@ -23,16 +26,26 @@
   <script src="../hotel-bridge.js"></script>
   <script src="../shift-briefing.js?v=phase9-shifts-v1"></script>
   <script src="bar-game.js?v=phase9-shifts-v1"></script>
+=======
+  <script src="../../safe-storage.js?v=2026.10.6-s1"></script>
+  <script src="../../wallet.js?v=2026.10.6-s1"></script>
+  <script src="../../casino-shell.js?v=2026.10.6-s1"></script>
+  <script src="../../hotel-events.js?v=2026.10.6-s1"></script>
+  <script src="../../hotel-perks.js?v=2026.10.6-s1"></script>
+  <script src="../hotel-config.js?v=2026.10.6-s1"></script>
+  <script src="../hotel-state.js?v=2026.10.6-s1"></script>
+  <script src="../hotel-engine.js?v=2026.10.6-s1"></script>
+  <script src="../hotel-bridge.js?v=2026.10.6-s1"></script>
+  <script src="../shift-twists.js?v=2026.10.6-s1"></script>
+  <script src="../shift-briefing.js?v=2026.10.6-s1"></script>
+  <script src="bar-game.js?v=2026.10.6-s1"></script>
+>>>>>>> 152942c07eeffbbadba72f112b8c9ed9366bebb6
 </head>
 <body>
   <main class="game-stage bar-shift-shell">
     <div class="bar-topline">
-      <a class="hotel-back-link" href="../index.html">
-        <i class="fa-solid fa-building"></i>
-        Hotel
-      </a>
       <div class="bar-hotel-cash">
-        <span>Hotel Cash</span>
+        <span><i class="fa-solid fa-building" aria-hidden="true"></i> Hotel Cash</span>
         $<strong id="bar-hotel-cash">0</strong>
       </div>
     </div>
@@ -43,45 +56,29 @@
           <span></span><span></span><span></span><span></span><span></span>
         </div>
         <div class="bar-counter">
-          <div class="customer-zone" id="customer-zone">
-            <div class="customer-avatar" id="customer-avatar">♟</div>
-            <div class="serve-tray" aria-hidden="true">
-              <div class="bar-drink serve-drink beer" id="serve-drink">
-                <div class="drink-liquid"></div>
-                <div class="drink-foam"></div>
-                <div class="drink-bubbles"><span></span><span></span><span></span></div>
-                <div class="drink-ice"><span></span><span></span></div>
-                <div class="drink-straw"></div>
-                <div class="drink-glass-shine"></div>
-              </div>
-            </div>
+          <div class="bar-seats" id="bar-seats" aria-label="Guests at the counter"><!-- rendered by bar-game.js --></div>
+
+          <div class="bar-build">
             <div class="order-ticket">
-              <div class="ticket-label">Order</div>
+              <div class="ticket-label" id="ticket-label">Order</div>
               <div class="ticket-drink" id="ticket-drink">Ready</div>
+              <div class="ticket-recipe" id="ticket-recipe"></div>
               <div class="patience-track">
                 <div class="patience-fill" id="patience-fill"></div>
+              </div>
+              <button class="recipe-book-btn" id="recipe-book-btn" type="button"><i class="fa-solid fa-book" aria-hidden="true"></i> Recipe book</button>
+            </div>
+            <div class="build-glass" aria-label="Your glass">
+              <div class="ticket-label">In the glass</div>
+              <div class="glass-contents" id="glass-contents" aria-live="polite"></div>
+              <div class="glass-actions">
+                <button class="glass-dump" id="dump-btn" type="button" disabled>Empty</button>
+                <button class="glass-serve" id="serve-btn" type="button" disabled>Serve</button>
               </div>
             </div>
           </div>
 
-          <div class="drink-station" id="drink-station">
-            <button class="drink-btn" type="button" data-drink="beer">
-              <span class="bar-drink beer"><span class="drink-liquid"></span><span class="drink-foam"></span><span class="drink-bubbles"><span></span><span></span><span></span></span><span class="drink-glass-shine"></span></span>
-              Beer
-            </button>
-            <button class="drink-btn" type="button" data-drink="martini">
-              <span class="bar-drink martini"><span class="drink-liquid"></span><span class="drink-straw"></span><span class="drink-glass-shine"></span></span>
-              Martini
-            </button>
-            <button class="drink-btn" type="button" data-drink="wine">
-              <span class="bar-drink wine"><span class="drink-liquid"></span><span class="drink-glass-shine"></span></span>
-              Wine
-            </button>
-            <button class="drink-btn" type="button" data-drink="oldFashioned">
-              <span class="bar-drink old-fashioned"><span class="drink-liquid"></span><span class="drink-ice"><span></span><span></span></span><span class="drink-glass-shine"></span></span>
-              Old Fashioned
-            </button>
-          </div>
+          <div class="drink-station ingredient-rail" id="drink-station" aria-label="Ingredients"><!-- rendered by bar-game.js --></div>
         </div>
       </div>
 
@@ -149,7 +146,7 @@
           </button>
           <a class="secondary-shift-btn" id="bar-return-link" href="../index.html">
             <i class="fa-solid fa-arrow-left"></i>
-            Back to Hotel
+            Back to Hotel Lobby
           </a>
         </div>
       </aside>

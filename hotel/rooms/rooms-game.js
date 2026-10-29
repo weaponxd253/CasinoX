@@ -27,12 +27,19 @@ const RoomsGame = (() => {
     { id:'minibar', label:'Minibar Restock', icon:'fa-wine-bottle', need:'runner', fallback:['housekeeper'], type:'minibar', patience:16000, duration:4600, cash:56, sat:1, risk:'lost sale', urgency:'normal', pressure:'lost sale', rewardLabel:'Revenue save', consequence:'Minibar sale is lost.', fitReason:'Runner recovers minibar revenue.' },
   ];
 
+  // Requests that leave a room dirty for Check-In Rush when they escalate
+  const CLEANING_TYPES = ['housekeeping', 'turndown', 'spill'];
+  const MAX_BACKLOG_PER_SHIFT = 3;
+
   const NAMES = ['Vale', 'Park', 'Wynn', 'Cross', 'Sol', 'Reed', 'Stone', 'Marin', 'Kade', 'Lux'];
 
   let shift = null;
   let timer = null;
 
   const $ = id => document.getElementById(id);
+
+  function hintsOn() { return window.HotelShiftBriefing?.hintsOn?.('rooms') ?? true; }
+  document.addEventListener('shift-hints-changed', () => updateAll());
 
   function init() {
     syncHotelCash();
@@ -63,14 +70,16 @@ const RoomsGame = (() => {
     }
 
     window.HotelShiftBriefing?.start?.('rooms', 'Floor Ops');
+    const twist = window.HotelShiftBriefing?.twistFor?.('rooms') ?? null;
     const now = Date.now();
     shift = {
       active: true,
       roomsLevel,
+      twist,
       staffEffect: HotelState.getStaffEffect?.('rooms') ?? null,
       startedAt: now,
       endsAt: now + SHIFT_MS,
-      target: 8 + roomsLevel * 2,
+      target: 8 + roomsLevel * 2 + (twist?.effects.extraGuests ?? 0),
       rooms: buildRooms(roomsLevel),
       staff: STAFF.map(s => ({ ...s, request:null, doneAt:0, startedAt:0 })),
       selectedRequestId: null,
@@ -82,15 +91,20 @@ const RoomsGame = (() => {
       earned: 0,
       satPoints: 0,
       lastOutcome: null,
+      backlogToSpawn: Math.min(MAX_BACKLOG_PER_SHIFT, HotelState.getDirtyRooms?.() ?? 0),
+      backlogCleaned: 0,
+      dirtied: 0,
     };
 
     $('start-ops-btn').disabled = true;
     $('start-ops-btn').innerHTML = '<i class="fa-solid fa-spinner"></i> On Shift';
-    setReturnLink('Back to Hotel', 'fa-arrow-left');
+    setReturnLink('Back to Hotel Lobby', 'fa-arrow-left');
     setNextStep('Click a room request to dispatch the best available staff.');
     hideResults();
     clearLog();
     log(`Floor Ops opened. Room staff coverage: ${shift.staffEffect?.score ?? 0}% ${shift.staffEffect?.label ?? 'Short'}.`, 'gold');
+    if (twist) log(`${twist.emoji} ${twist.title}: ${twist.summary}`, 'gold');
+    if (shift.backlogToSpawn) log(`${shift.backlogToSpawn} dirty room${shift.backlogToSpawn === 1 ? ' is' : 's are'} waiting from earlier. Clean them so Check-In can use them.`, 'bad');
     spawnRequests(3);
     updateAll();
     startTimer();
@@ -107,7 +121,17 @@ const RoomsGame = (() => {
 
   function makeRequest(room) {
     const options = REQUESTS.filter(r => !r.vip || shift.roomsLevel >= 3 || Math.random() < 0.16);
-    const template = options[Math.floor(Math.random() * options.length)];
+    // Rooms left dirty by an earlier shift come back first as resets
+    const backlog = shift.backlogToSpawn > 0;
+    if (backlog) shift.backlogToSpawn--;
+    // Checkout Rush: a share of requests are room resets and spills
+    const share = shift.twist?.effects.cleaningShare ?? 0;
+    const cleaning = options.filter(r => CLEANING_TYPES.includes(r.type) && !r.vip);
+    const pool = share && Math.random() < share ? cleaning : options;
+    const base = backlog ? REQUESTS.find(r => r.id === 'housekeeping') : pool[Math.floor(Math.random() * pool.length)];
+    const template = backlog
+      ? { ...base, label:'Dirty Room Reset', consequence:'Check-In cannot use this room until it is clean.', backlog:true }
+      : base;
     const now = Date.now();
     const patience = Math.round(template.patience * Math.max(0.78, 1.06 - shift.roomsLevel * 0.035) * (shift.staffEffect?.patienceMult ?? 1));
     return {
@@ -146,6 +170,14 @@ const RoomsGame = (() => {
     if (!shift?.active) return;
     const request = findRequest(requestId);
     if (!request || request.status !== 'waiting') return;
+    // Without hints there's no auto-dispatch: select the room, then pick who goes.
+    if (!hintsOn() && !shift.selectedStaffId) {
+      shift.selectedRequestId = requestId;
+      shift.lastOutcome = null;
+      updateAll();
+      CasinoShell.sound.tone(500, 'sine', 0.05, 0.12);
+      return;
+    }
     const staff = chooseStaffForRequest(request);
     if (!staff) {
       shift.selectedRequestId = requestId;
@@ -165,6 +197,12 @@ const RoomsGame = (() => {
     if (!shift?.active) return;
     const staff = shift.staff.find(s => s.id === staffId);
     if (!staff || staff.request) return;
+    const waiting = findRequest(shift.selectedRequestId);
+    if (!hintsOn() && waiting?.status === 'waiting') {   // room first, then staff
+      shift.selectedStaffId = staffId;
+      assignStaffToRequest(staff, waiting);
+      return;
+    }
     shift.selectedStaffId = shift.selectedStaffId === staffId ? null : staffId;
     shift.selectedRequestId = null;
     shift.lastOutcome = shift.selectedStaffId
@@ -220,6 +258,7 @@ const RoomsGame = (() => {
         if (request?.status === 'waiting' && now >= request.patienceEnd) {
           request.status = 'complaint';
           shift.complaints++;
+          if (CLEANING_TYPES.includes(request.type) && !request.backlog) shift.dirtied++;
           if (shift.selectedRequestId === request.requestId) shift.selectedRequestId = null;
           log(`Room ${request.roomNumber} escalated: ${request.label}.`, 'bad');
           CasinoShell.sound.lose();
@@ -258,7 +297,7 @@ const RoomsGame = (() => {
     const handled = fit.tier !== 'risky';
     const base = request.cash + shift.roomsLevel * 7;
     const speedBonus = fast ? request.cash * 0.22 : 0;
-    const earned = Math.round((base * fit.cashMult + speedBonus + (perfect ? request.cash * 0.35 : 0)) * (shift.staffEffect?.incomeMult ?? 1));
+    const earned = Math.round((base * fit.cashMult + speedBonus + (perfect ? request.cash * 0.35 : 0)) * (shift.staffEffect?.incomeMult ?? 1) * (shift.twist?.effects.cashMult ?? 1));
     const sat = perfect
       ? request.sat
       : fit.tier === 'best'
@@ -268,6 +307,8 @@ const RoomsGame = (() => {
           : 0;
     const outcome = buildOutcome(request, staff, fit, perfect, fast, earned, sat);
 
+    if (request.backlog && handled) shift.backlogCleaned++;
+    else if (!request.backlog && CLEANING_TYPES.includes(request.type) && !handled) shift.dirtied++;   // a botched clean still leaves it dirty
     request.status = 'done';
     request.completedAt = Date.now();
     request.outcome = outcome;
@@ -310,16 +351,33 @@ const RoomsGame = (() => {
     clearInterval(timer);
     shift.active = false;
 
-    const satBonus = Math.max(0, Math.min(9, Math.round(shift.satPoints / 3) - shift.complaints + (shift.staffEffect?.satisfactionBonus ?? 0)));
+    // Cleaning requests nobody reached leave their rooms dirty for Check-In
+    shift.rooms.forEach(room => {
+      const request = room.request;
+      if (request?.status === 'waiting' && CLEANING_TYPES.includes(request.type) && !request.backlog) shift.dirtied++;
+    });
+    const dirtyBefore = HotelState.getDirtyRooms?.() ?? 0;
+    const dirtyAfter = HotelState.addDirtyRooms?.(shift.dirtied - shift.backlogCleaned) ?? 0;
+
+    // Grade: requests handled well vs. requests that turned into complaints
+    const handledWell = shift.perfect + 0.6 * Math.max(0, shift.resolved - shift.perfect);
+    const grade = window.HotelShiftBriefing?.finishRun?.('rooms',
+      100 * handledWell / Math.max(1, shift.resolved + shift.complaints), $('ops-results'));
+    const rewardMult = HotelState.shiftRewardMultiplier?.('rooms') ?? 1;
+    shift.earned = Math.round(shift.earned * rewardMult);
+    const satBonus = Math.round(Math.max(0, Math.min(9, Math.round(shift.satPoints / 3) - shift.complaints + (shift.staffEffect?.satisfactionBonus ?? 0))) * rewardMult);
     HotelState.addHotelCash(shift.earned);
-    HotelState.setSatisfaction(HotelState.getSatisfaction() + satBonus);
+    HotelState.addSatisfactionBonus(satBonus);
     HotelState.applyStaffFatigue?.('rooms', shift.resolved ? 4 : 1);
     HotelEngine.recalculateReputation(HotelState.get());
     HotelBridge.applyHotelToCasino(HotelState.get());
     HotelState.recordShiftResult?.('rooms', {
-      title: 'Floor Ops complete',
+      title: `Floor Ops complete${shift.twist ? ` · ${shift.twist.title}` : ''}`,
       cash: shift.earned,
       satisfaction: satBonus,
+      rewardMult,
+      grade: grade?.letter,
+      score: grade?.score,
       primaryLabel: 'Resolved',
       primaryValue: shift.resolved,
       summary: `${shift.resolved} requests resolved, ${shift.complaints} complaints, ${shift.perfect} perfect dispatches.`,
@@ -328,19 +386,26 @@ const RoomsGame = (() => {
         { label:'Complaints', value:shift.complaints },
         { label:'Perfect', value:shift.perfect },
         { label:'Coverage', value:`${shift.staffEffect?.score ?? 0}%` },
+        { label:'Dirty rooms', value:dirtyAfter },
       ],
     });
     CasinoShell.awardXp(Math.max(10, Math.round(shift.earned / 5)));
 
     $('start-ops-btn').disabled = false;
     $('start-ops-btn').innerHTML = '<i class="fa-solid fa-rotate-right"></i> Run Floor Ops Again';
-    setReturnLink('Return to Hotel', 'fa-building');
-    setNextStep('Return to Hotel with the result, or run Floor Ops again.');
+    setReturnLink('Back to Hotel Lobby', 'fa-building');
+    setNextStep('Head back to the Hotel Lobby with the result, or run Floor Ops again.');
     syncHotelCash();
     updateAll();
-    showResults(satBonus);
+    showResults(satBonus, dirtyBefore, dirtyAfter);
+    if (dirtyAfter !== dirtyBefore || dirtyAfter) {
+      log(dirtyAfter
+        ? `${dirtyAfter} room${dirtyAfter === 1 ? '' : 's'} left dirty. Check-In can't use ${dirtyAfter === 1 ? 'it' : 'them'} until housekeeping cleans up.`
+        : 'Every dirty room is clean. Check-In has the full floor.', dirtyAfter > dirtyBefore ? 'bad' : 'good');
+    }
     log(`Shift complete. Hotel earned $${fmt(shift.earned)}. Satisfaction +${satBonus}.`, 'gold');
-    if (shift.earned > 0) CasinoShell.celebrate(shift.earned);
+    if (rewardMult < 1) log(`Repeat run this phase: ${Math.round(rewardMult * 100)}% rewards. Full rewards return next phase.`, 'bad');
+    if (shift.earned > 0) CasinoShell.celebrate(shift.earned, { currency: 'hotel' });
     CasinoShell.toast(`Floor Ops complete: +$${fmt(shift.earned)} hotel cash`);
   }
 
@@ -455,14 +520,24 @@ const RoomsGame = (() => {
     const roomsLevel = HotelState.get().departments.rooms?.level ?? 1;
     const tier = HotelConfig.UPGRADE_CATALOG.rooms?.[Math.max(0, roomsLevel - 1)];
     $('rooms-tier-label').textContent = tier?.label ?? 'Guest Rooms';
-    $('ops-target').textContent = 8 + roomsLevel * 2;
+    $('ops-target').textContent = 8 + roomsLevel * 2 + (window.HotelShiftBriefing?.twistFor?.('rooms')?.effects.extraGuests ?? 0);
     $('ops-time').textContent = '1:10';
     $('ops-session-fill').style.width = '0%';
+    const dirty = HotelState.getDirtyRooms?.() ?? 0;
     log('Guest Rooms are ready for Floor Ops.', 'gold', true);
-    setReturnLink('Back to Hotel', 'fa-arrow-left');
-    setNextStep('Start Floor Ops, then click a room to dispatch staff.');
+    if (dirty) log(`${dirty} room${dirty === 1 ? ' was' : 's were'} left dirty. Check-In can't use ${dirty === 1 ? 'it' : 'them'} until they're cleaned.`, 'bad');
+    setReturnLink('Back to Hotel Lobby', 'fa-arrow-left');
+    setNextStep(idleNextStep());
     updateStats();
     renderSelectedBrief();
+  }
+
+  function idleNextStep() {
+    if (shift) return 'Head back to the Hotel Lobby with the result, or run Floor Ops again.';
+    const dirty = HotelState.getDirtyRooms?.() ?? 0;
+    return dirty
+      ? `Start Floor Ops to clean ${dirty} dirty room${dirty === 1 ? '' : 's'} before Check-In needs ${dirty === 1 ? 'it' : 'them'}.`
+      : 'Start Floor Ops, then click a room to dispatch staff.';
   }
 
   function renderRooms() {
@@ -491,7 +566,7 @@ const RoomsGame = (() => {
           </div>
           <div class="room-meta">
             <span class="urgency-pill ${urgency.tier}">${urgency.label}</span>
-            <span>${staffLabel(request.need)}</span>
+            ${hintsOn() ? `<span>${staffLabel(request.need)}</span>` : ''}
           </div>
           <strong>${request.label}</strong>
           <span class="room-risk">${request.pressure}</span>
@@ -515,7 +590,8 @@ const RoomsGame = (() => {
     const request = findRequest(shift?.selectedRequestId);
     wrap.innerHTML = staff.map(member => {
       const busy = !!member.request;
-      const fit = request && !busy && shift?.active ? evaluateDispatch(member, request) : null;
+      // Training hint: show how well each staff member fits the selected room
+      const fit = hintsOn() && request && !busy && shift?.active ? evaluateDispatch(member, request) : null;
       const recommended = fit?.tier === 'best';
       const selected = shift?.selectedStaffId === member.id;
       const pct = staffPct(member);
@@ -523,7 +599,7 @@ const RoomsGame = (() => {
         <button class="staff-card ${busy ? 'busy' : ''} ${recommended ? 'recommended' : ''} ${selected ? 'manual-selected' : ''} ${fit ? `fit-${fit.tier}` : ''}" type="button" data-staff-id="${member.id}" ${busy || !shift?.active ? 'disabled' : ''}>
           <i class="fa-solid ${member.icon}"></i>
           <span>${member.label}</span>
-          <strong>${busy ? `Room ${member.request.roomNumber}` : selected ? 'Manual Override' : 'Auto Available'}</strong>
+          <strong>${busy ? `Room ${member.request.roomNumber}` : selected ? 'Manual Override' : request && !hintsOn() ? `Send to Room ${request.roomNumber}` : hintsOn() ? 'Auto Available' : 'Available'}</strong>
           ${fit ? `<small class="staff-fit-label">${fit.label}</small><em>${fit.reason}</em>` : selected ? '<small class="staff-fit-label">Selected</small><em>Click a room to send this staff member.</em>' : `<em>${member.strength}</em>`}
           <div class="staff-track"><div class="staff-fill" style="width:${pct}%"></div></div>
         </button>
@@ -543,14 +619,16 @@ const RoomsGame = (() => {
         <p>${shift?.active
           ? selectedStaff
             ? `Click a room to send ${selectedStaff.label}. Click the staff card again to return to auto-dispatch.`
-            : 'Click any active room request to auto-dispatch the best available staff.'
+            : hintsOn()
+              ? 'Click any active room request to auto-dispatch the best available staff.'
+              : 'Click a room request, then choose which staff member to send.'
           : 'Start a shift to open live room requests and triage the floor.'}</p>
       `;
       setNextStep(shift?.active
         ? selectedStaff
           ? `Click a room to send ${selectedStaff.label}.`
-          : 'Click a room request to dispatch the best available staff.'
-        : 'Start Floor Ops to open room requests.');
+          : hintsOn() ? 'Click a room request to dispatch the best available staff.' : 'Click a room request, then pick who goes.'
+        : idleNextStep());
       return;
     }
     const staff = STAFF.find(member => member.id === request.need);
@@ -558,14 +636,17 @@ const RoomsGame = (() => {
     wrap.innerHTML = `
       <span>Selected Request</span>
       <strong>Room ${request.roomNumber}: ${request.label}</strong>
-      <p>${request.guestName} needs ${request.risk} handled. Best staff: ${staff?.label ?? 'Any staff'}.</p>
+      <p>${request.guestName} needs ${request.risk} handled.${hintsOn() ? ` Best staff: ${staff?.label ?? 'Any staff'}.` : ' Choose who to send.'}</p>
       <div class="request-brief-grid">
         <div><span>Pressure</span><strong>${urgency.label}</strong></div>
         <div><span>Reward</span><strong>${request.rewardLabel}</strong></div>
         <div><span>Consequence</span><strong>${request.consequence}</strong></div>
       </div>
     `;
-    setNextStep(`All staff are busy. Room ${request.roomNumber} is queued until someone frees up.`);
+    const anyFree = (shift?.staff ?? []).some(member => !member.request);
+    setNextStep(anyFree && !hintsOn()
+      ? `Pick a staff member to send to Room ${request.roomNumber}.`
+      : `All staff are busy. Room ${request.roomNumber} is queued until someone frees up.`);
   }
 
   function renderDispatchPanel() {
@@ -573,7 +654,7 @@ const RoomsGame = (() => {
     if (!panel) return;
     const request = findRequest(shift?.selectedRequestId);
 
-    if (request) {
+    if (request && hintsOn()) {
       const bestStaff = STAFF.find(member => member.id === request.need);
       const available = (shift?.staff ?? []).filter(member => !member.request);
       const riskyCount = available.filter(member => evaluateDispatch(member, request).tier === 'risky').length;
@@ -680,7 +761,7 @@ const RoomsGame = (() => {
 
   function updateStats() {
     const resolved = shift?.resolved ?? 0;
-    const target = shift?.target ?? 10;
+    const target = shift?.target ?? 8 + Math.max(1, HotelState.get().departments.rooms?.level ?? 1) * 2 + (window.HotelShiftBriefing?.twistFor?.('rooms')?.effects.extraGuests ?? 0);
     const earned = shift?.earned ?? 0;
     const perfect = shift?.perfect ?? 0;
     const complaints = shift?.complaints ?? 0;
@@ -704,7 +785,15 @@ const RoomsGame = (() => {
     $('ops-session-fill').style.width = `${Math.max(0, 100 - (remaining / SHIFT_MS) * 100)}%`;
   }
 
-  function showResults(satBonus) {
+  function showResults(satBonus, dirtyBefore = 0, dirtyAfter = 0) {
+    const note = $('ops-dirty-note');
+    if (note) {
+      note.hidden = !(dirtyBefore || dirtyAfter);
+      note.className = `ops-dirty-note ${dirtyAfter > dirtyBefore ? 'bad' : dirtyAfter < dirtyBefore ? 'good' : ''}`;
+      note.innerHTML = dirtyAfter
+        ? `<i class="fa-solid fa-broom" aria-hidden="true"></i> ${dirtyAfter} dirty room${dirtyAfter === 1 ? '' : 's'} carried over to Check-In Rush`
+        : `<i class="fa-solid fa-broom" aria-hidden="true"></i> All dirty rooms cleaned`;
+    }
     $('result-cash').textContent = fmt(shift.earned);
     $('result-resolved').textContent = shift.resolved;
     $('result-complaints').textContent = shift.complaints;
@@ -773,7 +862,7 @@ const RoomsGame = (() => {
     return evaluateDispatch(staff, request);
   }
 
-  return { init, debugEvaluateDispatch };
+  return { init, debugEvaluateDispatch, debugShift: () => shift };
 })();
 
 if (typeof window !== 'undefined') window.RoomsGame = RoomsGame;

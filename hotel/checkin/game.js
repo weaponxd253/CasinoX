@@ -29,6 +29,9 @@ const CheckInGame = (() => {
   /* ── Cooldown storage kept for future pacing, but disabled for now. ── */
   const COOLDOWN_KEY = 'checkinGameCooldown';
 
+  /* ── Dirty rooms left by Floor Ops: one housekeeper on call ── */
+  const CLEAN_CALL_MS = 4000;
+
   /* ── Game state ──────────────────────────────────────────── */
   let phase          = 'idle';     // idle|countdown|active|complete
   let guestQueue     = [];
@@ -44,6 +47,9 @@ const CheckInGame = (() => {
   let staffEffect    = null;
   let raf            = null;
   let countdownVal   = 3;
+  let cleaning       = null;       // { roomId, doneAt } while housekeeping is on the way
+  let cleanedCount   = 0;
+  let twist          = null;       // calendar twist for this session (shift-twists.js)
 
   /* ── DOM refs ────────────────────────────────────────────── */
   const $ = id => document.getElementById(id);
@@ -51,6 +57,11 @@ const CheckInGame = (() => {
   /* ────────────────────────────────────────────────────────────
      INIT
   ─────────────────────────────────────────────────────────── */
+  function hintsOn() { return window.HotelShiftBriefing?.hintsOn?.('lobby') ?? true; }
+  document.addEventListener('shift-hints-changed', () => {
+    if (phase === 'active') { _renderRoomList(); if (selectedRoom) selectRoom(selectedRoom); }
+  });
+
   function init() {
     CasinoShell.mount({
       name:     'Check-In Rush',
@@ -77,6 +88,10 @@ const CheckInGame = (() => {
       _unlockStart();
     });
     $('ci-confirm-btn').addEventListener('click', confirmCheckIn);
+    $('ci-room-list').addEventListener('click', e => {
+      const tile = e.target.closest('.ci-room-tile[data-room-id]');
+      if (tile && !tile.disabled) selectRoom(tile.dataset.roomId);
+    });
   }
 
   /* ────────────────────────────────────────────────────────────
@@ -125,16 +140,20 @@ const CheckInGame = (() => {
   function startSession() {
     phase = 'active';
     window.HotelShiftBriefing?.start?.('lobby', 'Check-In Rush');
+    twist = window.HotelShiftBriefing?.twistFor?.('lobby') ?? null;
     $('overlay-countdown').style.display = 'none';
     $('ci-hud').style.display            = 'flex';
     $('ci-game-area').style.display      = 'grid';
 
-    sessionMs  = diff.duration * 1000;
+    sessionMs  = (diff.duration + (twist?.effects.extraSeconds ?? 0)) * 1000;
     sessionEnd = Date.now() + sessionMs;
     staffEffect = HotelState.getStaffEffect?.('lobby') ?? null;
     results    = [];
     rooms      = _generateRooms();
     guestQueue = _buildGuestQueue();
+    cleaning   = null;
+    cleanedCount = 0;
+    _markDirtyRooms();
 
     _renderRoomList();
     setNextStep('Select the best matching room for the arriving guest.');
@@ -148,7 +167,8 @@ const CheckInGame = (() => {
   function _buildGuestQueue() {
     const state = HotelState.get();
     const q = [];
-    for (let i = 0; i < diff.guests; i++) {
+    const count = diff.guests + (twist?.effects.extraGuests ?? 0);
+    for (let i = 0; i < count; i++) {
       const g = HotelGuestPool.previewArrival(state);
       if (g) q.push(g);
     }
@@ -170,7 +190,7 @@ const CheckInGame = (() => {
     }
 
     activeGuest  = guestQueue.shift();
-    patienceTotal = (BASE_PATIENCE[activeGuest.type] ?? 20000) * diff.patience * (staffEffect?.patienceMult ?? 1);
+    patienceTotal = (BASE_PATIENCE[activeGuest.type] ?? 20000) * diff.patience * (staffEffect?.patienceMult ?? 1) * (twist?.effects.patienceMult ?? 1);
     if (activeGuest.isReturning) patienceTotal *= 1.3;   // returning guests wait longer
     patienceEnd  = Date.now() + patienceTotal;
 
@@ -192,7 +212,7 @@ const CheckInGame = (() => {
     if (!activeGuest || !selectedRoom || phase !== 'active') return;
 
     const room   = rooms.find(r => r.id === selectedRoom);
-    if (!room || room.occupied) return;
+    if (!room || room.occupied || room.dirty) return;
 
     const match  = _computeMatch(activeGuest, room);
     room.occupied = true;
@@ -265,6 +285,7 @@ const CheckInGame = (() => {
     if (phase !== 'active') return;
     const room = rooms.find(r => r.id === roomId);
     if (!room || room.occupied) return;
+    if (room.dirty) { callHousekeeping(roomId); return; }
 
     const previousRoom = selectedRoom;
     selectedRoom = roomId;
@@ -272,22 +293,27 @@ const CheckInGame = (() => {
 
     if (previousRoom) {
       const prevTile = document.querySelector(`.ci-room-tile[data-room-id="${previousRoom}"]`);
-      if (prevTile) prevTile.classList.remove('selected');
+      if (prevTile) { prevTile.classList.remove('selected'); prevTile.setAttribute('aria-pressed', 'false'); }
     }
     const nextTile = document.querySelector(`.ci-room-tile[data-room-id="${roomId}"]`);
-    if (nextTile) nextTile.classList.add('selected');
+    if (nextTile) { nextTile.classList.add('selected'); nextTile.setAttribute('aria-pressed', 'true'); }
 
     const match = _computeMatch(activeGuest, room);
+    const hints = hintsOn();
     renderSelectionSummary(room, match);
-    setNextStep(`Confirm Room ${room.number} for ${activeGuest.name}. Match: ${_matchPlainLabel(match.quality)}.`);
+    setNextStep(hints
+      ? `Confirm Room ${room.number} for ${activeGuest.name}. Match: ${_matchPlainLabel(match.quality)}.`
+      : `Confirm Room ${room.number} for ${activeGuest.name}, or pick another room.`);
     const btn   = $('ci-confirm-btn');
     btn.disabled = false;
-    btn.innerHTML = match.quality === 'perfect'
+    btn.innerHTML = !hints
+      ? '<i class="fa-solid fa-key"></i> Assign Room & Check In'
+      : match.quality === 'perfect'
       ? '<i class="fa-solid fa-star"></i> Perfect match — Check In!'
       : match.quality === 'good'
       ? '<i class="fa-solid fa-key"></i> Good match — Check In'
       : '<i class="fa-solid fa-key"></i> Assign Room & Check In';
-    btn.className = `ci-confirm-btn match-${match.quality}`;
+    btn.className = `ci-confirm-btn ${hints ? `match-${match.quality}` : ''}`;
   }
 
   /* ────────────────────────────────────────────────────────────
@@ -326,6 +352,49 @@ const CheckInGame = (() => {
       });
     }
     return roomList;
+  }
+
+  /* ────────────────────────────────────────────────────────────
+     DIRTY ROOMS  (left behind by Floor Ops)
+  ─────────────────────────────────────────────────────────── */
+  function _markDirtyRooms() {
+    const dirty = Math.min(HotelState.getDirtyRooms?.() ?? 0, Math.max(0, rooms.length - 2));
+    const open = [...rooms];
+    for (let i = 0; i < dirty; i++) {
+      const room = open.splice(Math.floor(Math.random() * open.length), 1)[0];
+      room.dirty = true;
+    }
+  }
+
+  function callHousekeeping(roomId) {
+    if (phase !== 'active') return;
+    const room = rooms.find(r => r.id === roomId);
+    if (!room?.dirty) return;
+    if (cleaning) {
+      const busy = rooms.find(r => r.id === cleaning.roomId);
+      setNextStep(`Housekeeping is still on Room ${busy?.number}. Pick a clean room or wait.`);
+      CasinoShell.sound.tone(260, 'sine', 0.06, 0.15);
+      return;
+    }
+    const ms = Math.round(CLEAN_CALL_MS * (staffEffect?.speedMult ?? 1));
+    cleaning = { roomId, doneAt: Date.now() + ms, total: ms };
+    setNextStep(`Housekeeping is cleaning Room ${room.number}. The guest keeps waiting meanwhile.`);
+    CasinoShell.sound.tone(520, 'triangle', 0.06, 0.15);
+    _renderRoomList();
+  }
+
+  function _finishCleaning() {
+    const room = rooms.find(r => r.id === cleaning?.roomId);
+    cleaning = null;
+    if (!room) return;
+    room.dirty = false;
+    cleanedCount++;
+    CasinoShell.sound.tone(700, 'sine', 0.06, 0.15);
+    CasinoShell.announce?.(`Room ${room.number} is clean.`);
+    _renderRoomList();
+    if (selectedRoom) {
+      document.querySelector(`.ci-room-tile[data-room-id="${selectedRoom}"]`)?.classList.add('selected');
+    }
   }
 
   /* ────────────────────────────────────────────────────────────
@@ -371,20 +440,31 @@ const CheckInGame = (() => {
     // Reward calculation
     const baseCashBonus = checkedIn.reduce((s, r) =>
       s + Math.round((r.room?.label?.startsWith('Presidential') ? 350 : r.income * 0.25)), 0);
-    const cashBonus   = Math.round(baseCashBonus * (staffEffect?.incomeMult ?? 1));
+    // Grade: half for how many guests got rooms, half for how well they matched
+    const matchValue  = { perfect: 1, good: 0.75, acceptable: 0.4 };
+    const quality     = checkedIn.length
+      ? checkedIn.reduce((sum, r) => sum + (matchValue[r.match?.quality] ?? 0), 0) / checkedIn.length
+      : 0;
+    const total0      = results.length;
+    const runGrade    = window.HotelShiftBriefing?.finishRun?.('lobby',
+      0.5 * (total0 ? (checkedIn.length / total0) * 100 : 0) + 50 * quality,
+      document.querySelector('#overlay-results .results-content'));
+    const rewardMult  = HotelState.shiftRewardMultiplier?.('lobby') ?? 1;
+    const cashBonus   = Math.round(baseCashBonus * (staffEffect?.incomeMult ?? 1) * (twist?.effects.cashMult ?? 1) * rewardMult);
     const matchRate   = checkedIn.length > 0 ? perfect.length / checkedIn.length : 0;
-    const satBoost    = Math.round(matchRate * 18) + (checkedIn.length ? (staffEffect?.satisfactionBonus ?? 0) : 0);
+    const satBoost    = Math.round((Math.round(matchRate * 18) + (checkedIn.length ? (staffEffect?.satisfactionBonus ?? 0) : 0)) * rewardMult);
     const total        = results.length;
     const pct          = total > 0 ? Math.round((checkedIn.length / total) * 100) : 0;
     const grade        = pct >= 90 ? '★★★ Exceptional!' : pct >= 70 ? '★★ Good Work' : pct >= 50 ? '★ Decent' : 'Keep Practising';
 
     // Apply rewards to hotel state
     if (cashBonus > 0) HotelState.addHotelCash(cashBonus);
-    if (satBoost  > 0) {
-      const state = HotelState.get();
-      const newSat = Math.min(100, state.satisfaction.current + satBoost);
-      HotelState.setSatisfaction(newSat);
-    }
+    if (satBoost  > 0) HotelState.addSatisfactionBonus(satBoost);
+
+    // Rooms cleaned here come off the hotel's dirty-room backlog
+    if (cleanedCount > 0) HotelState.cleanDirtyRooms?.(cleanedCount);
+    const dirtyLeft = HotelState.getDirtyRooms?.() ?? 0;
+    cleaning = null;
 
     if (checkedIn.length > 0 && typeof HotelState.applyCheckInBoost === 'function') {
       HotelState.applyCheckInBoost(checkedIn.length);
@@ -394,9 +474,12 @@ const CheckInGame = (() => {
     }
     HotelState.applyStaffFatigue?.('lobby', checkedIn.length ? 3 : 1);
     HotelState.recordShiftResult?.('lobby', {
-      title: 'Check-In Rush complete',
+      title: `Check-In Rush complete${twist ? ` · ${twist.title}` : ''}`,
       cash: cashBonus,
       satisfaction: satBoost,
+      rewardMult,
+      grade: runGrade?.letter,
+      score: runGrade?.score,
       primaryLabel: 'Checked In',
       primaryValue: checkedIn.length,
       summary: `${checkedIn.length} guests checked in, ${perfect.length} perfect matches, ${missed.length} walked out.`,
@@ -440,6 +523,24 @@ const CheckInGame = (() => {
         <span>Satisfaction Boost</span>
         <strong>+${satBoost}%</strong>
       </div>` : ''}
+      ${rewardMult < 1 ? `
+      <div class="reward-row">
+        <i class="fa-solid fa-rotate-right"></i>
+        <span>Repeat run this phase</span>
+        <strong>${Math.round(rewardMult * 100)}% rewards</strong>
+      </div>` : ''}
+      ${cleanedCount || dirtyLeft ? `
+      <div class="reward-row">
+        <i class="fa-solid fa-broom"></i>
+        <span>${cleanedCount ? `Cleaned ${cleanedCount} dirty room${cleanedCount === 1 ? '' : 's'}` : 'Dirty rooms'}</span>
+        <strong>${dirtyLeft ? `${dirtyLeft} still dirty · run Floor Ops` : 'All clean'}</strong>
+      </div>` : ''}
+      ${twist ? `
+      <div class="reward-row">
+        <span aria-hidden="true">${twist.emoji}</span>
+        <span>Shift twist</span>
+        <strong>${twist.title}</strong>
+      </div>` : ''}
       ${staffEffect?.assignedCount ? `
       <div class="reward-row">
         <i class="fa-solid fa-user-tie"></i>
@@ -448,7 +549,7 @@ const CheckInGame = (() => {
       </div>` : ''}
       `;
 
-    if (pct >= 70) CasinoShell.celebrate(cashBonus);
+    if (pct >= 70) CasinoShell.celebrate(cashBonus, { currency: 'hotel' });
 
     $('overlay-results').style.display = 'flex';
   }
@@ -482,6 +583,13 @@ const CheckInGame = (() => {
         );
 
         if (now >= patienceEnd) _handleTimeout();
+      }
+
+      // Housekeeping call
+      if (cleaning) {
+        const fill = document.querySelector(`.ci-room-tile[data-room-id="${cleaning.roomId}"] .room-clean-fill`);
+        if (fill) fill.style.width = `${Math.min(100, 100 - ((cleaning.doneAt - now) / cleaning.total) * 100)}%`;
+        if (now >= cleaning.doneAt) _finishCleaning();
       }
 
       // Session end
@@ -560,39 +668,57 @@ const CheckInGame = (() => {
      RENDER — ROOM LIST
   ─────────────────────────────────────────────────────────── */
   function _renderRoomList() {
-    const avail = rooms.filter(r => !r.occupied).length;
-    $('room-count').textContent = `(${avail} available)`;
+    const avail = rooms.filter(r => !r.occupied && !r.dirty).length;
+    const dirty = rooms.filter(r => r.dirty).length;
+    $('room-count').textContent = `(${avail} available${dirty ? ` · ${dirty} dirty` : ''})`;
     const bestQuality = activeGuest ? _bestRoomQuality(activeGuest) : null;
 
     $('ci-room-list').innerHTML = rooms.map(room => {
       if (room.occupied) {
-        return `<div class="ci-room-tile occupied">
+        return `<button type="button" class="ci-room-tile occupied" disabled aria-label="Room ${room.number}, occupied">
           <span class="room-num">${room.number}</span>
           <span class="room-type">${room.label}</span>
           <span class="room-status">Occupied</span>
-        </div>`;
+        </button>`;
       }
 
-      const match    = activeGuest ? _computeMatch(activeGuest, room) : null;
+      // Training hint: badge each room's match for the active guest
+      const match    = activeGuest && hintsOn() ? _computeMatch(activeGuest, room) : null;
       const isSelected = selectedRoom === room.id;
       const qualClass  = match ? `match-${match.quality}` : '';
-      const bestClass = match && match.quality === bestQuality ? 'best-choice' : '';
+      const bestClass = match && !room.dirty && match.quality === bestQuality ? 'best-choice' : '';
+      if (room.dirty) {
+        const isCleaning = cleaning?.roomId === room.id;
+        return `<button type="button" class="ci-room-tile dirty ${isCleaning ? 'cleaning' : ''} ${qualClass}"
+                     data-room-id="${room.id}" aria-label="Room ${room.number} needs cleaning. ${isCleaning ? 'Housekeeping is on it.' : 'Call housekeeping.'}">
+          <span class="room-tile-top">
+            <span class="room-num">${room.number}</span>
+            ${match ? `<span class="match-badge match-${match.quality}">${_matchLabel(match.quality)}</span>` : ''}
+          </span>
+          <span class="room-tile-body">
+            <span class="room-type">${room.label}</span>
+            <span class="room-beds">${room.beds}</span>
+          </span>
+          <span class="room-dirty-label">🧹 ${isCleaning ? 'Cleaning…' : 'Needs cleaning · tap to call housekeeping'}</span>
+          ${isCleaning ? '<span class="room-clean-track"><span class="room-clean-fill"></span></span>' : ''}
+        </button>`;
+      }
       const featHtml   = room.features.slice(0, 2).map(f =>
         `<span class="room-feat">${_prefShort(f)}</span>`
       ).join('');
 
-      return `<div class="ci-room-tile ${qualClass} ${bestClass} ${isSelected ? 'selected' : ''}"
-                   data-room-id="${room.id}" onclick="CheckInGame.selectRoom('${room.id}')">
-        <div class="room-tile-top">
+      return `<button type="button" class="ci-room-tile ${qualClass} ${bestClass} ${isSelected ? 'selected' : ''}"
+                   data-room-id="${room.id}" aria-pressed="${isSelected}">
+        <span class="room-tile-top">
           <span class="room-num">${room.number}</span>
           ${match ? `<span class="match-badge match-${match.quality}">${_matchLabel(match.quality)}</span>` : ''}
-        </div>
-        <div class="room-tile-body">
+        </span>
+        <span class="room-tile-body">
           <span class="room-type">${room.label}</span>
           <span class="room-beds">${room.beds}</span>
-        </div>
-        <div class="room-feats">${featHtml}</div>
-      </div>`;
+        </span>
+        <span class="room-feats">${featHtml}</span>
+      </button>`;
     }).join('');
   }
 
@@ -606,13 +732,16 @@ const CheckInGame = (() => {
   ─────────────────────────────────────────────────────────── */
   function _renderDiffCard() {
     const lobbyLevel = HotelState.get().departments.lobby?.level ?? 1;
+    const upcoming = window.HotelShiftBriefing?.twistFor?.('lobby') ?? null;
     $('diff-card').innerHTML = `
       <div class="diff-level">${diff.label}</div>
       <div class="diff-stats">
-        <span>👥 ${diff.guests} guests</span>
-        <span>⏱ ${diff.duration}s</span>
+        <span>👥 ${diff.guests + (upcoming?.effects.extraGuests ?? 0)} guests</span>
+        <span>⏱ ${diff.duration + (upcoming?.effects.extraSeconds ?? 0)}s</span>
+        ${upcoming ? `<span class="diff-twist">${upcoming.emoji} ${upcoming.title}</span>` : ''}
         <span>🏨 Lobby Lv ${lobbyLevel}</span>
         ${HotelState.getStaffEffect?.('lobby')?.assignedCount ? `<span>👔 Staff ${HotelState.getStaffEffect('lobby').score}%</span>` : ''}
+        ${HotelState.getDirtyRooms?.() ? `<span class="diff-dirty">🧹 ${HotelState.getDirtyRooms()} dirty room${HotelState.getDirtyRooms() === 1 ? '' : 's'} from Floor Ops</span>` : ''}
       </div>`;
   }
 
@@ -637,7 +766,7 @@ const CheckInGame = (() => {
     el.innerHTML = `
       <span>Selected Room</span>
       <strong>${room.number} · ${room.label}</strong>
-      <small>${_matchPlainLabel(match.quality)} match for ${activeGuest?.name ?? 'guest'}.</small>
+      <small>${hintsOn() ? `${_matchPlainLabel(match.quality)} match for ${activeGuest?.name ?? 'guest'}.` : `Check their preferences against the room's features.`}</small>
     `;
   }
 
@@ -681,7 +810,7 @@ const CheckInGame = (() => {
     const rank = { perfect: 4, good: 3, acceptable: 2, wrong: 1 };
     let best = null;
     let bestRank = 0;
-    rooms.filter(room => !room.occupied).forEach(room => {
+    rooms.filter(room => !room.occupied && !room.dirty).forEach(room => {
       const quality = _computeMatch(guest, room).quality;
       const value = rank[quality] ?? 0;
       if (value > bestRank) {

@@ -57,3 +57,22 @@
 /* ── Choice buttons ── */
 .choice-row { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
 .choice-row .btn { min-width: 150px; }
+
+/* ── Let it ride ── */
+.ride-panel {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  justify-items: center;
+  gap: 4px 14px;
+  margin: -6px 0 18px;
+  padding: 12px 18px;
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  background: rgba(201,168,76,0.1);
+}
+.ride-panel[hidden] { display: none; }
+.ride-label { grid-column: 1 / -1; font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); }
+.ride-pot { grid-column: 1 / -1; font-family: var(--font-display); font-size: 30px; color: var(--gold-light); }
+.ride-next { grid-column: 1 / -1; font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
+.ride-panel .btn { grid-column: 1 / -1; }

@@ -103,6 +103,7 @@ const HotelEngine = (() => {
     const noSecurity       = !state.departments.security?.unlocked    ? -4 : 0;
 
     const entertainmentEffects = activeEntertainmentEffects(state);
+    const shiftBonus       = Math.round(HotelState.getSatisfactionBonus?.() ?? 0);
 
     const raw = HotelConfig.ECONOMY.SAT_BASE
       + roomComfort
@@ -110,6 +111,7 @@ const HotelEngine = (() => {
       + entertainBonus
       + spaBonus
       + (entertainmentEffects.satisfactionBoost ?? 0)
+      + shiftBonus
       - overcrowd
       + noMaintenance
       + noSecurity;
@@ -126,6 +128,7 @@ const HotelEngine = (() => {
     HotelState.setSatisfactionComponents({
       roomComfort, foodQuality, entertainBonus, spaBonus,
       activeShowBonus: entertainmentEffects.satisfactionBoost ?? 0,
+      shiftBonus,
       overcrowdingPenalty: -overcrowd,
       maintenancePenalty:  noMaintenance,
       securityPenalty:     noSecurity,
@@ -186,6 +189,8 @@ const HotelEngine = (() => {
     const state  = HotelState.get();
     const now    = Date.now();
     const result = calculateIncome(state, now);
+    // Measure time away before updateTicker() moves lastTick to now.
+    const elapsed = now - (state.ticker.lastTick || now);
 
     if (result.amount > 0) {
       HotelState.addHotelCash(result.amount);
@@ -194,13 +199,13 @@ const HotelEngine = (() => {
 
     // Restore guest population from offline absence
     if (window.HotelGuests) {
-      const elapsed = now - (state.ticker.lastTick || now);
       const gResult = HotelGuests.restoreFromOffline(state, elapsed)
                    ?? HotelGuests.tick(state);
       applyEntertainmentTraffic(state, gResult, now);
       HotelState.setGuestData(gResult);
     }
 
+    expireHighRoller(state, now);
     recalculateSatisfaction(state);
     recalculateReputation(state);
     checkAchievements(state);
@@ -246,12 +251,13 @@ const HotelEngine = (() => {
         } else if (ev.type === 'high_roller_arrival') {
           HotelState.setHighRollerFlag();
           HotelBridge?.emit('high_roller_arrival', {});
-          CasinoShell?.toast('💎 A High Roller has arrived — head to the casino!');
-        } else if (ev.type === 'high_roller_departure') {
-          HotelState.clearHighRollerFlag();
+          CasinoShell?.toast('💎 A High Roller has arrived — the casino opens a high-stakes table for 45 minutes!');
+        } else if (ev.type === 'high_roller_departure' && !state.guests.highRollerUntil) {
+          HotelState.clearHighRollerFlag();   // legacy visits without an end time
         }
       });
     }
+    expireHighRoller(state, now);
 
     HotelState.updateTicker(now);
     recalculateSatisfaction(state);
@@ -264,11 +270,10 @@ const HotelEngine = (() => {
   /* ── Achievement checks ──────────────────────────────────── */
 
   function checkAchievements(state) {
-    // Upgrade count
-    if (state.stats.upgradeCount >= 1)
-      HotelState.tickAchievementProgress('first_upgrade',  0);
-    if (state.stats.upgradeCount >= 5)
-      HotelState.tickAchievementProgress('five_upgrades',  0);
+    // Upgrade count (these used to tick by 0 and could never unlock)
+    HotelState.setAchievementProgress('first_upgrade', state.stats.upgradeCount);
+    HotelState.setAchievementProgress('five_upgrades', state.stats.upgradeCount);
+    HotelState.setAchievementProgress('ten_shifts', state.stats.shiftsCompleted ?? 0);
 
     // Satisfaction
     if (state.satisfaction.current >= 80)
@@ -301,8 +306,10 @@ const HotelEngine = (() => {
     const satMult    = satisfactionMultiplier(state.satisfaction.current);
     const activeMult = (state.ticker.activeMultiplierExpiry > Date.now())
       ? state.ticker.activeMultiplier : 1.0;
+    const bridgeMult = (state.casinoBridge.multiplierExpiry > Date.now())
+      ? state.casinoBridge.activeMultiplier : 1.0;
     const entertainmentMult = 1 + (activeEntertainmentEffects(state).incomeBoost ?? 0);
-    const deptIpm = Math.round(deptTotal * satMult * activeMult * entertainmentMult);
+    const deptIpm = Math.round(deptTotal * satMult * activeMult * bridgeMult * entertainmentMult);
 
     // Guest spending income (1 min interval)
     const guestIpm = window.HotelGuests
@@ -382,20 +389,25 @@ const HotelEngine = (() => {
       weekday: dayRolled ? (before.weekday + 1) % WEEKDAYS.length : before.weekday,
       phase: CALENDAR_PHASES[nextPhaseIndex],
       lastAdvancedAt: Date.now(),
+      lastManualAdvanceAt: Date.now(),
     };
 
-    const phaseMinutes = 6 * 60;
+    // A phase is 6 game hours, but real-time ticks already pay idle income,
+    // so Advance Time only pays a short settlement (full 6h in dev mode).
+    const phaseMinutes = HotelConfig.isDevMode?.() ? 6 * 60 : HotelConfig.ECONOMY.ADVANCE_PHASE_INCOME_MINUTES;
     const activeShows = activeEntertainmentBookings(state, before.day, before.phase);
     const income = calculatePhaseIncome(state, phaseMinutes);
     if (income > 0) HotelState.addHotelCash(income);
     const staffReport = HotelState.processStaffPayroll?.({ day: before.day, phase: before.phase }) ?? null;
 
     let guestResult = null;
+    let guestIncome = 0;
     if (window.HotelGuests) {
       guestResult = HotelGuests.tick(state);
       applyEntertainmentTraffic(state, guestResult);
       HotelState.setGuestData(guestResult);
-      if (guestResult.guestIncome > 0) HotelState.addHotelCash(Math.floor(guestResult.guestIncome * 6));
+      guestIncome = guestResult.guestIncome > 0 ? Math.floor(guestResult.guestIncome * 6) : 0;
+      if (guestIncome > 0) HotelState.addHotelCash(guestIncome);
       (guestResult.specialEvents ?? []).forEach(processSpecialGuestEvent);
     }
 
@@ -412,6 +424,10 @@ const HotelEngine = (() => {
       nextDay: nextCalendar.day,
       nextPhase: nextCalendar.phase,
       income,
+      guestIncome,
+      dayRolled,
+      satisfaction: HotelState.get().satisfaction.current,
+      createdAt: Date.now(),
       guestPopulation: HotelState.get().guests.population,
       shows: activeShows.map(show => show.label),
       trafficBoost: activeShows.reduce((sum, show) => sum + (show.effects?.trafficBoost ?? 0), 0),
@@ -420,6 +436,13 @@ const HotelEngine = (() => {
     };
     HotelState.addCalendarReport(report);
     return report;
+  }
+
+  /** ms until Advance Time may be used again (0 = ready). Dev mode skips it. */
+  function advanceCooldownRemaining(state = HotelState.get(), now = Date.now()) {
+    if (HotelConfig.isDevMode?.()) return 0;
+    const last = state.calendar?.lastManualAdvanceAt ?? 0;
+    return Math.max(0, last + HotelConfig.ECONOMY.ADVANCE_COOLDOWN_MS - now);
   }
 
   function calculatePhaseIncome(state, minutes) {
@@ -448,9 +471,18 @@ const HotelEngine = (() => {
     } else if (ev.type === 'high_roller_arrival') {
       HotelState.setHighRollerFlag();
       HotelBridge?.emit('high_roller_arrival', {});
-      CasinoShell?.toast('A High Roller has arrived.');
-    } else if (ev.type === 'high_roller_departure') {
+      CasinoShell?.toast('💎 A High Roller has arrived — the casino opens a high-stakes table for 45 minutes!');
+    } else if (ev.type === 'high_roller_departure' && !HotelState.get().guests.highRollerUntil) {
       HotelState.clearHighRollerFlag();
+    }
+  }
+
+  /* End a high-roller visit once its time is up. */
+  function expireHighRoller(state = HotelState.get(), now = Date.now()) {
+    const g = state.guests;
+    if (g?.highRollerPresent && g.highRollerUntil && g.highRollerUntil <= now) {
+      HotelState.clearHighRollerFlag();
+      CasinoShell?.toast('💎 The high roller has checked out. The high-stakes table is closed.');
     }
   }
 
@@ -470,7 +502,7 @@ const HotelEngine = (() => {
     checkAchievements, checkDeptUnlocks,
     currentIpm, nextUpgradeCost, nextUpgradeStats,
     activeEntertainmentEffects,
-    advanceCalendarPhase, activeEntertainmentBookings,
+    advanceCalendarPhase, advanceCooldownRemaining, activeEntertainmentBookings, expireHighRoller,
     calendarDayKey, CALENDAR_PHASES, WEEKDAYS,
   };
 })();
