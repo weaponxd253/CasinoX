@@ -1447,7 +1447,7 @@ test.describe('soft launch', () => {
     page.once('dialog', d => d.accept());
     await page.locator('[data-shell-menu]').first().click();
     await page.locator('[data-menu="import"]').setInputFiles(file);
-    await expect.poll(() => page.evaluate(() => window.HotelState && HotelState.getCash()), { timeout: 8000 }).toBeGreaterThanOrEqual(cashBefore);
+    await expect.poll(() => page.evaluate(() => window.HotelState?.get() ? HotelState.getCash() : 0), { timeout: 8000 }).toBeGreaterThanOrEqual(cashBefore);
     expect(await page.evaluate(() => CasinoWallet.get())).toBe(321);
   });
 

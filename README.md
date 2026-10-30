@@ -24,15 +24,11 @@ A browser-based casino resort with a Phaser owner world, existing HTML/CSS casin
 ```
 CasinoX/
 │
-<<<<<<< HEAD
 ├── index.html              ← Owner title screen (site entry point)
 ├── world/                  ← Central Lobby, hotel preview, interactions, shared controls and world metadata
 ├── floor/                  ← Existing Blackjack Lounge and persistent table overlay
 ├── save-safety.js          ← Read-only validation for existing saves
-=======
-├── index.html              ← Site entry point (redirects to hotel/index.html)
 ├── casino.html             ← Casino lobby (game cards + unlock gates)
->>>>>>> 152942c07eeffbbadba72f112b8c9ed9366bebb6
 ├── lobby.css               ← Lobby layout + light-theme overrides
 │
 ├── casino-shell.css        ← Shared design system (tokens, header, modals)

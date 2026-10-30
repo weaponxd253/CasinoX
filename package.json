@@ -6,13 +6,10 @@
     "test": "npm run test:e2e",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
-<<<<<<< HEAD
     "test:floor": "playwright test tests/floor.spec.js --workers=2",
     "test:world": "playwright test tests/world.spec.js --workers=2",
-    "vendor:phaser": "node scripts/vendor-phaser.cjs"
-=======
+    "vendor:phaser": "node scripts/vendor-phaser.cjs",
     "bump-version": "node scripts/bump-version.js"
->>>>>>> 152942c07eeffbbadba72f112b8c9ed9366bebb6
   },
   "devDependencies": {
     "@playwright/test": "^1.44.0"

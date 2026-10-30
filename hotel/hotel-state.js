@@ -310,27 +310,15 @@ const HotelState = (() => {
 
   /* ── Persistence ─────────────────────────────────────────── */
   function load() {
-<<<<<<< HEAD
     CasinoSaveSafety.assertReadable(STORAGE_KEY);
-=======
     let raw = null;
->>>>>>> 152942c07eeffbbadba72f112b8c9ed9366bebb6
     try {
       raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return createNewSave();
       const parsed = JSON.parse(raw);
       return migrate(parsed);
     } catch (e) {
-<<<<<<< HEAD
       throw CasinoSaveSafety.fail('Hotel save could not be loaded. Its original data has been preserved.');
-=======
-      // Keep the unreadable save so it can be recovered by hand, rather
-      // than letting the fresh save overwrite it on the next write.
-      console.warn(`[HotelState] Corrupt save — backed up to "${BACKUP_KEY}" and starting fresh.`, e);
-      try { if (raw) localStorage.setItem(BACKUP_KEY, raw); } catch (_) { /* storage full */ }
-      _recoveredFromCorruptSave = true;
-      return createNewSave();
->>>>>>> 152942c07eeffbbadba72f112b8c9ed9366bebb6
     }
   }
 

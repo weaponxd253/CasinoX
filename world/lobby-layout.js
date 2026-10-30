@@ -39,7 +39,7 @@ export const LOBBY_SOLIDS = [
   rect('left-pillar-base', 48, 625, 102, 710),
   rect('right-pillar-base', 1230, 748, 1298, 805),
   ...polygon('fountain', [[709, 508], [827, 508], [869, 548], [869, 620], [827, 669], [709, 669], [667, 620], [667, 548]]),
-  rect('west-sofa-north', 144, 444, 274, 490),
+  rect('west-sofa-north', 144, 444, 268, 490),
   rect('west-sofa-east', 326, 504, 370, 612),
   rect('west-sofa-south', 151, 675, 285, 720),
   rect('west-chair-south', 326, 686, 370, 764),
@@ -56,8 +56,8 @@ export const LOBBY_SOLIDS = [
   circle('east-lamp-right', 1175, 543, 10),
   rect('east-lamp-south', 1040, 825, 1070, 864),
   ...[[618, 450], [915, 450], [619, 676], [916, 676], [75, 373], [87, 475],
-    [343, 472], [407, 705], [1063, 327], [1113, 377], [1228, 378], [1307, 520], [1516, 520],
-    [1515, 775], [1128, 149], [1428, 146]].map(([x, y], i) => circle(`planter-${i}`, x, y, 17)),
+    [343, 472, 14], [407, 705], [1063, 327], [1113, 377], [1228, 378], [1307, 520], [1516, 520],
+    [1515, 775], [1128, 149], [1428, 146]].map(([x, y, radius = 17], i) => circle(`planter-${i}`, x, y, radius)),
 ];
 
 export const LOBBY_INTERACTIONS = {

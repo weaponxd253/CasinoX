@@ -10,23 +10,8 @@
    Queues casino activity for the hotel (hotel-events.js) so
    no hotel scripts are needed on this page.                 */
 function hotelEvent(type, data) {
-<<<<<<< HEAD
-  try {
-    CasinoSaveSafety.assertReadable('hotelGameState');
-    const raw = localStorage.getItem('hotelGameState');
-    if (!raw) return;
-    const state = JSON.parse(raw);
-    if (!state?.casinoBridge?.events) return;
-    const e = state.casinoBridge.events;
-    if (type === 'blackjack_win')   e.blackjackWins++;
-    else if (type === 'blackjack_loss') e.blackjackLosses++;
-    else if (type === 'chips_wagered')  e.totalChipsWagered += (Number(data?.amount) || 0);
-    localStorage.setItem('hotelGameState', JSON.stringify(state));
-  } catch (_) { /* hotel not initialised */ }
-=======
   // Queued for the hotel to apply — see hotel-events.js
   window.HotelEvents?.push(type, data);
->>>>>>> 152942c07eeffbbadba72f112b8c9ed9366bebb6
 }
 
 /* ── State ──────────────────────────────────────────────────

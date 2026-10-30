@@ -1,5 +1,6 @@
 import { LOBBY } from './lobby-config.js';
 import { ExplorableScene } from './explorable-scene.js';
+import { constrainFootprintMovement } from './collision-geometry.js';
 import { LOBBY_ART, LOBBY_FOREGROUNDS, LOBBY_INTERACTIONS, toWorld } from './lobby-layout.js';
 
 const imageUrl = new URL('./assets/lobby/central-lobby.png', import.meta.url).href;
@@ -27,6 +28,21 @@ export class LobbyScene extends ExplorableScene {
     }
     texture.setFilter(window.Phaser.Textures.FilterMode.NEAREST);
     super.create();
+    const finishContacts = () => {
+      const body = this.player.body;
+      // Arcade retains the beginning of every physics step, including catch-up
+      // steps and body.reset on room return. This is transient physics data,
+      // not another saved owner position or a repair of invalid stored data.
+      const previous = { x: body.prev.x + body.halfWidth, y: body.prev.y + body.halfHeight };
+      try {
+        const corrected = constrainFootprintMovement(previous, body.center, LOBBY.solids, this.config.playerRadius);
+        body.position.x += corrected.x - body.center.x;
+        body.position.y += corrected.y - body.center.y;
+        body.updateCenter();
+      } catch (error) { this.host.onError(error); }
+    };
+    this.physics.world.on('worldstep', finishContacts);
+    this.events.once('shutdown', () => this.physics.world.off('worldstep', finishContacts));
     this.drawCollisions = () => {
       if (!this.collisionOverlay.visible) return;
       const g = this.collisionOverlay.clear();

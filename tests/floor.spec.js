@@ -1,7 +1,11 @@
 const { test, expect } = require('@playwright/test');
+const { dealerBustDeck } = require('./helpers/blackjack-deck');
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => sessionStorage.setItem('shellBonusPrompted', '1'));
+  await page.addInitScript(() => {
+    sessionStorage.setItem('shellBonusPrompted', '1');
+    localStorage.setItem('casinoWelcomed', '1');
+  });
   // Real local Phaser and real blackjack code, with only remote assets/API mocked.
   await page.route(/https:\/\/(fonts\.googleapis\.com|fonts\.gstatic\.com|cdnjs\.cloudflare\.com)\//, route => route.abort());
   await page.route('https://deckofcardsapi.com/api/deck/**', route => {
@@ -192,17 +196,21 @@ test('rapid closing and reopening keeps the world paused for the new visit', asy
   await moveUntil(page, 's', state => state.player.y > parked.y + 25);
 });
 
-test('a deck connection failure uses the existing blackjack refund behavior', async ({ page }) => {
+test('the local blackjack deck needs no connection and settles its single wager normally', async ({ page }) => {
   await page.route('https://deckofcardsapi.com/api/deck/**', route => route.abort());
   await openRoom(page);
   await approachTable(page);
   await page.keyboard.press('e');
   const table = await blackjackUI(page);
+  await table.locator('#speed-range').fill('2');
   await table.locator('.chip-btn[data-value="1"]').click();
   await table.locator('#deal-button').click();
-  await expect(table.locator('#result-message')).toHaveText('Could not connect. Returning your bet.');
-  await expect(table.locator('#deal-button')).toBeEnabled();
-  await expect(page.locator('#floor-balance')).toHaveText('100.00');
+  await expect(table.locator('#result-message')).toHaveText('Your move…');
+  await expect(page.locator('#floor-balance')).toHaveText('99.00');
+  await table.locator('#stand-button').click();
+  await expect(table.locator('#result-message')).toHaveText('Dealer busts — you win!');
+  await expect(page.locator('#floor-balance')).toHaveText('101.00');
+  await expect(table.locator('#leaderboard-list li')).toHaveCount(1);
   await page.getByRole('button', { name: 'Return to floor' }).click();
   await expect.poll(async () => (await snapshot(page)).paused).toBe(false);
 });
@@ -217,7 +225,9 @@ async function openRoom(page) {
 async function blackjackUI(page) {
   await expect(page.locator('#blackjack-status')).toHaveText('Your hand stays at this table when you return to the floor.');
   await expect(page.locator('#blackjack-frame')).not.toHaveAttribute('inert', '');
-  return page.frameLocator('#blackjack-frame');
+  const table = page.frameLocator('#blackjack-frame');
+  await dealerBustDeck(table);
+  return table;
 }
 
 async function snapshot(page) {

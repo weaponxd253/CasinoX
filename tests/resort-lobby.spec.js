@@ -1,5 +1,6 @@
 const { test, expect } = require('@playwright/test');
 const { savedResort } = require('./helpers/saved-resort');
+const { dealerBustDeck } = require('./helpers/blackjack-deck');
 const { POINTS, currentWorld, walkTo } = require('./helpers/lobby-world');
 
 test.beforeEach(async ({ page }) => {
@@ -200,6 +201,7 @@ test('a paid blackjack hand survives a hotel visit without another deduction or 
   await page.keyboard.press('e');
   const table = page.frameLocator('#blackjack-frame');
   await expect(page.locator('#blackjack-status')).toContainText('Your hand stays');
+  await dealerBustDeck(table);
   await table.locator('#speed-range').fill('2');
   await table.locator('.chip-btn[data-value="5"]').click(); await table.locator('#deal-button').click();
   await expect(table.locator('#result-message')).toHaveText('Your move…');

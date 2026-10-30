@@ -1,5 +1,6 @@
 const { test, expect } = require('@playwright/test');
 const { savedResort } = require('./helpers/saved-resort');
+const { dealerBustDeck } = require('./helpers/blackjack-deck');
 const { POINTS, currentWorld, walkTo } = require('./helpers/lobby-world');
 
 test.beforeEach(async ({ page }) => {
@@ -307,6 +308,7 @@ test('another tab cannot silently replace an active world session', async ({ pag
 });
 
 test('all six minigame shell return links still open hotel management', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('casinoWelcomed', '1'));
   for (const operation of ['checkin', 'rooms', 'restaurant', 'bar', 'entertainment', 'spa']) {
     await page.goto(`/hotel/${operation}/index.html`);
     const link = page.locator('.shell-header').getByRole('link', { name: 'Hotel Lobby', exact: true });
@@ -363,4 +365,10 @@ async function moveUntil(page, key, predicate) {
 }
 async function hold(page, key, duration) { await page.keyboard.down(key); await page.waitForTimeout(duration); await page.keyboard.up(key); await page.waitForTimeout(60); }
 async function approachEntrance(page) { await walkTo(page, POINTS.casino); await expect(page.locator('#world-interact')).toBeEnabled(); }
-async function blackjackUI(page) { await expect(page.locator('#blackjack-status')).toContainText('Your hand stays'); await expect(page.locator('#blackjack-frame')).not.toHaveAttribute('inert', ''); return page.frameLocator('#blackjack-frame'); }
+async function blackjackUI(page) {
+  await expect(page.locator('#blackjack-status')).toContainText('Your hand stays');
+  await expect(page.locator('#blackjack-frame')).not.toHaveAttribute('inert', '');
+  const table = page.frameLocator('#blackjack-frame');
+  await dealerBustDeck(table);
+  return table;
+}

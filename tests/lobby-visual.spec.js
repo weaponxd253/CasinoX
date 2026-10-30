@@ -69,6 +69,38 @@ test('real WASD movement reaches all four interactions around the fountain and f
   }
 });
 
+test('oblique column contacts remain clear and autosave never stops owner movement', async ({ page }) => {
+  await seed(page, currentWorld({ x: 740, y: 329, facing: 'right' }));
+  await world(page);
+  await page.keyboard.down('d');
+  let invalid;
+  try {
+    invalid = await page.evaluate(async () => {
+      const { walkable } = await import('/world/lobby-navigation.js');
+      const invalid = [], deadline = performance.now() + 1100;
+      await new Promise(resolve => {
+        const sample = () => {
+          const player = CasinoWorldDebug.snapshot().player;
+          if (!walkable(player)) invalid.push(player);
+          if (performance.now() >= deadline) resolve();
+          else requestAnimationFrame(sample);
+        };
+        requestAnimationFrame(sample);
+      });
+      return invalid;
+    });
+  } finally { await page.keyboard.up('d'); }
+  expect(invalid).toEqual([]);
+  expect((await snap(page)).failed).toBe(false);
+  expect((await snap(page)).player.x).toBeGreaterThan(850);
+  const saved = await page.evaluate(async () => {
+    const { walkable } = await import('/world/lobby-navigation.js');
+    const state = JSON.parse(localStorage.getItem('casinoWorldState'));
+    return { valid: walkable(state.lobby), version: state.version };
+  });
+  expect(saved).toEqual({ valid: true, version: 2 });
+});
+
 test('the background is the exact supplied PNG and renders sharp, undistorted source pixels', async ({ page }) => {
   expect(createHash('sha256').update(fs.readFileSync(path.resolve(__dirname, '../world/assets/lobby/central-lobby.png'))).digest('hex'))
     .toBe('4fa44e549d01cdd1fe8e2a424335129653456e19bbb8a67d03187958a0f9af7d');
