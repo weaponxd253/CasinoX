@@ -54,7 +54,7 @@ test('standalone background pixels remain sharp and the separate table is never 
     }));
   });
   for (const p of pixels) expect(p.actual).toEqual(p.expected);
-  expect(pngs.every(url => /owner\.png$|blackjack-lounge\.png$/.test(url))).toBe(true);
+  expect(pngs.every(url => /owner\.png$|blackjack-lounge\.png$|dealer\.png$/.test(url))).toBe(true);
 });
 
 test('owner can circle the table through both aisles and collide with the actual curved base and stools', async ({ page }) => {

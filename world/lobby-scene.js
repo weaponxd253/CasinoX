@@ -3,6 +3,9 @@ import { ExplorableScene } from './explorable-scene.js';
 import { constrainFootprintMovement } from './collision-geometry.js';
 import { LOBBY_ART, LOBBY_FOREGROUNDS, LOBBY_INTERACTIONS, toWorld } from './lobby-layout.js';
 import { ReceptionistSprite, preloadReceptionistSprite, RECEPTION_COUNTER_FOREGROUND } from './receptionist-sprite.js';
+import { preloadTravelerSprite } from './casual-traveler-sprite.js';
+import { LobbyGuests } from './lobby-guests.js';
+import { updateLobbyDepth } from './lobby-depth.js';
 
 const imageUrl = new URL('./assets/lobby/central-lobby.png', import.meta.url).href;
 
@@ -14,6 +17,7 @@ export class LobbyScene extends ExplorableScene {
   preload() {
     super.preload();
     preloadReceptionistSprite(this);
+    preloadTravelerSprite(this);
     this.load.image(LOBBY_ART.key, imageUrl, { timeout: 5000 });
   }
 
@@ -45,7 +49,12 @@ export class LobbyScene extends ExplorableScene {
     };
     this.physics.world.on('worldstep', finishContacts);
     this.events.once('shutdown', () => this.physics.world.off('worldstep', finishContacts));
+    if (!this.host.hasFailed()) this.guests = new LobbyGuests(this);
+    this.updateDepth = () => updateLobbyDepth(this);
+    this.events.on('postupdate', this.updateDepth);
+    this.events.once('shutdown', () => this.events.off('postupdate', this.updateDepth));
     this.drawCollisions = () => {
+      this.guests?.label.setVisible(this.collisionOverlay.visible);
       if (!this.collisionOverlay.visible) return;
       const g = this.collisionOverlay.clear();
       for (const shape of LOBBY.solids) {
@@ -59,6 +68,7 @@ export class LobbyScene extends ExplorableScene {
           target.width + target.reach * 2, target.height + target.reach * 2, target.reach);
       }
       g.lineStyle(2, 0xffffff).strokeCircle(this.player.x, this.player.y, 14);
+      this.guests?.drawDebug(g, true);
     };
     this.events.on('postupdate', this.drawCollisions);
     this.events.once('shutdown', () => this.events.off('postupdate', this.drawCollisions));
@@ -91,6 +101,6 @@ export class LobbyScene extends ExplorableScene {
   update() {
     if (!this.owner) return;
     super.update();
-    for (const layer of this.foregrounds) layer.foreground.setDepth(this.player.y + 14 < layer.baseline ? 20 : 5);
+    updateLobbyDepth(this);
   }
 }

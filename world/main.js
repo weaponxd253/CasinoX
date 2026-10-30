@@ -92,7 +92,8 @@ function refresh() {
   setText('world-interact', action ? `E · ${action.label}` : 'E · Interact');
   setText('world-status', dialog.open ? 'At the blackjack table · world paused'
     : conversation.open ? 'In conversation · world paused · Esc to close'
-      : action ? `Press E · ${action.label}`
+      : action ? [current === 'CasinoRoom' && action.id === 'blackjack' ? casino.dealer.greeting : null,
+        `Press E · ${action.label}`].filter(Boolean).join(' · ')
         : current === 'CentralLobby' ? 'Visit reception, the casino, the manager’s office or the hotel entrance.'
           : current === 'HotelInterior' ? 'Explore the hotel preview. Read the directory, or return south to the lobby.'
             : 'Approach the blackjack table, or walk south to return to the lobby.');
@@ -231,8 +232,8 @@ try {
   };
   overlay = new BlackjackOverlay({
     dialog,
-    onOpen: () => { casino.pauseWorld(); refresh(); },
-    onClose: resume,
+    onOpen: () => { casino.setBlackjackOpen(true); casino.pauseWorld(); refresh(); },
+    onClose: () => { casino.setBlackjackOpen(false); resume(); },
   });
   dialogue = new Dialogue({
     dialog: conversation,
@@ -275,7 +276,9 @@ try {
         sourceWidth: lobby.background.texture.getSourceImage().width, sourceHeight: lobby.background.texture.getSourceImage().height,
         scaleMode: lobby.background.frame.source.scaleMode } : null,
       loungeArtwork: casino?.artworkSnapshot() ?? null,
+      dealer: casino?.dealer?.snapshot() ?? null,
       receptionist: lobby?.receptionist?.snapshot() ?? null,
+      guest: lobby?.guests?.snapshot() ?? null,
       receptionCounter: lobby?.foregrounds?.filter(layer => layer.id === 'reception-counter')
         .map(layer => ({ depth: layer.foreground.depth, baseline: layer.baseline })) ?? [],
       collisionsVisible: activeScene()?.collisionOverlay?.visible ?? false,

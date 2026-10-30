@@ -130,9 +130,9 @@ test('the fountain basin blocks the original radius-14 body while rugs and route
   expect((await snap(page)).failed).toBe(false);
   expect((await snap(page)).ownerBody.radius).toBe(14);
   await walkTo(page, { x: 480, y: 280 });
-  expect((await snap(page)).lobbyForegrounds[0].depth).toBe(20);
+  expect((await snap(page)).lobbyForegrounds[0].depth).toBeGreaterThan(10);
   await walkTo(page, { x: 480, y: 430 });
-  expect((await snap(page)).lobbyForegrounds[0].depth).toBe(5);
+  expect((await snap(page)).lobbyForegrounds[0].depth).toBeLessThan(10);
 });
 
 test('coffee-table and office-wall footprints stop the owner at the visible obstacles', async ({ page }) => {

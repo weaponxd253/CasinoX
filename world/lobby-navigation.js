@@ -8,11 +8,12 @@ export function walkable(position, radius = 14) {
     && position.y >= radius && position.y <= 600 - radius
     && clearOf(position, LOBBY_SOLIDS, radius);
 }
-export function clearSegment(a, b, radius = 14) {
+export function clearSegment(a, b, radius = 14, blockers = []) {
   const steps = Math.ceil(Math.hypot(a.x - b.x, a.y - b.y));
   for (let i = 0; i <= steps; i++) {
     const t = steps ? i / steps : 0;
-    if (!walkable({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }, radius)) return false;
+    const p = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+    if (!walkable(p, radius) || !clearOf(p, blockers, radius)) return false;
   }
   return true;
 }
@@ -62,19 +63,24 @@ export function nearestReachable(position) {
 }
 
 // Read-only path calculation is also used by journey tests to drive real keys.
-export function lobbyPath(from, to) {
+export function lobbyPath(from, to, { blockers = [], smooth = false } = {}) {
   if (!reachable(from) || !reachable(to)) throw new Error('Path endpoints must be reachable lobby floor.');
-  if ((from.x === to.x || from.y === to.y) && clearSegment(from, to)) return [{ ...to }];
+  const clear = (a, b) => clearSegment(a, b, 14, blockers);
+  if ((smooth || from.x === to.x || from.y === to.y) && clear(from, to)) return [{ ...to }];
   const { nodes, columns, step, connected } = navigation();
-  const endpoint = p => connected.filter(n => Math.abs(n.x - p.x) <= 8 && Math.abs(n.y - p.y) <= 8 && clearSegment(p, n))
+  // Filter this request only. Never write temporary blockers into cached nodes.
+  const available = index => nodes[index] === 2 && clearOf({ x: index % columns * step,
+    y: Math.floor(index / columns) * step }, blockers, 14);
+  const endpoint = p => connected.filter(n => Math.abs(n.x - p.x) <= 8 && Math.abs(n.y - p.y) <= 8 && clear(p, n))
     .sort((a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y))[0];
   const start = endpoint(from), end = endpoint(to);
+  if (!start || !end) throw new Error('Lobby route is temporarily blocked.');
   const key = p => p.y / step * columns + p.x / step;
   const initial = key(start), target = key(end), queue = [initial], previous = new Map([[initial, null]]);
   for (let head = 0; head < queue.length && !previous.has(target); head++) {
     const index = queue[head];
     for (const next of [index - 1, index + 1, index - columns, index + columns]) {
-      if (nodes[next] === 2 && !previous.has(next)) { previous.set(next, index); queue.push(next); }
+      if (available(next) && !previous.has(next)) { previous.set(next, index); queue.push(next); }
     }
   }
   if (!previous.has(target)) throw new Error('No lobby route found.');
@@ -87,5 +93,14 @@ export function lobbyPath(from, to) {
     if (a && ((a.x === b.x && b.x === point.x) || (a.y === b.y && b.y === point.y))) simplified[simplified.length - 1] = point;
     else simplified.push(point);
   }
-  return simplified;
+  if (!smooth) return simplified;
+  // String pulling removes tiny grid turns, but every shortcut is revalidated.
+  const result = [];
+  let current = from, index = 0;
+  while (index < simplified.length) {
+    let furthest = index;
+    for (let i = index; i < simplified.length; i++) if (clear(current, simplified[i])) furthest = i;
+    result.push(simplified[furthest]); current = simplified[furthest]; index = furthest + 1;
+  }
+  return result;
 }

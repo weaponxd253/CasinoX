@@ -5,6 +5,7 @@ import { INTERACTABLES } from '../world/interactables.js';
 import { preloadOwnerSprite } from '../world/owner-sprite.js';
 import { constrainFootprintMovement, distanceFromRect } from '../world/collision-geometry.js';
 import { LOUNGE_ART, LOUNGE_FOREGROUNDS, toWorld } from './lounge-layout.js';
+import { DealerNPC, preloadDealerSprite } from './dealer-npc.js';
 
 const Phaser = window.Phaser;
 const imageUrl = new URL('./assets/lounge/blackjack-lounge.png', import.meta.url).href;
@@ -17,6 +18,7 @@ export class CasinoRoom extends Phaser.Scene {
 
   preload() {
     preloadOwnerSprite(this);
+    preloadDealerSprite(this);
     this.load.image(LOUNGE_ART.key, imageUrl, { timeout: 5000 });
   }
 
@@ -119,10 +121,13 @@ export class CasinoRoom extends Phaser.Scene {
     this.focusCanvas();
   }
 
+  setBlackjackOpen(open) { this.dealer?.setPlaying(open); }
+
   update() {
     if (!this.owner) return;
     this.owner.update();
     const near = this.isNearTable();
+    this.dealer.updateProximity(near);
     const interaction = this.getInteraction();
     if (interaction !== this.interaction) {
       this.interaction = interaction;
@@ -137,6 +142,8 @@ export class CasinoRoom extends Phaser.Scene {
     const image = () => this.add.image(LOUNGE_ART.x, LOUNGE_ART.y, LOUNGE_ART.key)
       .setOrigin(0).setDisplaySize(LOUNGE_ART.width, LOUNGE_ART.height);
     this.background = image().setDepth(0);
+    // Below the existing table masks at depths 5/20; no additional collider.
+    this.dealer = new DealerNPC(this);
     this.foregrounds = LOUNGE_FOREGROUNDS.map(definition => {
       const graphics = this.make.graphics({ x: 0, y: 0 }, false);
       graphics.fillStyle(0xffffff).fillPoints(definition.points.map(([x, y]) => toWorld(x, y)), true);

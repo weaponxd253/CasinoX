@@ -70,7 +70,10 @@ test('the stationary receptionist matches owner scale and the counter occludes h
     x: 206, y: 173, width: 48, height: 72, scaleMode: 1, depth: 4,
     hasPhysicsBody: false, placeholderVisible: false });
   expect(state.ownerVisual).toMatchObject({ width: 48, height: 72 });
-  expect(state.receptionCounter).toEqual([{ depth: 5, baseline: 196.875 }]);
+  expect(state.receptionCounter).toHaveLength(1);
+  expect(state.receptionCounter[0].baseline).toBe(196.875);
+  expect(state.receptionCounter[0].depth).toBeGreaterThan(state.receptionist.depth);
+  expect(state.receptionCounter[0].depth).toBeLessThan(10);
   expect(state.receptionist.walkingAnimations).toEqual(['down', 'left', 'right', 'up'].map((direction, row) => ({
     key: `receptionist-walk-${direction}`, frames: [0, 1, 2, 3].map(i => row * 4 + i), frameRate: 8, repeat: -1,
   })));

@@ -34,7 +34,8 @@ try {
     onProximity: near => {
       if (failed) return;
       interact.disabled = !near;
-      status.textContent = near ? 'Press E to play blackjack' : 'Walk up to the blackjack table';
+      status.textContent = near ? [room.dealer.greeting, 'Press E to play blackjack'].filter(Boolean).join(' · ')
+        : 'Walk up to the blackjack table';
     },
     onReady: () => {
       host.setAttribute('aria-busy', 'false');
@@ -45,10 +46,12 @@ try {
   const overlay = new BlackjackOverlay({
     dialog,
     onOpen: () => {
+      room.setBlackjackOpen(true);
       room.pauseWorld();
       status.textContent = 'At the blackjack table · floor paused';
     },
     onClose: () => {
+      room.setBlackjackOpen(false);
       if (failed) return;
       room.resumeWorld();
       status.textContent = 'Press E to play blackjack';
@@ -88,6 +91,7 @@ try {
         nearTable: room.player ? room.isNearTable() : false,
         balance: CasinoWallet.get(),
         ownerFacing: room.owner?.facing ?? null,
+        dealer: room.dealer?.snapshot() ?? null,
         loungeArtwork: room.artworkSnapshot(),
         collisionsVisible: room.collisionOverlay?.visible ?? false,
         loungeForegrounds: room.foregrounds?.map(layer => ({ baseline: layer.baseline, depth: layer.foreground.depth })) ?? [],
