@@ -1,5 +1,6 @@
 const { test, expect } = require('@playwright/test');
 const { dealerBustDeck } = require('./helpers/blackjack-deck');
+const { walkLoungeTo } = require('./helpers/lounge-world');
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -55,27 +56,25 @@ test('WASD moves in all four directions and diagonals keep a consistent speed', 
 test('outer walls stop the player and moving away still works', async ({ page }) => {
   test.setTimeout(45_000);
   await openRoom(page);
-  await moveUntil(page, 's', state => state.player.y >= 554);
+  await moveUntil(page, 's', state => state.player.y >= 585);
   await hold(page, ['s'], 150);
-  expect((await snapshot(page)).player.y).toBeCloseTo(554, 0);
-  await moveUntil(page, 'd', state => state.player.x >= 914);
-  await hold(page, ['d'], 150);
-  expect((await snapshot(page)).player.x).toBeCloseTo(914, 0);
-  await moveUntil(page, 'w', state => state.player.y <= 46);
-  await hold(page, ['w'], 150);
-  expect((await snapshot(page)).player.y).toBeCloseTo(46, 0);
-  await moveUntil(page, 'a', state => state.player.x <= 46);
-  await hold(page, ['a'], 150);
-  expect((await snapshot(page)).player.x).toBeCloseTo(46, 0);
-  await moveUntil(page, 's', state => state.player.y > 100);
+  expect((await snapshot(page)).player.y).toBeCloseTo(586, 0);
+  await walkLoungeTo(page, { x: 100, y: 300 }); await hold(page, ['a'], 350);
+  expect((await snapshot(page)).player.x).toBeCloseTo(89.703125, 1);
+  await hold(page, ['d'], 200); expect((await snapshot(page)).player.x).toBeGreaterThan(115);
+  await walkLoungeTo(page, { x: 860, y: 300 }); await hold(page, ['d'], 350);
+  expect((await snapshot(page)).player.x).toBeCloseTo(870.296875, 1);
+  await walkLoungeTo(page, { x: 480, y: 174 }); await hold(page, ['w'], 300);
+  expect((await snapshot(page)).player.y).toBeCloseTo(157.5546875, 1);
+  await hold(page, ['s'], 160); expect((await snapshot(page)).player.y).toBeGreaterThan(175);
 });
 
-test('the interior partition is solid', async ({ page }) => {
+test('the visible southern pillar is solid', async ({ page }) => {
   await openRoom(page);
-  await moveUntil(page, 'a', state => state.player.x <= 260);
-  await hold(page, ['a'], 150);
-  expect((await snapshot(page)).player.x).toBeCloseTo(260, 0);
-  await moveUntil(page, 'd', state => state.player.x > 300);
+  await walkLoungeTo(page, { x: 340, y: 550 });
+  await hold(page, ['a'], 400);
+  expect((await snapshot(page)).player.x).toBeCloseTo(321.734375, 1);
+  await hold(page, ['d'], 200); expect((await snapshot(page)).player.x).toBeGreaterThan(350);
 });
 
 test('the table is solid and E only opens inside its interaction range', async ({ page }) => {
@@ -83,9 +82,9 @@ test('the table is solid and E only opens inside its interaction range', async (
   await page.keyboard.press('e');
   await expect(page.locator('#blackjack-overlay')).not.toBeVisible();
   await expect(page.locator('#interact-button')).toBeDisabled();
-  await moveUntil(page, 'w', state => state.player.y <= 314);
+  await moveUntil(page, 'w', state => state.player.y <= 390);
   await hold(page, ['w'], 150);
-  expect((await snapshot(page)).player.y).toBeCloseTo(314, 0);
+  expect((await snapshot(page)).player.y).toBeCloseTo(389.5859375, 1);
   await expect(page.locator('#interact-button')).toBeEnabled();
   await page.keyboard.press('e');
   await expect(page.locator('#blackjack-overlay')).toBeVisible();

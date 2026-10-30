@@ -2,6 +2,7 @@ import { LOBBY } from './lobby-config.js';
 import { ExplorableScene } from './explorable-scene.js';
 import { constrainFootprintMovement } from './collision-geometry.js';
 import { LOBBY_ART, LOBBY_FOREGROUNDS, LOBBY_INTERACTIONS, toWorld } from './lobby-layout.js';
+import { ReceptionistSprite, preloadReceptionistSprite, RECEPTION_COUNTER_FOREGROUND } from './receptionist-sprite.js';
 
 const imageUrl = new URL('./assets/lobby/central-lobby.png', import.meta.url).href;
 
@@ -12,6 +13,7 @@ export class LobbyScene extends ExplorableScene {
 
   preload() {
     super.preload();
+    preloadReceptionistSprite(this);
     this.load.image(LOBBY_ART.key, imageUrl, { timeout: 5000 });
   }
 
@@ -67,13 +69,14 @@ export class LobbyScene extends ExplorableScene {
     const image = () => this.add.image(LOBBY_ART.x, LOBBY_ART.y, LOBBY_ART.key)
       .setOrigin(0).setDisplaySize(LOBBY_ART.width, LOBBY_ART.height);
     this.background = image().setDepth(0);
-    this.foregrounds = LOBBY_FOREGROUNDS.map(definition => {
+    this.receptionist = new ReceptionistSprite(this);
+    this.foregrounds = [...LOBBY_FOREGROUNDS, RECEPTION_COUNTER_FOREGROUND].map(definition => {
       const graphics = this.make.graphics({ x: 0, y: 0 }, false);
       graphics.fillStyle(0xffffff).fillPoints(definition.points.map(([x, y]) => toWorld(x, y)), true);
       const mask = graphics.createGeometryMask();
       const foreground = image().setMask(mask).setDepth(5);
       this.events.once('shutdown', () => { mask.destroy(); graphics.destroy(); });
-      return { foreground, baseline: toWorld(0, definition.baseline).y };
+      return { id: definition.id, foreground, baseline: toWorld(0, definition.baseline).y };
     });
     this.halos = new Map(Object.entries(LOBBY_INTERACTIONS).map(([id, target]) => [id,
       this.add.rectangle(target.x, target.y, target.width + 8, target.height + 8)

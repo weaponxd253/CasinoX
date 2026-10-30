@@ -16,8 +16,9 @@ export class BlackjackOverlay {
       // A queued close from the previous visit must not resume a reopened room.
       if (!dialog.open) this.finishClose();
     });
+    this.frame.addEventListener('load', () => this.requestReady());
     window.addEventListener('message', event => {
-      if (event.origin !== location.origin || event.source !== this.frame.contentWindow) return;
+      if (event.source !== this.frame.contentWindow || !this.acceptsOrigin(event.origin)) return;
       if (event.data?.channel !== 'casino-floor:blackjack') return;
       if (event.data.type === 'close') this.close();
       if (event.data.type === 'ready') {
@@ -25,6 +26,29 @@ export class BlackjackOverlay {
         this.status.textContent = 'Your hand stays at this table when you return to the floor.';
       }
     });
+  }
+
+  acceptsOrigin(origin) {
+    if (location.protocol !== 'file:') return origin === location.origin;
+    // Local-file origin strings vary between embedded browsers and message
+    // events. Require the actual readable table URL as well as its WindowProxy;
+    // never accept arbitrary opaque-origin frames on an HTTP page.
+    if (origin !== 'null' && origin !== 'file://') return false;
+    try {
+      const actual = new URL(this.frame.contentWindow.location.href);
+      const expected = new URL('../blackjack/index.html', location.href);
+      return actual.protocol === 'file:' && actual.host === expected.host
+        && decodeURIComponent(actual.pathname) === decodeURIComponent(expected.pathname)
+        && actual.searchParams.get('embed') === 'floor';
+    } catch (_) { return false; }
+  }
+
+  requestReady() {
+    if (!this.frame.hasAttribute('src')) return;
+    // File URLs cannot use a reliable serialized target origin. This probe
+    // contains no state; replies still require the exact expected frame/URL.
+    this.frame.contentWindow.postMessage({ channel: 'casino-floor:blackjack', type: 'host-ready' },
+      location.protocol === 'file:' ? '*' : location.origin);
   }
 
   open() {
@@ -36,7 +60,7 @@ export class BlackjackOverlay {
     // Load once. Never remove or reload this frame on close, including mid-hand.
     if (!this.frame.hasAttribute('src')) {
       this.frame.src = '../blackjack/index.html?embed=floor';
-    }
+    } else if (this.frame.inert) this.requestReady();
   }
 
   close() {

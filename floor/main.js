@@ -6,14 +6,33 @@ const interact = document.getElementById('interact-button');
 const host = document.getElementById('floor-canvas');
 const dialog = document.getElementById('blackjack-overlay');
 const balance = document.getElementById('floor-balance');
+let room;
+let game;
+let failed = false;
+function fail(error) {
+  failed = true;
+  room?.owner?.stop();
+  if (room?.sys) {
+    room.input.keyboard.enabled = false;
+    const pause = () => game.scene.pause(room);
+    if (room.sys.getStatus() === window.Phaser.Scenes.CREATING) room.events.once('create', pause);
+    else if (room.sys.isActive()) pause();
+  }
+  interact.disabled = true;
+  host.setAttribute('aria-busy', 'false');
+  status.textContent = `${error.message} You can still use the classic Blackjack X link below.`;
+  console.error('Casino floor:', error);
+}
 CasinoWallet.onChange(value => { balance.textContent = value.toFixed(2); });
 
 try {
   if (!window.Phaser) throw new Error('Phaser could not load.');
   const { CasinoRoom } = await import('./room-scene.js');
-  const room = new CasinoRoom({
+  room = new CasinoRoom({
+    onError: fail, hasFailed: () => failed,
     onInteract: () => openTable(),
     onProximity: near => {
+      if (failed) return;
       interact.disabled = !near;
       status.textContent = near ? 'Press E to play blackjack' : 'Walk up to the blackjack table';
     },
@@ -30,6 +49,7 @@ try {
       status.textContent = 'At the blackjack table · floor paused';
     },
     onClose: () => {
+      if (failed) return;
       room.resumeWorld();
       status.textContent = 'Press E to play blackjack';
     },
@@ -38,10 +58,13 @@ try {
     if (!interact.disabled && room.isNearTable()) overlay.open();
   };
   interact.addEventListener('click', openTable);
+  const collisionButton = document.getElementById('floor-collisions');
+  collisionButton.hidden = !new URLSearchParams(location.search).has('debug');
+  collisionButton.addEventListener('click', () => { if (room.owner && !failed) { room.toggleCollisions(); room.focusCanvas(); } });
 
   const Phaser = window.Phaser;
-  const game = new Phaser.Game({
-    // This small vector room needs no WebGL pipeline or GPU assets.
+  game = new Phaser.Game({
+    // Keep the existing canvas runtime and its nearest-neighbor sprite rendering.
     type: Phaser.CANVAS,
     parent: host,
     width: ROOM.width,
@@ -58,12 +81,16 @@ try {
   if (new URLSearchParams(location.search).has('debug')) {
     window.CasinoFloorDebug = Object.freeze({
       snapshot: () => ({
-        ready: Boolean(room.player),
+        ready: Boolean(room.player), failed,
         paused: game.scene.isPaused('CasinoRoom'),
         player: room.player ? { x: room.player.x, y: room.player.y } : null,
         velocity: room.player ? { x: room.player.body.velocity.x, y: room.player.body.velocity.y } : null,
         nearTable: room.player ? room.isNearTable() : false,
         balance: CasinoWallet.get(),
+        ownerFacing: room.owner?.facing ?? null,
+        loungeArtwork: room.artworkSnapshot(),
+        collisionsVisible: room.collisionOverlay?.visible ?? false,
+        loungeForegrounds: room.foregrounds?.map(layer => ({ baseline: layer.baseline, depth: layer.foreground.depth })) ?? [],
         ownerVisual: room.owner?.visual.snapshot() ?? null,
         ownerBody: room.player ? {
           radius: room.player.body.radius, width: room.player.body.width, height: room.player.body.height,
@@ -72,8 +99,4 @@ try {
       }),
     });
   }
-} catch (error) {
-  host.setAttribute('aria-busy', 'false');
-  status.textContent = 'The room could not load. You can still play using the Blackjack link below.';
-  console.error('Casino floor:', error);
-}
+} catch (error) { fail(error); }

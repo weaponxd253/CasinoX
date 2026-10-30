@@ -176,8 +176,8 @@ for (const fails of [false, true]) {
     await page.goto('/floor/index.html?debug=1'); await ready(page); await page.locator('canvas').focus();
     expect((await snapshot(page)).ownerVisual.mode).toBe(fails ? 'circle' : 'sprite');
     expect((await snapshot(page)).ownerBody).toEqual({ radius: 14, width: 28, height: 28, isCircle: true, placeholderVisible: fails });
-    await moveUntil(page, 's', state => state.player.y >= 554); await hold(page, 's', 150);
-    expect((await snapshot(page)).player.y).toBeCloseTo(554, 0);
+    await moveUntil(page, 's', state => state.player.y >= 585); await hold(page, 's', 150);
+    expect((await snapshot(page)).player.y).toBeCloseTo(586, 0);
     await moveUntil(page, 'w', state => state.player.y < 520);
     await expect(page.locator('canvas')).toBeFocused();
   });

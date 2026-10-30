@@ -2,11 +2,26 @@
 (() => {
   if (window.parent === window || new URLSearchParams(location.search).get('embed') !== 'floor') return;
   try {
-    if (window.parent.location.origin !== location.origin) return;
+    if (location.protocol === 'file:') {
+      const parent = new URL(window.parent.location.href);
+      const allowed = ['../floor/index.html', '../world/index.html'].map(path => new URL(path, location.href));
+      if (parent.protocol !== 'file:' || !allowed.some(url => parent.host === url.host
+        && decodeURIComponent(parent.pathname) === decodeURIComponent(url.pathname))) return;
+    } else if (window.parent.location.origin !== location.origin) return;
   } catch (_) { return; }
 
   document.documentElement.dataset.floorEmbed = '';
-  const send = type => window.parent.postMessage({ channel: 'casino-floor:blackjack', type }, location.origin);
+  const localFile = location.protocol === 'file:';
+  const send = type => window.parent.postMessage({ channel: 'casino-floor:blackjack', type }, localFile ? '*' : location.origin);
+  const ready = () => {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => send('ready'), { once: true });
+    else send('ready');
+  };
+  window.addEventListener('message', event => {
+    if (event.source !== window.parent) return;
+    if (localFile ? !['null', 'file://'].includes(event.origin) : event.origin !== location.origin) return;
+    if (event.data?.channel === 'casino-floor:blackjack' && event.data.type === 'host-ready') ready();
+  });
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape') {
       event.preventDefault();
@@ -23,5 +38,5 @@
       send('close');
     }
   });
-  document.addEventListener('DOMContentLoaded', () => send('ready'));
+  ready();
 })();

@@ -28,7 +28,7 @@ let lastSavedPosition;
 let allowLeaving = false;
 
 const activeScene = () => ({ CentralLobby: lobby, CasinoRoom: casino, HotelInterior: hotel })[current];
-const isBlocked = () => failed || dialog.open || conversation.open || performance.now() < unlockInteractionAt;
+const isBlocked = () => failed || !ready || !activeScene()?.owner || dialog.open || conversation.open || performance.now() < unlockInteractionAt;
 const samePosition = (a, b) => a && b && a.x === b.x && a.y === b.y && a.facing === b.facing;
 const setText = (id, value) => {
   const element = document.getElementById(id);
@@ -103,10 +103,19 @@ function activate(key) {
   activeScene().stopMovement();
   game.scene.sleep(current);
   current = key;
+  ready = false;
+  host.setAttribute('aria-busy', 'true');
+  interact.disabled = true;
+  returnButton.disabled = true;
+  setText('world-status', 'Loading the room…');
   unlockInteractionAt = performance.now() + 250;
   game.scene.run(key);
-  activeScene().focusCanvas();
-  host.setAttribute('aria-busy', 'false');
+  // First entry can wait for artwork. Existing sleeping scenes wake immediately.
+  if (activeScene().owner && !failed) {
+    ready = true;
+    activeScene().focusCanvas();
+    host.setAttribute('aria-busy', 'false');
+  }
   refresh();
 }
 
@@ -189,6 +198,7 @@ try {
     import('./lobby-scene.js'), import('../floor/room-scene.js'), import('./hotel-scene.js'),
   ]);
   const onReady = scene => {
+    if (failed) return;
     ready = true;
     host.setAttribute('aria-busy', 'false');
     scene.focusCanvas();
@@ -233,7 +243,10 @@ try {
   returnButton.addEventListener('click', returnToLobby);
   const collisionButton = document.getElementById('world-collisions');
   collisionButton.hidden = !new URLSearchParams(location.search).has('debug');
-  collisionButton.addEventListener('click', () => { if (lobby?.owner) lobby.toggleCollisions(); activeScene()?.owner?.focus(); });
+  collisionButton.addEventListener('click', () => {
+    if (!failed && activeScene()?.owner) activeScene().toggleCollisions?.();
+    activeScene()?.owner?.focus();
+  });
   const Phaser = window.Phaser;
   game = new Phaser.Game({
     type: Phaser.CANVAS, parent: host, width: LOBBY.width, height: LOBBY.height,
@@ -261,8 +274,13 @@ try {
         width: lobby.background.displayWidth, height: lobby.background.displayHeight,
         sourceWidth: lobby.background.texture.getSourceImage().width, sourceHeight: lobby.background.texture.getSourceImage().height,
         scaleMode: lobby.background.frame.source.scaleMode } : null,
-      collisionsVisible: lobby?.collisionOverlay?.visible ?? false,
+      loungeArtwork: casino?.artworkSnapshot() ?? null,
+      receptionist: lobby?.receptionist?.snapshot() ?? null,
+      receptionCounter: lobby?.foregrounds?.filter(layer => layer.id === 'reception-counter')
+        .map(layer => ({ depth: layer.foreground.depth, baseline: layer.baseline })) ?? [],
+      collisionsVisible: activeScene()?.collisionOverlay?.visible ?? false,
       lobbyForegrounds: lobby?.foregrounds?.map(layer => ({ baseline: layer.baseline, depth: layer.foreground.depth })) ?? [],
+      loungeForegrounds: casino?.foregrounds?.map(layer => ({ baseline: layer.baseline, depth: layer.foreground.depth })) ?? [],
     }) });
   }
 } catch (error) { fail(error); }

@@ -45,3 +45,4 @@ body.blackjack-open { overflow: hidden; }
   .overlay-header p { font-size: 11px; }
   .overlay-header button { padding: 8px; font-size: 10px; }
 }
+#floor-collisions[hidden] { display: none; }

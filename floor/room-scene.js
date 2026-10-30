@@ -3,8 +3,11 @@ import { OwnerController } from '../world/owner-controller.js';
 import { InteractionSystem } from '../world/interaction-system.js';
 import { INTERACTABLES } from '../world/interactables.js';
 import { preloadOwnerSprite } from '../world/owner-sprite.js';
+import { constrainFootprintMovement, distanceFromRect } from '../world/collision-geometry.js';
+import { LOUNGE_ART, LOUNGE_FOREGROUNDS, toWorld } from './lounge-layout.js';
 
 const Phaser = window.Phaser;
+const imageUrl = new URL('./assets/lounge/blackjack-lounge.png', import.meta.url).href;
 
 export class CasinoRoom extends Phaser.Scene {
   constructor(host) {
@@ -12,17 +15,44 @@ export class CasinoRoom extends Phaser.Scene {
     this.host = host;
   }
 
-  preload() { preloadOwnerSprite(this); }
+  preload() {
+    preloadOwnerSprite(this);
+    this.load.image(LOUNGE_ART.key, imageUrl, { timeout: 5000 });
+  }
 
   create() {
+    if (this.host.hasFailed?.()) {
+      this.events.once('create', () => this.game.scene.pause(this));
+      return;
+    }
+    const texture = this.textures.exists(LOUNGE_ART.key) && this.textures.get(LOUNGE_ART.key);
+    const source = texture && texture.getSourceImage();
+    if (!source || source.width !== LOUNGE_ART.sourceWidth || source.height !== LOUNGE_ART.sourceHeight) {
+      this.host.onError(new Error('Blackjack Lounge artwork could not load or has invalid dimensions.'));
+      return;
+    }
+    texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
     this.drawRoom();
     this.solids = this.physics.add.staticGroup();
-    for (const wall of ROOM.walls) this.addSolid(wall);
-    this.addSolid(ROOM.table);
+    for (const shape of ROOM.solids) this.addSolid(shape);
 
     this.owner = new OwnerController(this, { spawn: ROOM.spawn, radius: ROOM.playerRadius, speed: ROOM.speed, label: 'YOU' });
     this.player = this.owner.player;
     this.physics.add.collider(this.player, this.solids);
+    const finishContacts = () => {
+      const body = this.player.body;
+      const previous = { x: body.prev.x + body.halfWidth, y: body.prev.y + body.halfHeight };
+      try {
+        const corrected = constrainFootprintMovement(previous, body.center, ROOM.solids, ROOM.playerRadius);
+        body.position.x += corrected.x - body.center.x;
+        body.position.y += corrected.y - body.center.y;
+        body.updateCenter();
+      } catch (error) { this.host.onError(error); }
+    };
+    this.physics.world.on('worldstep', finishContacts);
+    this.events.once('shutdown', () => this.physics.world.off('worldstep', finishContacts));
+    this.events.on('postupdate', this.drawCollisions, this);
+    this.events.once('shutdown', () => this.events.off('postupdate', this.drawCollisions, this));
     this.interactions = new InteractionSystem(this, {
       definitions: INTERACTABLES,
       context: () => ({ canReturn: Boolean(this.host.onExit || this.host.onAction) }),
@@ -52,9 +82,10 @@ export class CasinoRoom extends Phaser.Scene {
     this.host.onReady();
   }
 
-  addSolid({ x, y, width, height }) {
-    const solid = this.add.zone(x, y, width, height);
+  addSolid({ x, y, width, height, radius }) {
+    const solid = this.add.zone(x, y, width ?? radius * 2, height ?? radius * 2);
     this.solids.add(solid);
+    if (radius !== undefined) { solid.body.setCircle(radius); solid.body.updateFromGameObject(); }
   }
 
   hasFocus() {
@@ -62,10 +93,7 @@ export class CasinoRoom extends Phaser.Scene {
   }
 
   isNearTable() {
-    const table = ROOM.table;
-    const dx = Math.max(Math.abs(this.player.x - table.x) - table.width / 2, 0);
-    const dy = Math.max(Math.abs(this.player.y - table.y) - table.height / 2, 0);
-    return Math.hypot(dx, dy) <= table.reach;
+    return Boolean(this.player) && distanceFromRect(this.player, ROOM.table) <= ROOM.table.reach;
   }
 
   stopMovement() {
@@ -92,49 +120,57 @@ export class CasinoRoom extends Phaser.Scene {
   }
 
   update() {
+    if (!this.owner) return;
     this.owner.update();
     const near = this.isNearTable();
     const interaction = this.getInteraction();
     if (interaction !== this.interaction) {
       this.interaction = interaction;
-      this.tableHalo.setVisible(near);
       this.host.onProximity(Boolean(interaction), interaction);
     }
     this.nearTable = near;
+    for (const layer of this.foregrounds) layer.foreground.setDepth(this.player.y + ROOM.playerRadius < layer.baseline ? 20 : 5);
   }
 
   drawRoom() {
-    const g = this.add.graphics();
-    g.fillStyle(0x291e35).fillRect(0, 0, ROOM.width, ROOM.height);
-    g.fillStyle(0x38283c).fillRoundedRect(54, 54, 852, 492, 12);
-    g.lineStyle(1, 0x9b7950, 0.22);
-    for (let x = 80; x < 920; x += 40) {
-      for (let y = 80; y < 560; y += 40) {
-        g.strokeRect(x, y, 6, 6);
-      }
-    }
-    g.lineStyle(2, 0xad8b55, 0.65).strokeRoundedRect(62, 62, 836, 476, 10);
-    for (const wall of ROOM.walls) {
-      g.fillStyle(0x131d27).fillRect(wall.x - wall.width / 2, wall.y - wall.height / 2, wall.width, wall.height);
-      g.lineStyle(2, 0xa28251).strokeRect(wall.x - wall.width / 2, wall.y - wall.height / 2, wall.width, wall.height);
-    }
-    const text = (x, y, value, size, color = '#e9ce98') => this.add.text(x, y, value, {
-      fontFamily: 'Georgia, serif', fontSize: size, color, align: 'center',
-    }).setOrigin(0.5);
-    text(480, 92, 'THE BLACKJACK LOUNGE', 25);
-    text(480, 122, 'C A S I N O   X   /   R O Y A L E   C O L L E C T I O N', 11, '#b6a5ae');
+    this.add.rectangle(480, 300, 960, 600, 0x000000);
+    const image = () => this.add.image(LOUNGE_ART.x, LOUNGE_ART.y, LOUNGE_ART.key)
+      .setOrigin(0).setDisplaySize(LOUNGE_ART.width, LOUNGE_ART.height);
+    this.background = image().setDepth(0);
+    this.foregrounds = LOUNGE_FOREGROUNDS.map(definition => {
+      const graphics = this.make.graphics({ x: 0, y: 0 }, false);
+      graphics.fillStyle(0xffffff).fillPoints(definition.points.map(([x, y]) => toWorld(x, y)), true);
+      const mask = graphics.createGeometryMask();
+      const foreground = image().setMask(mask).setDepth(5);
+      this.events.once('shutdown', () => { mask.destroy(); graphics.destroy(); });
+      return { foreground, baseline: toWorld(0, definition.baseline).y };
+    });
+    this.collisionOverlay = this.add.graphics().setDepth(100)
+      .setVisible(new URLSearchParams(location.search).has('collisions'));
+  }
 
-    this.tableHalo = this.add.rectangle(480, 240, 268, 148)
-      .setStrokeStyle(2, 0xf0d699, 0.8).setVisible(false);
-    g.fillStyle(0x12151c, 0.5).fillRoundedRect(354, 190, 252, 126, 26);
-    g.fillStyle(0x8c693e).fillRoundedRect(360, 180, 240, 120, 24);
-    g.fillStyle(0x15584e).fillRoundedRect(370, 190, 220, 100, 18);
-    g.lineStyle(1, 0xb5a578, 0.6).strokeRoundedRect(379, 198, 202, 83, 14);
-    text(480, 224, 'BLACKJACK', 20);
-    text(480, 252, '3:2  /  MIN 1 CHIP', 11);
-    text(480, 340, 'APPROACH TO PLAY', 12, '#b6a5ae');
-    text(130, 390, 'PRIVATE\nLOUNGE', 13, '#b6a5ae');
-    text(790, 480, 'W A S D\nto explore', 15, '#b6a5ae');
-    if (this.host.onExit || this.host.onAction) text(ROOM.exit.x, ROOM.exit.y, 'E · CENTRAL LOBBY', 13);
+  toggleCollisions() { this.collisionOverlay.setVisible(!this.collisionOverlay.visible); this.drawCollisions(); }
+
+  drawCollisions() {
+    if (!this.collisionOverlay?.visible || !this.player) return;
+    const g = this.collisionOverlay.clear();
+    for (const shape of ROOM.solids) {
+      g.fillStyle(0xff5268, 0.3).lineStyle(1, 0xff6375, 0.85);
+      if (shape.radius !== undefined) g.fillCircle(shape.x, shape.y, shape.radius).strokeCircle(shape.x, shape.y, shape.radius);
+      else g.fillRect(shape.x - shape.width / 2, shape.y - shape.height / 2, shape.width, shape.height);
+    }
+    g.lineStyle(2, 0x5de8ed);
+    const t = ROOM.table;
+    g.strokeRoundedRect(t.x - t.width / 2 - t.reach, t.y - t.height / 2 - t.reach,
+      t.width + t.reach * 2, t.height + t.reach * 2, t.reach);
+    if (this.host.onAction || this.host.onExit) g.strokeCircle(ROOM.exit.x, ROOM.exit.y, ROOM.exit.reach);
+    g.lineStyle(2, 0xffffff).strokeCircle(this.player.x, this.player.y, ROOM.playerRadius);
+  }
+
+  artworkSnapshot() {
+    return this.background ? { x: this.background.x, y: this.background.y,
+      width: this.background.displayWidth, height: this.background.displayHeight,
+      sourceWidth: this.background.texture.getSourceImage().width, sourceHeight: this.background.texture.getSourceImage().height,
+      scaleMode: this.background.frame.source.scaleMode } : null;
   }
 }
