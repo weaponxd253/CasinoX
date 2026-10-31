@@ -3,7 +3,7 @@ import { ExplorableScene } from './explorable-scene.js';
 import { constrainFootprintMovement } from './collision-geometry.js';
 import { LOBBY_ART, LOBBY_FOREGROUNDS, LOBBY_INTERACTIONS, toWorld } from './lobby-layout.js';
 import { ReceptionistSprite, preloadReceptionistSprite, RECEPTION_COUNTER_FOREGROUND } from './receptionist-sprite.js';
-import { preloadTravelerSprite } from './casual-traveler-sprite.js';
+import { preloadGuestAppearances } from './guest-appearances.js';
 import { LobbyGuests } from './lobby-guests.js';
 import { updateLobbyDepth } from './lobby-depth.js';
 
@@ -17,7 +17,7 @@ export class LobbyScene extends ExplorableScene {
   preload() {
     super.preload();
     preloadReceptionistSprite(this);
-    preloadTravelerSprite(this);
+    preloadGuestAppearances(this);
     this.load.image(LOBBY_ART.key, imageUrl, { timeout: 5000 });
   }
 
@@ -55,6 +55,7 @@ export class LobbyScene extends ExplorableScene {
     this.events.once('shutdown', () => this.events.off('postupdate', this.updateDepth));
     this.drawCollisions = () => {
       this.guests?.label.setVisible(this.collisionOverlay.visible);
+      this.guests?.slotLabels.forEach(label => label.setVisible(this.collisionOverlay.visible));
       if (!this.collisionOverlay.visible) return;
       const g = this.collisionOverlay.clear();
       for (const shape of LOBBY.solids) {

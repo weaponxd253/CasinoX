@@ -1,0 +1,289 @@
+{
+  "sourceSize": [
+    1024,
+    1536
+  ],
+  "sourceSha256": "da62b862e515eaa15826efd6863d4b3eff8336536d6dcb1b15caa707674ccc8c",
+  "sheetSize": [
+    1024,
+    1536
+  ],
+  "frameSize": [
+    256,
+    384
+  ],
+  "footBaseline": 368,
+  "resampling": "none",
+  "alphaThreshold": 32,
+  "directions": [
+    "down",
+    "left",
+    "right",
+    "up"
+  ],
+  "idleFrames": {
+    "down": 0,
+    "left": 4,
+    "right": 8,
+    "up": 12
+  },
+  "preparedSha256": "11f2613a6cf7d57ee9bae7d073c951aef22a47d6212c2fcad4ca2f5c0e0ee611",
+  "frames": [
+    {
+      "frame": 0,
+      "direction": "down",
+      "sourceBounds": [
+        45,
+        47,
+        213,
+        371
+      ],
+      "preparedBounds": [
+        44,
+        44,
+        212,
+        368
+      ]
+    },
+    {
+      "frame": 1,
+      "direction": "down",
+      "sourceBounds": [
+        300,
+        47,
+        470,
+        378
+      ],
+      "preparedBounds": [
+        43,
+        37,
+        213,
+        368
+      ]
+    },
+    {
+      "frame": 2,
+      "direction": "down",
+      "sourceBounds": [
+        554,
+        47,
+        727,
+        379
+      ],
+      "preparedBounds": [
+        41,
+        36,
+        214,
+        368
+      ]
+    },
+    {
+      "frame": 3,
+      "direction": "down",
+      "sourceBounds": [
+        812,
+        47,
+        982,
+        379
+      ],
+      "preparedBounds": [
+        43,
+        36,
+        213,
+        368
+      ]
+    },
+    {
+      "frame": 4,
+      "direction": "left",
+      "sourceBounds": [
+        44,
+        404,
+        197,
+        748
+      ],
+      "preparedBounds": [
+        51,
+        24,
+        204,
+        368
+      ]
+    },
+    {
+      "frame": 5,
+      "direction": "left",
+      "sourceBounds": [
+        300,
+        404,
+        465,
+        744
+      ],
+      "preparedBounds": [
+        45,
+        28,
+        210,
+        368
+      ]
+    },
+    {
+      "frame": 6,
+      "direction": "left",
+      "sourceBounds": [
+        551,
+        404,
+        727,
+        744
+      ],
+      "preparedBounds": [
+        40,
+        28,
+        216,
+        368
+      ]
+    },
+    {
+      "frame": 7,
+      "direction": "left",
+      "sourceBounds": [
+        814,
+        404,
+        980,
+        743
+      ],
+      "preparedBounds": [
+        45,
+        29,
+        211,
+        368
+      ]
+    },
+    {
+      "frame": 8,
+      "direction": "right",
+      "sourceBounds": [
+        55,
+        773,
+        209,
+        1118
+      ],
+      "preparedBounds": [
+        51,
+        23,
+        205,
+        368
+      ]
+    },
+    {
+      "frame": 9,
+      "direction": "right",
+      "sourceBounds": [
+        305,
+        773,
+        471,
+        1118
+      ],
+      "preparedBounds": [
+        45,
+        23,
+        211,
+        368
+      ]
+    },
+    {
+      "frame": 10,
+      "direction": "right",
+      "sourceBounds": [
+        560,
+        773,
+        727,
+        1116
+      ],
+      "preparedBounds": [
+        44,
+        25,
+        211,
+        368
+      ]
+    },
+    {
+      "frame": 11,
+      "direction": "right",
+      "sourceBounds": [
+        815,
+        773,
+        983,
+        1116
+      ],
+      "preparedBounds": [
+        44,
+        25,
+        212,
+        368
+      ]
+    },
+    {
+      "frame": 12,
+      "direction": "up",
+      "sourceBounds": [
+        42,
+        1139,
+        212,
+        1480
+      ],
+      "preparedBounds": [
+        43,
+        27,
+        213,
+        368
+      ]
+    },
+    {
+      "frame": 13,
+      "direction": "up",
+      "sourceBounds": [
+        300,
+        1139,
+        471,
+        1487
+      ],
+      "preparedBounds": [
+        42,
+        20,
+        213,
+        368
+      ]
+    },
+    {
+      "frame": 14,
+      "direction": "up",
+      "sourceBounds": [
+        554,
+        1139,
+        725,
+        1485
+      ],
+      "preparedBounds": [
+        42,
+        22,
+        213,
+        368
+      ]
+    },
+    {
+      "frame": 15,
+      "direction": "up",
+      "sourceBounds": [
+        810,
+        1139,
+        981,
+        1486
+      ],
+      "preparedBounds": [
+        42,
+        21,
+        213,
+        368
+      ]
+    }
+  ]
+}

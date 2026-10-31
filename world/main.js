@@ -279,6 +279,7 @@ try {
       dealer: casino?.dealer?.snapshot() ?? null,
       receptionist: lobby?.receptionist?.snapshot() ?? null,
       guest: lobby?.guests?.snapshot() ?? null,
+      guestTraffic: lobby?.guests?.snapshotAll() ?? null,
       receptionCounter: lobby?.foregrounds?.filter(layer => layer.id === 'reception-counter')
         .map(layer => ({ depth: layer.foreground.depth, baseline: layer.baseline })) ?? [],
       collisionsVisible: activeScene()?.collisionOverlay?.visible ?? false,

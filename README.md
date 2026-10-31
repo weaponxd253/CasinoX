@@ -147,6 +147,13 @@ or unsupported saves show an error and are preserved rather than reset. See
 [Phase 1 routes and save behavior](docs/STATE_AND_ROUTES.md) for exact boundaries,
 remaining decisions and a manual checklist. Run `npm run test:world` for Phase 1.
 
+Phase 5B adds three visual hotel travelers with staggered arrivals and an automatic
+reception queue. Guests physically advance, receive eight active seconds of
+service, and leave toward the hotel once per page load. See the
+[queue configuration, diagnostics and verification](docs/PHASE_5B_QUEUE.md).
+Run `npx playwright test tests/reception-queue.spec.js tests/reception-queue-capture.spec.js --workers=1`
+for dedicated queue coverage.
+
 Phase 2 adds a receptionist conversation, a manager’s office shortcut to the
 original dashboard, and an explorable hotel interior preview. Doors, NPCs and the
 hotel directory use the same declarative interaction system. E activates the
