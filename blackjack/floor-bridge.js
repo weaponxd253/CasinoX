@@ -14,8 +14,9 @@
   const localFile = location.protocol === 'file:';
   const send = type => window.parent.postMessage({ channel: 'casino-floor:blackjack', type }, localFile ? '*' : location.origin);
   const ready = () => {
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => send('ready'), { once: true });
-    else send('ready');
+    const finish = () => { CasinoShell.refreshProfile(); send('ready'); };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', finish, { once: true });
+    else finish();
   };
   window.addEventListener('message', event => {
     if (event.source !== window.parent) return;

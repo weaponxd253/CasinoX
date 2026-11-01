@@ -23,7 +23,7 @@
     <div id="floor-canvas" aria-busy="true"></div>
     <div class="floor-toolbar world-toolbar"><p id="world-status" role="status">Opening your resort…</p><button id="world-interact" class="shell-pill" disabled><kbd>E</kbd> Interact</button><button id="world-return" class="shell-pill" hidden>Return to Central Lobby</button></div>
     <p class="floor-help">Click the room to focus · WASD or arrows to walk · E to interact · M for management · Esc closes dialogue or returns from an interior</p>
-    <p class="world-limit">Your lobby location is saved. Blackjack hands stay at the table during visits in this page. Reloading or leaving during a hand loses it; its wager stays deducted.</p>
+    <p class="world-limit">Your lobby location is saved. Blackjack hands stay at the table during visits in this page. Reloading or leaving during a hand loses it; its wager stays deducted. Finish casino rounds and cash out Coin Flip pots before leaving or reloading; unfinished wagers may be lost.</p>
   </main>
   <footer class="floor-footer">Casino X · Virtual chips only · For entertainment</footer>
   <dialog id="world-dialogue" aria-labelledby="dialogue-title" aria-describedby="dialogue-text">
@@ -37,6 +37,13 @@
     <iframe id="blackjack-frame" title="Blackjack X game" allow="autoplay" inert></iframe>
   </dialog>
   <script src="../save-safety.js"></script>
+  <dialog id="casino-game-overlay" aria-labelledby="casino-game-title" aria-describedby="casino-game-status">
+    <div class="overlay-header"><div><h2 id="casino-game-title" data-game-title>Casino X</h2>
+      <p id="casino-game-status" role="status">Loading the game…</p></div>
+      <div class="game-header-actions"><span class="game-wallet">Chips <strong id="casino-game-balance">—</strong></span>
+      <button class="shell-pill" data-game-close autofocus>Return to Casino <span aria-hidden="true">×</span></button></div></div>
+    <div data-game-content></div>
+  </dialog>
   <script src="../wallet.js"></script>
   <script src="../floor/vendor/phaser.min.js"></script>
   <script type="module" src="main.js"></script>

@@ -60,7 +60,7 @@ test('declarative destinations share the system and standalone lounge has no wor
       standaloneExit: selectInteraction(INTERACTABLES, exit.scene, exit.position, { canReturn: false }),
     };
   });
-  expect(result).toEqual({ idsUnique: true, types: ['blackjack', 'dialogue', 'door', 'management', 'return'],
+  expect(result).toEqual({ idsUnique: true, types: ['blackjack', 'casino-game', 'dialogue', 'door', 'management', 'return'],
     casino: { type: 'door', destination: 'MainCasinoFloor' }, hotel: { type: 'door', destination: 'HotelInterior' },
     worldExit: 'lobby', standaloneExit: null });
 });

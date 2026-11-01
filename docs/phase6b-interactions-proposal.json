@@ -1,0 +1,315 @@
+{
+  "status": "Planning-only numerical validation; application and existing tests unchanged. Runtime prompt/input tests follow approval.",
+  "ownerRadius": 14,
+  "verificationRadius": 14.25,
+  "collisionBodies": 120,
+  "gridConnectedNodes": 11937,
+  "regions": [
+    {
+      "id": "roulette",
+      "game": "roulette",
+      "bounds": [
+        280,
+        570,
+        328,
+        598
+      ],
+      "stand": [
+        304,
+        584
+      ],
+      "region": {
+        "x": 208.125,
+        "y": 342.1875,
+        "width": 28.125,
+        "height": 16.40625,
+        "reach": 8
+      },
+      "approach": {
+        "x": 208.125,
+        "y": 342.1875
+      }
+    },
+    {
+      "id": "slot-1",
+      "game": "slots",
+      "bounds": [
+        1084,
+        500,
+        1116,
+        524
+      ],
+      "stand": [
+        1100,
+        512
+      ],
+      "region": {
+        "x": 674.53125,
+        "y": 300,
+        "width": 18.75,
+        "height": 14.0625,
+        "reach": 8
+      },
+      "approach": {
+        "x": 674.53125,
+        "y": 300
+      }
+    },
+    {
+      "id": "slot-2",
+      "game": "slots",
+      "bounds": [
+        1158,
+        500,
+        1190,
+        524
+      ],
+      "stand": [
+        1174,
+        512
+      ],
+      "region": {
+        "x": 717.890625,
+        "y": 300,
+        "width": 18.75,
+        "height": 14.0625,
+        "reach": 8
+      },
+      "approach": {
+        "x": 717.890625,
+        "y": 300
+      }
+    },
+    {
+      "id": "slot-3",
+      "game": "slots",
+      "bounds": [
+        1232,
+        500,
+        1264,
+        524
+      ],
+      "stand": [
+        1248,
+        512
+      ],
+      "region": {
+        "x": 761.25,
+        "y": 300,
+        "width": 18.75,
+        "height": 14.0625,
+        "reach": 8
+      },
+      "approach": {
+        "x": 761.25,
+        "y": 300
+      }
+    },
+    {
+      "id": "slot-4",
+      "game": "slots",
+      "bounds": [
+        1306,
+        500,
+        1338,
+        524
+      ],
+      "stand": [
+        1322,
+        512
+      ],
+      "region": {
+        "x": 804.609375,
+        "y": 300,
+        "width": 18.75,
+        "height": 14.0625,
+        "reach": 8
+      },
+      "approach": {
+        "x": 804.609375,
+        "y": 300
+      }
+    },
+    {
+      "id": "slot-5",
+      "game": "slots",
+      "bounds": [
+        1380,
+        500,
+        1412,
+        524
+      ],
+      "stand": [
+        1396,
+        512
+      ],
+      "region": {
+        "x": 847.96875,
+        "y": 300,
+        "width": 18.75,
+        "height": 14.0625,
+        "reach": 8
+      },
+      "approach": {
+        "x": 847.96875,
+        "y": 300
+      }
+    },
+    {
+      "id": "coin-flip",
+      "game": "coinflip",
+      "bounds": [
+        1056,
+        628,
+        1080,
+        660
+      ],
+      "stand": [
+        1068,
+        644
+      ],
+      "region": {
+        "x": 655.78125,
+        "y": 377.34375,
+        "width": 14.0625,
+        "height": 18.75,
+        "reach": 8
+      },
+      "approach": {
+        "x": 655.78125,
+        "y": 377.34375
+      }
+    }
+  ],
+  "checks": [
+    {
+      "id": "roulette",
+      "approachClear": true,
+      "connected": true,
+      "eligibleAtApproach": true,
+      "eligibleAtDoorApproaches": [
+        false,
+        false
+      ],
+      "acceptedSamples": 324,
+      "rejectedSamples": 35,
+      "rejectedAcrossObstacle": 0
+    },
+    {
+      "id": "slot-1",
+      "approachClear": true,
+      "connected": true,
+      "eligibleAtApproach": true,
+      "eligibleAtDoorApproaches": [
+        false,
+        false
+      ],
+      "acceptedSamples": 184,
+      "rejectedSamples": 59,
+      "rejectedAcrossObstacle": 0
+    },
+    {
+      "id": "slot-2",
+      "approachClear": true,
+      "connected": true,
+      "eligibleAtApproach": true,
+      "eligibleAtDoorApproaches": [
+        false,
+        false
+      ],
+      "acceptedSamples": 223,
+      "rejectedSamples": 20,
+      "rejectedAcrossObstacle": 0
+    },
+    {
+      "id": "slot-3",
+      "approachClear": true,
+      "connected": true,
+      "eligibleAtApproach": true,
+      "eligibleAtDoorApproaches": [
+        false,
+        false
+      ],
+      "acceptedSamples": 223,
+      "rejectedSamples": 20,
+      "rejectedAcrossObstacle": 0
+    },
+    {
+      "id": "slot-4",
+      "approachClear": true,
+      "connected": true,
+      "eligibleAtApproach": true,
+      "eligibleAtDoorApproaches": [
+        false,
+        false
+      ],
+      "acceptedSamples": 223,
+      "rejectedSamples": 20,
+      "rejectedAcrossObstacle": 0
+    },
+    {
+      "id": "slot-5",
+      "approachClear": true,
+      "connected": true,
+      "eligibleAtApproach": true,
+      "eligibleAtDoorApproaches": [
+        false,
+        false
+      ],
+      "acceptedSamples": 223,
+      "rejectedSamples": 20,
+      "rejectedAcrossObstacle": 0
+    },
+    {
+      "id": "coin-flip",
+      "approachClear": true,
+      "connected": true,
+      "eligibleAtApproach": true,
+      "eligibleAtDoorApproaches": [
+        false,
+        false
+      ],
+      "acceptedSamples": 243,
+      "rejectedSamples": 0,
+      "rejectedAcrossObstacle": 0
+    }
+  ],
+  "slotEligibleHorizontalGaps": [
+    8.609375,
+    8.609375,
+    8.609375,
+    8.609375
+  ],
+  "oppositeSideChecks": [
+    {
+      "id": "roulette",
+      "p": {
+        "x": 208.125,
+        "y": 178.125
+      },
+      "walkable": true,
+      "inRange": false,
+      "clearPath": false
+    },
+    {
+      "id": "slot-3",
+      "p": {
+        "x": 761.25,
+        "y": 175.78125
+      },
+      "walkable": true,
+      "inRange": false,
+      "clearPath": false
+    },
+    {
+      "id": "coin-flip",
+      "p": {
+        "x": 832.734375,
+        "y": 377.34375
+      },
+      "walkable": true,
+      "inRange": false,
+      "clearPath": false
+    }
+  ]
+}

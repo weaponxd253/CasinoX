@@ -1,0 +1,126 @@
+{
+  "scope": "Read-only source/isolated existing-page audit. These are compatibility and risk observations, not implemented Phase 6B acceptance tests. Game implementation files were not edited.",
+  "stats": {
+    "startTime": "2026-11-01T16:20:56.417Z",
+    "duration": 23418.518,
+    "expected": 6,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "projects": [
+    "chromium"
+  ],
+  "workers": 1,
+  "observations": [
+    {
+      "game": "roulette",
+      "bareIframeCompatible": true,
+      "openingBalance": 250.25,
+      "finalBalance": 425.25,
+      "parentHudSynced": true,
+      "hotelAndGuestBytesUnchanged": true,
+      "state": {
+        "profile": {
+          "xp": 22,
+          "level": 1,
+          "into": 22,
+          "need": 50,
+          "streak": 2
+        },
+        "round": {
+          "spinning": false
+        }
+      },
+      "scope": "Existing-page probe only; no Phase 6B host implemented."
+    },
+    {
+      "game": "slots",
+      "bareIframeCompatible": true,
+      "openingBalance": 250.25,
+      "finalBalance": 250.85,
+      "parentHudSynced": true,
+      "hotelAndGuestBytesUnchanged": true,
+      "state": {
+        "profile": {
+          "xp": 18,
+          "level": 1,
+          "into": 18,
+          "need": 50,
+          "streak": 2
+        },
+        "round": {
+          "spinning": false,
+          "auto": false
+        }
+      },
+      "scope": "Existing-page probe only; no Phase 6B host implemented."
+    },
+    {
+      "game": "coinflip",
+      "bareIframeCompatible": true,
+      "openingBalance": 250.25,
+      "finalBalance": 255.25,
+      "parentHudSynced": true,
+      "hotelAndGuestBytesUnchanged": true,
+      "state": {
+        "profile": {
+          "xp": 22,
+          "level": 1,
+          "into": 22,
+          "need": 50,
+          "streak": 2
+        },
+        "round": {
+          "flipping": false,
+          "potPending": false
+        }
+      },
+      "scope": "Existing-page probe only; no Phase 6B host implemented."
+    },
+    {
+      "risk": "stale retained profile",
+      "storedXpAfterRoulette": 50,
+      "cachedBlackjackXp": 49,
+      "beforeBlackjackBet": 301.25,
+      "afterBlackjackBet": 350.25,
+      "walletEvents": [
+        300.25,
+        350.25
+      ],
+      "storedXpAfterBlackjackBet": 50,
+      "expectedNewBetWithoutDuplicateLevelReward": 300.25,
+      "scope": "Isolated original-game reproduction; do not treat as implemented integration or change gambling formulas."
+    },
+    {
+      "risk": "idle unbanked pot",
+      "beforeRemoval": 245.25,
+      "afterRemoval": 255.25,
+      "observedPagehideCredit": 10,
+      "proposedPolicy": "Require original Cash out before ordinary host close; do not rely on iframe removal as settlement."
+    },
+    {
+      "risk": "hidden auto-wagers",
+      "balanceAfterFirstBet": 249.65,
+      "balanceAfterHiddenWait": 247.85,
+      "balanceAfterStop": 247.85,
+      "additionalHiddenSpend": 1.8000000000000114,
+      "proposedPolicy": "Never close or hide a Main Slots document while auto is active; use original Stop and wait for the paid spin."
+    }
+  ],
+  "fixture": "Existing saved-resort factory; initial balance 250.25, XP 17 or 49, legitimate Roulette gate fields level 2 / reputation 6. Existing controlled RNG seams; no post-wager artificial balance changes.",
+  "screenshots": [
+    "docs/screenshots/phase6b-audit-roulette.png",
+    "docs/screenshots/phase6b-audit-slots.png",
+    "docs/screenshots/phase6b-audit-coinflip.png"
+  ],
+  "proposalMap": "docs/phase6b-attractions-plan.png",
+  "gameHostImplemented": false,
+  "proposalOnly": true,
+  "baselinePassed": 716,
+  "sourceIntegrity": {
+    "startingFiles": 361,
+    "byteIdentical": 361,
+    "changedFiles": []
+  }
+}

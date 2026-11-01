@@ -3,9 +3,11 @@ import { ROOM } from '../floor/room-config.js';
 import { HOTEL } from './hotel-config.js';
 import { LOBBY_INTERACTIONS } from './lobby-layout.js';
 import { MAIN_PORTALS } from './main-casino-layout.js';
+import { ATTRACTION_INTERACTIONS } from './casino-attractions.js';
 
 // Presentation/navigation definitions only. Availability never unlocks a department.
 export const INTERACTABLES = [
+  ...ATTRACTION_INTERACTIONS,
   { id:'main-south',scene:'MainCasinoFloor',position:MAIN_PORTALS.south,radius:MAIN_PORTALS.south.reach,label:'Return to Central Lobby',availability:true,action:{type:'return'} },
   { id:'main-north',scene:'MainCasinoFloor',position:MAIN_PORTALS.north,radius:MAIN_PORTALS.north.reach,label:'Enter Blackjack Lounge',availability:true,action:{type:'door',destination:'CasinoRoom'} },
   { id: 'casino', scene: 'CentralLobby', position: LOBBY.entrance, radius: LOBBY.entrance.reach,

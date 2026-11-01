@@ -1,0 +1,14 @@
+/* Optional host chrome only; original game layouts, bets and controls are intact. */
+html[data-casino-embed] .shell-header a,
+html[data-casino-embed] .shell-footer,
+html[data-casino-embed] [data-menu="import"] { display: none; }
+html[data-casino-embed] body { min-height: 100dvh; }
+/* Original Slots replaces the spinning strip with one settled symbol, but
+   GSAP's cached Y can reapply the old strip offset during its winning shake.
+   Keep only settled strips in their windows; spinning strips animate normally. */
+html[data-casino-embed] .icon-container:has(> div:only-child) { transform: translateY(0) !important; }
+/* The original phone roulette bar occupies two rows. Keep the final save
+   controls scrollable above it when the redundant page footer is hidden. */
+@media (max-width: 768px) {
+  html[data-casino-embed] body:has(.rt-actions) { padding-bottom: calc(var(--sticky-safe) + 80px); }
+}

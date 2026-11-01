@@ -70,6 +70,17 @@ const CasinoShell = (function () {
     return { xp: profile.data.xp, level: l.level, into: l.into, need: l.need, streak: profile.data.streak };
   }
 
+  // An existing retained table can return after another document earned XP.
+  // Match a fresh page's in-memory defaults; this validates/reads, never saves
+  // or awards anything. Embedded hosts call it before releasing game inputs.
+  function refreshProfile() {
+    CasinoSaveSafety.assertReadable(PROFILE_KEY);
+    profile.data = { xp: 0, lastClaim: null, streak: 0 };
+    profile.load();
+    renderProgression();
+    return snapshot();
+  }
+
   /* Award XP scaled to a wager (1 XP per $1, min 1). Handles level-ups + rewards. */
   function awardXp(wager) {
     // +50% while a hotel high roller has the high-stakes table open
@@ -913,7 +924,7 @@ const CasinoShell = (function () {
     mount, standalone, theme, sound, toast, celebrate, gameOver, info, openCashier,
     openMenu, exportSave, parseSave, debugInfo, copyDebugInfo,
     announce, reducedMotion, registerShortcuts, showShortcuts,
-    awardXp, dailyBonus, syncBalance, renderProgression,
+    awardXp, dailyBonus, syncBalance, renderProgression, refreshProfile,
     get profile() { return snapshot(); },
     wallet: null
   };

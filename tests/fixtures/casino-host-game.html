@@ -1,0 +1,16 @@
+<!doctype html><title>Host protocol fixture — no wagers</title><button id="fixture-button">Fixture input</button>
+<script>
+const q = new URLSearchParams(location.search), visit = q.get('visit'), gameId = location.pathname.split('/').at(-2);
+let fixtureBusy = false, fixtureFrozen = false;
+const state = () => ({ known: true, storageHealthy: true, canClose: !fixtureBusy, roundActive: fixtureBusy,
+  reason: fixtureBusy ? 'Fixture round is active.' : '', autoActive: false, potPending: false });
+window.CasinoGameBridge = { snapshot: state };
+const send = (type, extra = {}) => parent.postMessage({ channel:'casino-world:game',version:1,gameId,visit,type,...extra },location.origin);
+addEventListener('message', e => {
+ if(e.source!==parent||e.origin!==location.origin||e.data?.visit!==visit)return;
+ if(e.data.type==='host-ready')send('ready',{state:state()});
+ if(e.data.type==='activate')document.getElementById('fixture-button').focus();
+ if(e.data.type==='close-check'){const s=state();if(s.canClose)fixtureFrozen=true;send('close-reply',{requestId:e.data.requestId,accepted:s.canClose,state:s});}
+});
+send('ready',{state:state()});
+</script>

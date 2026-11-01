@@ -11,7 +11,8 @@ export function selectInteraction(definitions, scene, position, context = {}) {
   return definitions
     .filter(definition => definition.scene === scene
       && (typeof definition.availability === 'function' ? definition.availability(context) : definition.availability !== false)
-      && interactionDistance(position, definition) <= definition.radius)
+      && interactionDistance(position, definition) <= definition.radius
+      && (!definition.reachable || definition.reachable(position, context)))
     .sort((a, b) => interactionDistance(position, a) - interactionDistance(position, b)
       || a.id.localeCompare(b.id))[0] ?? null;
 }

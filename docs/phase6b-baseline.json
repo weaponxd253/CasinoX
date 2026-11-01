@@ -1,0 +1,32 @@
+{
+  "scope": "Pre-implementation Phase 6B baseline; no application or existing test changes.",
+  "startingCommit": "38b3117cc938ea43ab1695ea54a5ba983ea6c680",
+  "branch": "main",
+  "generatedAt": "2026-11-01T16:23:35.710565+00:00",
+  "stats": {
+    "startTime": "2026-11-01T15:33:56.206Z",
+    "duration": 2767708.941,
+    "expected": 716,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "workers": 1,
+  "errors": [],
+  "attempts": 716,
+  "retries": 0,
+  "projects": {
+    "chromium": {
+      "cases": 358,
+      "passed": 358
+    },
+    "mobile-chrome": {
+      "cases": 358,
+      "passed": 358
+    }
+  },
+  "startingFiles": 361,
+  "byteIdenticalFiles": 361,
+  "changedStartingFiles": [],
+  "approvalRequiredBeforeImplementation": true
+}

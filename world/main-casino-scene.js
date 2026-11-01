@@ -2,6 +2,7 @@ import { ExplorableScene } from './explorable-scene.js';
 import { MAIN_CASINO } from './main-casino-config.js';
 import { MAIN_ART, MAIN_PORTALS, MAIN_APPROACHES, MAIN_FUTURE_ANCHORS, MAIN_FOREGROUNDS, toWorld } from './main-casino-layout.js';
 import { constrainFootprintMovement } from './collision-geometry.js';
+import { CASINO_ATTRACTIONS } from './casino-attractions.js';
 
 const imageUrl=new URL('./assets/casino/main-casino-floor.png',import.meta.url).href;
 export class MainCasinoFloorScene extends ExplorableScene {
@@ -38,6 +39,8 @@ export class MainCasinoFloorScene extends ExplorableScene {
       return {id:d.id,foreground,baseline:toWorld(0,d.baseline).y};
     });
     this.halos=new Map(Object.entries(MAIN_PORTALS).map(([key,p])=>['main-'+key,this.add.rectangle(p.x,p.y,p.width+8,p.height+8).setStrokeStyle(2,0xf0d699).setDepth(25).setVisible(false)]));
+    for (const a of CASINO_ATTRACTIONS) this.halos.set(a.id, this.add.rectangle(a.position.x, a.position.y,
+      a.position.width, a.position.height).setStrokeStyle(2, 0xf0d699).setDepth(25).setVisible(false));
     this.collisionOverlay=this.add.graphics().setDepth(100).setVisible(new URLSearchParams(location.search).has('collisions'));
     this.debugLabel=this.add.text(40,8,'',{fontFamily:'monospace',fontSize:'12px',color:'#a8ffe3',backgroundColor:'#10211f'}).setDepth(101).setVisible(false);
   }
@@ -50,8 +53,15 @@ export class MainCasinoFloorScene extends ExplorableScene {
     for(const p of Object.values(MAIN_PORTALS)){g.lineStyle(2,0x5de8ed).strokeRoundedRect(p.x-p.width/2-p.reach,p.y-p.height/2-p.reach,p.width+p.reach*2,p.height+p.reach*2,p.reach);g.lineStyle(2,0x6dffd0).strokeCircle(p.spawn.x,p.spawn.y,14);}
     g.lineStyle(2,0xffd36d);for(const path of Object.values(MAIN_APPROACHES))g.strokePoints(path,false);
     for(const p of Object.values(MAIN_FUTURE_ANCHORS))g.strokeCircle(p.x,p.y,5);
+    for (const a of CASINO_ATTRACTIONS) {
+      const p = a.position;
+      g.lineStyle(1, 0xf0d699).strokeRoundedRect(p.x-p.width/2-a.radius, p.y-p.height/2-a.radius,
+        p.width+a.radius*2, p.height+a.radius*2, a.radius);
+      g.lineStyle(1, 0x70fbe1).strokeCircle(a.approach.x, a.approach.y, 14);
+      if (this.getInteraction() === a.id) g.strokePoints([this.player, a.approach], false);
+    }
     g.lineStyle(2,0xffffff).strokeCircle(this.player.x,this.player.y,14);
-    this.debugLabel.setText(`MainCasinoFloor | owner ${this.player.x.toFixed(1)},${this.player.y.toFixed(1)} | radius 14 | speed 190\n${this.config.solids.length} bodies | cyan portals / green spawns / gold approach guides\nRoulette, slots and coin kiosk: scenery only | casino NPCs: none`);
+    this.debugLabel.setText(`MainCasinoFloor | owner ${this.player.x.toFixed(1)},${this.player.y.toFixed(1)} | radius 14 | speed 190\n${this.config.solids.length} bodies | cyan portals / green spawns / gold attraction regions\nSelected: ${this.getInteraction() ?? 'none'} | 7 attractions | casino NPCs: none`);
   }
   artworkSnapshot(){return this.background?{x:30,y:0,width:900,height:600,sourceWidth:this.background.texture.getSourceImage().width,sourceHeight:this.background.texture.getSourceImage().height,scaleMode:this.background.frame.source.scaleMode}:null;}
   geometrySnapshot(){return {solids:this.config.solids.map(s=>({...s})),portals:structuredClone(MAIN_PORTALS),approaches:structuredClone(MAIN_APPROACHES),anchors:structuredClone(MAIN_FUTURE_ANCHORS),foregrounds:this.foregrounds.map(l=>({id:l.id,baseline:l.baseline,depth:l.foreground.depth})),resources:{displayObjects:this.children.list.length,worldStepListeners:this.physics.world.listenerCount('worldstep'),postUpdateListeners:this.events.listenerCount('postupdate'),colliders:this.physics.world.colliders.getActive().length}};}

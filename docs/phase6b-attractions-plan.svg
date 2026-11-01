@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 960 600">
+<rect width="960" height="600" fill="#081216"/>
+<image href="../world/assets/casino/main-casino-floor.png" x="30" y="0" width="900" height="600" style="image-rendering:pixelated"/>
+<rect x="40" y="8" width="480" height="24" rx="4" fill="#08191f" fill-opacity=".95"/>
+<text x="49" y="24" fill="#ffe3a1" font-family="Arial" font-size="11">PHASE 6B PROPOSAL • REGIONS + APPROACHES • NOT IMPLEMENTED</text>
+<rect x="186.0625" y="325.984375" width="44.125" height="32.40625" rx="8" fill="#14332e" fill-opacity=".4" stroke="#f4cc6a" stroke-dasharray="3 2"/>
+<rect x="194.0625" y="333.984375" width="28.125" height="16.40625" fill="none" stroke="#ffe3a1" stroke-width="1.5"/>
+<circle cx="208.125" cy="342.1875" r="14" fill="none" stroke="#70fbe1" stroke-width="1.2"/>
+<path d="M208.125,357.1875 V367.1875" stroke="#ffe3a1"/>
+<rect x="176.125" y="367.1875" width="64" height="17" rx="3" fill="#08191f"/>
+<text x="208.125" y="379.1875" text-anchor="middle" fill="#ffe3a1" font-family="Arial" font-size="10">roulette</text>
+<rect x="657.15625" y="284.96875" width="34.75" height="30.0625" rx="8" fill="#14332e" fill-opacity=".4" stroke="#f4cc6a" stroke-dasharray="3 2"/>
+<rect x="665.15625" y="292.96875" width="18.75" height="14.0625" fill="none" stroke="#ffe3a1" stroke-width="1.5"/>
+<circle cx="674.53125" cy="300" r="14" fill="none" stroke="#70fbe1" stroke-width="1.2"/>
+<path d="M674.53125,315 V327" stroke="#ffe3a1"/>
+<rect x="665.53125" y="327" width="18" height="17" rx="3" fill="#08191f"/>
+<text x="674.53125" y="339" text-anchor="middle" fill="#ffe3a1" font-family="Arial" font-size="10">1</text>
+<rect x="700.515625" y="284.96875" width="34.75" height="30.0625" rx="8" fill="#14332e" fill-opacity=".4" stroke="#f4cc6a" stroke-dasharray="3 2"/>
+<rect x="708.515625" y="292.96875" width="18.75" height="14.0625" fill="none" stroke="#ffe3a1" stroke-width="1.5"/>
+<circle cx="717.890625" cy="300" r="14" fill="none" stroke="#70fbe1" stroke-width="1.2"/>
+<path d="M717.890625,315 V327" stroke="#ffe3a1"/>
+<rect x="708.890625" y="327" width="18" height="17" rx="3" fill="#08191f"/>
+<text x="717.890625" y="339" text-anchor="middle" fill="#ffe3a1" font-family="Arial" font-size="10">2</text>
+<rect x="743.875" y="284.96875" width="34.75" height="30.0625" rx="8" fill="#14332e" fill-opacity=".4" stroke="#f4cc6a" stroke-dasharray="3 2"/>
+<rect x="751.875" y="292.96875" width="18.75" height="14.0625" fill="none" stroke="#ffe3a1" stroke-width="1.5"/>
+<circle cx="761.25" cy="300" r="14" fill="none" stroke="#70fbe1" stroke-width="1.2"/>
+<path d="M761.25,315 V327" stroke="#ffe3a1"/>
+<rect x="752.25" y="327" width="18" height="17" rx="3" fill="#08191f"/>
+<text x="761.25" y="339" text-anchor="middle" fill="#ffe3a1" font-family="Arial" font-size="10">3</text>
+<rect x="787.234375" y="284.96875" width="34.75" height="30.0625" rx="8" fill="#14332e" fill-opacity=".4" stroke="#f4cc6a" stroke-dasharray="3 2"/>
+<rect x="795.234375" y="292.96875" width="18.75" height="14.0625" fill="none" stroke="#ffe3a1" stroke-width="1.5"/>
+<circle cx="804.609375" cy="300" r="14" fill="none" stroke="#70fbe1" stroke-width="1.2"/>
+<path d="M804.609375,315 V327" stroke="#ffe3a1"/>
+<rect x="795.609375" y="327" width="18" height="17" rx="3" fill="#08191f"/>
+<text x="804.609375" y="339" text-anchor="middle" fill="#ffe3a1" font-family="Arial" font-size="10">4</text>
+<rect x="830.59375" y="284.96875" width="34.75" height="30.0625" rx="8" fill="#14332e" fill-opacity=".4" stroke="#f4cc6a" stroke-dasharray="3 2"/>
+<rect x="838.59375" y="292.96875" width="18.75" height="14.0625" fill="none" stroke="#ffe3a1" stroke-width="1.5"/>
+<circle cx="847.96875" cy="300" r="14" fill="none" stroke="#70fbe1" stroke-width="1.2"/>
+<path d="M847.96875,315 V327" stroke="#ffe3a1"/>
+<rect x="838.96875" y="327" width="18" height="17" rx="3" fill="#08191f"/>
+<text x="847.96875" y="339" text-anchor="middle" fill="#ffe3a1" font-family="Arial" font-size="10">5</text>
+<rect x="640.75" y="359.96875" width="30.0625" height="34.75" rx="8" fill="#14332e" fill-opacity=".4" stroke="#f4cc6a" stroke-dasharray="3 2"/>
+<rect x="648.75" y="367.96875" width="14.0625" height="18.75" fill="none" stroke="#ffe3a1" stroke-width="1.5"/>
+<circle cx="655.78125" cy="377.34375" r="14" fill="none" stroke="#70fbe1" stroke-width="1.2"/>
+<path d="M655.78125,392.34375 V402.34375" stroke="#ffe3a1"/>
+<rect x="623.78125" y="402.34375" width="64" height="17" rx="3" fill="#08191f"/>
+<text x="655.78125" y="414.34375" text-anchor="middle" fill="#ffe3a1" font-family="Arial" font-size="10">coin-flip</text>
+<rect x="42" y="556" width="360" height="32" rx="4" fill="#08191f" fill-opacity=".96"/>
+<text x="51" y="570" fill="#ffe3a1" font-family="Arial" font-size="10">Gold: primary region + 8px reach • Cyan: owner radius 14</text>
+<text x="51" y="583" fill="#70fbe1" font-family="Arial" font-size="10">Original 120 collision bodies and room art remain unchanged</text>
+</svg>

@@ -1,0 +1,815 @@
+{
+  "phase": "6B",
+  "generatedAt": "2026-11-01T18:21:56.354Z",
+  "startingCommit": "38b3117cc938ea43ab1695ea54a5ba983ea6c680",
+  "baseline": {
+    "startTime": "2026-11-01T15:33:56.206Z",
+    "duration": 2767708.941,
+    "expected": 716,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "final": {
+    "stats": {
+      "startTime": "2026-11-01T17:25:40.965Z",
+      "duration": 3124333.963,
+      "expected": 788,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "workers": 1,
+    "projects": {
+      "chromium": {
+        "cases": 394,
+        "passed": 394
+      },
+      "mobile-chrome": {
+        "cases": 394,
+        "passed": 394
+      }
+    },
+    "errors": [],
+    "attempts": 788,
+    "retries": 0,
+    "newCases": 72
+  },
+  "deterministicManagementStress": {
+    "cases": 28,
+    "passed": 28,
+    "configuredCaps": [
+      6,
+      8
+    ],
+    "simulatedSecondsPerCase": 600,
+    "movingLimit": 4
+  },
+  "deterministicTrafficStress": {
+    "cases": 12,
+    "passed": 12,
+    "configuredCaps": [
+      6,
+      8
+    ],
+    "simulatedSecondsPerCase": 600,
+    "movingLimit": 4
+  },
+  "sourceIntegrity": {
+    "inputFiles": 370,
+    "unchangedInputs": 354,
+    "changedInputs": [
+      "docs/PHASE_6B_PLAN.md",
+      "README.md",
+      "blackjack/floor-bridge.js",
+      "casino-shell.js",
+      "coinflip/index.html",
+      "floor/blackjack-overlay.js",
+      "roulette/index.html",
+      "slots/index.html",
+      "tests/interactions.spec.js",
+      "world/index.html",
+      "world/interactables.js",
+      "world/interaction-system.js",
+      "world/main-casino-scene.js",
+      "world/main.js",
+      "world/room-routes.js",
+      "world/world.css"
+    ],
+    "frozenSourceFiles": 192,
+    "sourceUnchangedThroughoutFinalRun": true,
+    "protectedFiles": [
+      {
+        "path": "blackjack/script.js",
+        "sha256": "922E966288C2D8EECC3FC3E410F3268AFAF3F7F641C95564C180EA3C1D8A1116",
+        "unchanged": true
+      },
+      {
+        "path": "coinflip/game.js",
+        "sha256": "AEE9C96287003B49856ED26800130AFE1A6A76C28A0DBA99F738E543D353E91B",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/bar/bar-game.js",
+        "sha256": "6755CD00BFA49FF87ADE14A7BC81D6B5AE653EB446707A5F16DF130F5ED2D584",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/bar/bar.css",
+        "sha256": "3C49BDF670AE9CAB47EC0DCB21949CE6AB51BA9E53F70795703145EAD5AE99AF",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/bar/index.html",
+        "sha256": "BE3753910EA8F6F47CD7DCDF625FB1B935007050B3C262E60E4242B14262FD5D",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/checkin/game.css",
+        "sha256": "3266F0A0277CBEDA0D87C0931E5F98FE3B009442AE9A02DE870869D0E6033B25",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/checkin/game.js",
+        "sha256": "F3B06B7D1ABFD09C53C272374E464BF3CAE0B9E1FB460AC577BF3FFB4051F6B3",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/checkin/index.html",
+        "sha256": "49D67A14D5752025D6F208717A053949A1FCE3E244E5F28D47383863BFC2211B",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/entertainment/entertainment.css",
+        "sha256": "233491E3E5EF02E8F03CC7C1CA32C8381F1EE84BDB495F00652DE27A90E5CA5B",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/entertainment/entertainment.js",
+        "sha256": "62E56EE060391CE0ECA5724207C50E88C1CC8744789FA7D43FB2C20491DDBA4A",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/entertainment/index.html",
+        "sha256": "48C7980DFF80212E71BA56CF8779DAD1CD204EDA4F93F7D5B366A7C394207F38",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/hotel-bridge.js",
+        "sha256": "E26DC05FEE190FB7693A5A4DF8445C4E3CD3F7CD295085C3C17B3AD05CDCA600",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/hotel-config.js",
+        "sha256": "A05E0126A47D73413CD2DA9A4569366ED7068333AB6349C7333C33D21C0C6F10",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/hotel-engine.js",
+        "sha256": "1E1B923DCDB461D1553F884732A76B3D2CBA2B95EE006B571B702BE57F72F48B",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/hotel-goals.js",
+        "sha256": "D8CA4E16B1B505A2F63820B787ADD2480127C9F3F0AA59EE60367B1E7C2DD6AE",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/hotel-guest-pool.js",
+        "sha256": "C0B7556EC70C33F6EC6CA627D9A7361C65EBC20C2577A4D7B6B14DEC4F795BFF",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/hotel-guests.js",
+        "sha256": "61D77A5D3EA281BDA12345C2B9E3B7FB1641E5529693791225E8A03156B59F43",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/hotel-renderer.js",
+        "sha256": "D5E2C982CA9716FC666CB163BA32C6E74A0C41EAC2F800B767C3008A9E157396",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/hotel-state.js",
+        "sha256": "89253DC36CC1D9BBDA9929ED8FF674D1826B73D2FC4A48B9381A46D625FE88CF",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/hotel-ui.js",
+        "sha256": "5C701E601B6C045742DB1CAACCFCB21729F878FD610170CCFA89216A0B3B7E58",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/hotel.css",
+        "sha256": "22B2463D340741F477BC6F514CF509920A37A148EF091097019AF3D6BA5223D3",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/index.html",
+        "sha256": "3870BFFA8A52877DC472B3C086A9E74AF0EC04BE663821E144A5BAA183D3D112",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/restaurant/index.html",
+        "sha256": "7E37AD531A52FEE281CD7F70E65FAFCFE1425102C096864C9C141C1B39CB5B62",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/restaurant/restaurant-game.js",
+        "sha256": "83C4791D6A4DC3051E2D0B2ECBCF430D1AB1632701505E3522886734AF7AE041",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/restaurant/restaurant.css",
+        "sha256": "DDE8DF6FE56ABB26FF68BC0AA789B35B821E818A084055A92AC271716C8CAA29",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/rooms/index.html",
+        "sha256": "ABD594E7CABAB133F4DC1EA845F76E76FAC5CEA20431C7D5E7337E7BD9103C7B",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/rooms/rooms-game.js",
+        "sha256": "6868A0467FA00D1E7FFAE186242B7FDFABC744DC24D0F92C952134BA7E738A77",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/rooms/rooms.css",
+        "sha256": "EC34F8B0FEC58F5BD840D4E89EFA104ABD526252F7588B21CEAFAAEAB8B1C890",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/shift-briefing.css",
+        "sha256": "7C718A63A5E848105BFBBF068E4095C971707A9C2044A91C581AA97162F16DDC",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/shift-briefing.js",
+        "sha256": "6685095548BC4517C2E0C67869782750B62D33D4AAA7BE4AA8B97EE72CCD36DC",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/shift-twists.js",
+        "sha256": "29F8C89E3CF7BCF58A431A4EFA4EC956FB13738BF09C355B610B415C570E70E6",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/spa/index.html",
+        "sha256": "8EF0999B6A9EB9B8F948D710436D83DDDC4526AC625A4266CA3F31AC3E98AB9C",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/spa/spa-game.js",
+        "sha256": "5E0199BE762C59D301E0793002DE6623386C9BEB62C2D606D80B1AA38F577FBE",
+        "unchanged": true
+      },
+      {
+        "path": "hotel/spa/spa.css",
+        "sha256": "5BC9EA89526E538FBF1CE73B9CA24587B5FA98C55D4C0045762553F36BDEC93F",
+        "unchanged": true
+      },
+      {
+        "path": "roulette/script.js",
+        "sha256": "EBC9F68C84CCD47BAA34BBF6893BFE06F7107EE14156038F7673D4263F5E97F9",
+        "unchanged": true
+      },
+      {
+        "path": "slots/script.js",
+        "sha256": "F81CD385B666A1E690AD72589EF1511E21EBCFC84AAA1377952935A17E2484CD",
+        "unchanged": true
+      },
+      {
+        "path": "wallet.js",
+        "sha256": "35036511D526172466397F200E42F26BA79233EB481CB979453D1B23096E0667",
+        "unchanged": true
+      },
+      {
+        "path": "world/collision-geometry.js",
+        "sha256": "890FF1FE331D8DE15B22013EB410288141A8963D6C7B49B7C0E1FE4A884345FA",
+        "unchanged": true
+      },
+      {
+        "path": "world/guest-activity-config.js",
+        "sha256": "C59B8BE78CA4EFA43AB2FA1E7455F57D880EEF9EF6358639D556EF7EC3E022AA",
+        "unchanged": true
+      },
+      {
+        "path": "world/guest-activity-director.js",
+        "sha256": "D6F460DCA1A5B4883A80D36AB3713D802A159981824F1EBCD32EC0C6F9ED6AE8",
+        "unchanged": true
+      },
+      {
+        "path": "world/guest-appearances.js",
+        "sha256": "C68F9A5C856C1A02CC9DE6CB48F7025F186C092A21F0DDCB0A6E7834E636905F",
+        "unchanged": true
+      },
+      {
+        "path": "world/guest-controller.js",
+        "sha256": "99A75E7F7A2C343131DF7693BF90803E113E5149CC1B679A4FE58A701DA45908",
+        "unchanged": true
+      },
+      {
+        "path": "world/guest-dialogue-bubbles.js",
+        "sha256": "15639D9E01F300F3DCBEEA9D25ED448997343CBB638DBEF40166EA1751B9F7D7",
+        "unchanged": true
+      },
+      {
+        "path": "world/guest-dialogue-config.js",
+        "sha256": "0E759D08ACBB9725217831B1A4E007F81C565CB9B725D2C7B49126875399693C",
+        "unchanged": true
+      },
+      {
+        "path": "world/guest-dialogue-controller.js",
+        "sha256": "B17E593B8BA4453E34940F7CEC598BDA41962F733C9CB150E41526A9F7B10120",
+        "unchanged": true
+      },
+      {
+        "path": "world/guest-personalities.js",
+        "sha256": "206172D2ED11F4E7B0F33EDBB812D798C98AEFC8179DD4E7B9F9499B58DF35FB",
+        "unchanged": true
+      },
+      {
+        "path": "world/guest-traffic-config.js",
+        "sha256": "0CB696A0EE07EA4B1C440573100FD2A262D7FDB5F0E12BE05E81B48C38EAD89D",
+        "unchanged": true
+      },
+      {
+        "path": "world/guest-traffic-controller.js",
+        "sha256": "2ADBA5404CD2225B3D9ACBCF8801DD89F0BDA7A24F5E055F7BE374E208AAB92D",
+        "unchanged": true
+      },
+      {
+        "path": "world/hotel-state-adapter.js",
+        "sha256": "3ED1B56804EA151C94ACA4BDF4AAB3D1722D539B87660DBDBB19ADF6107552EE",
+        "unchanged": true
+      },
+      {
+        "path": "world/main-casino-config.js",
+        "sha256": "F15053EC81FEF36C09F9A23D35D6373487418DB5083ECAA8BE07F1BA2FB4CEEF",
+        "unchanged": true
+      },
+      {
+        "path": "world/main-casino-layout.js",
+        "sha256": "DA0A1E259A1716523ED35269377BE55FFCDD2C23D359AF39C253EE3A628E6BD1",
+        "unchanged": true
+      },
+      {
+        "path": "world/npc-sprite.js",
+        "sha256": "5A3258B442C1613BF7220228AC78DBDD2BB6D88F47E3171C25A0884C9B3A91B2",
+        "unchanged": true
+      },
+      {
+        "path": "world/owner-controller.js",
+        "sha256": "DA813375FD9CE5F590DCDB4C3C0A40664048C4B7EC8889BBD0264B2C38F731F4",
+        "unchanged": true
+      },
+      {
+        "path": "world/owner-sprite.js",
+        "sha256": "234E6A3174EB35F336A62A2A34E859D3264117561064C612F4291AA105D8F4DB",
+        "unchanged": true
+      },
+      {
+        "path": "world/reception-queue-manager.js",
+        "sha256": "6115E22015A12A9B04010DD4E2CC6FE7F0F4E2569784A81D844855844F903CA1",
+        "unchanged": true
+      },
+      {
+        "path": "world/receptionist-sprite.js",
+        "sha256": "FC8576FF6A62F571D9C9333AB9E3FFE4D4E6CA3BA9F1273D77BBDA4AFE382C47",
+        "unchanged": true
+      },
+      {
+        "path": "world/world-state.js",
+        "sha256": "35BDDF75BF439D910A5139FE942BC59A9F878525AEF1F22385C6A5A738A1B887",
+        "unchanged": true
+      }
+    ],
+    "originalArtworkAndExistingEvidenceUnchanged": true
+  },
+  "selectorParity": {
+    "cases": 1795,
+    "capacities": 48,
+    "writes": 0,
+    "parity": "exact"
+  },
+  "financialParity": {
+    "cases": 360,
+    "writes": 0,
+    "parity": "exact"
+  },
+  "actualGameAcceptance": [
+    {
+      "project": "chromium",
+      "actualGameSettlement": true,
+      "initialBalance": 250.25,
+      "finalBalance": 257.25,
+      "ledger": [
+        {
+          "source": "/roulette/index.html",
+          "key": "casinoBalance",
+          "value": "249.25"
+        },
+        {
+          "source": "/roulette/index.html",
+          "key": "casinoBalance",
+          "value": "251.25"
+        },
+        {
+          "source": "/slots/index.html",
+          "key": "casinoBalance",
+          "value": "250.65"
+        },
+        {
+          "source": "/slots/index.html",
+          "key": "casinoBalance",
+          "value": "250.05"
+        },
+        {
+          "source": "/slots/index.html",
+          "key": "casinoBalance",
+          "value": "251.25"
+        },
+        {
+          "source": "/coinflip/index.html",
+          "key": "casinoBalance",
+          "value": "246.25"
+        },
+        {
+          "source": "/coinflip/index.html",
+          "key": "casinoBalance",
+          "value": "256.25"
+        },
+        {
+          "source": "/blackjack/index.html",
+          "key": "casinoBalance",
+          "value": "255.25"
+        },
+        {
+          "source": "/blackjack/index.html",
+          "key": "casinoBalance",
+          "value": "257.25"
+        }
+      ],
+      "hotelGuestAndCheckpointBytesPreserved": true,
+      "exactOwnerReturns": 4,
+      "errors": []
+    },
+    {
+      "project": "mobile-chrome",
+      "actualGameSettlement": true,
+      "initialBalance": 250.25,
+      "finalBalance": 257.25,
+      "ledger": [
+        {
+          "source": "/roulette/index.html",
+          "key": "casinoBalance",
+          "value": "249.25"
+        },
+        {
+          "source": "/roulette/index.html",
+          "key": "casinoBalance",
+          "value": "251.25"
+        },
+        {
+          "source": "/slots/index.html",
+          "key": "casinoBalance",
+          "value": "250.65"
+        },
+        {
+          "source": "/slots/index.html",
+          "key": "casinoBalance",
+          "value": "250.05"
+        },
+        {
+          "source": "/slots/index.html",
+          "key": "casinoBalance",
+          "value": "251.25"
+        },
+        {
+          "source": "/coinflip/index.html",
+          "key": "casinoBalance",
+          "value": "246.25"
+        },
+        {
+          "source": "/coinflip/index.html",
+          "key": "casinoBalance",
+          "value": "256.25"
+        },
+        {
+          "source": "/blackjack/index.html",
+          "key": "casinoBalance",
+          "value": "255.25"
+        },
+        {
+          "source": "/blackjack/index.html",
+          "key": "casinoBalance",
+          "value": "257.25"
+        }
+      ],
+      "hotelGuestAndCheckpointBytesPreserved": true,
+      "exactOwnerReturns": 4,
+      "errors": []
+    }
+  ],
+  "evidence": {
+    "promptCaptureStats": {
+      "startTime": "2026-11-01T18:18:13.659Z",
+      "duration": 26102.128,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "promptCaptureWorkers": 1,
+    "files": [
+      {
+        "path": "docs/screenshots/casino-games-desktop-blackjack-prompt.png",
+        "bytes": 1111660,
+        "sha256": "F1F3D512781CA287C57D6C6D7B543CE574A02670DAABD8276D4962F0C09271BD"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-blackjack-result.png",
+        "bytes": 456835,
+        "sha256": "5D0107732BABB160612CF3FCF81FFD71448090E4E959910629EFB6A3133813FB"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-casino-south-return.png",
+        "bytes": 1283029,
+        "sha256": "2C6F62FAC2689C7C3C9F42B85B8B10B696E1EABAAF6B663C310C5F8A8CD6C80E"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-coin-flip-prompt-full.png",
+        "bytes": 1298322,
+        "sha256": "DC3D10893626C007A0529311DA78121571364110E84CD552931635293B847D48"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-coinflip-open.png",
+        "bytes": 512190,
+        "sha256": "108AD675EB04F52D0C467CAAF412DE31EA6D30CFE128E362361ADADA4A8EA085"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-coinflip-pot.png",
+        "bytes": 549821,
+        "sha256": "2DC561A31A6C656B00685EBA2CC567C87EAD8E1B6F158F8EB4095C95F96CC061"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-coinflip-prompt.png",
+        "bytes": 1274756,
+        "sha256": "BB41A1DA03CF411AC08B2919612322BA87E14340C3EBA4D77284E1CB3C8E65D4"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-coinflip-return.png",
+        "bytes": 1274900,
+        "sha256": "5C6A408A25BF71EC8C28E2A38E65228FF351AEA9FF9F8A84A0982A6A50FEF3C5"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-interaction-debug.png",
+        "bytes": 1196544,
+        "sha256": "5DF5B8E67E48ECEA77E6BB3C2FC3B4F2E6699522C117557EE5EB171A6314348C"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-lobby-return.png",
+        "bytes": 1248628,
+        "sha256": "318887694EA882E04E87A2AB7E47CA1343AB72EB7F8F03CD7F4FC862295DB493"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-roulette-board.png",
+        "bytes": 444572,
+        "sha256": "58315E729CD16A8F519D632F0D93A39A32828D7B0724CDC093F770E74693A576"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-roulette-open.png",
+        "bytes": 446907,
+        "sha256": "960C229460AAE2D4B68AB22A7E8870E721FE487F7F7A94D70E81DF97437066F2"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-roulette-prompt-full.png",
+        "bytes": 1298547,
+        "sha256": "660635F544F876096FE48C1C966B14FD374EDA95503837CF349E3B2D9E025CCF"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-roulette-prompt.png",
+        "bytes": 1274547,
+        "sha256": "381E3D2F8FCACEA039F4041388D794371C5D916A7A8A972B9540E4986B522A40"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-roulette-result.png",
+        "bytes": 326810,
+        "sha256": "7DF3D88AAC860F3006884316BB681F3E9BAB58A562E179949B6E34E2AC3C397C"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-roulette-return.png",
+        "bytes": 1274204,
+        "sha256": "D8BC454C2BDCF906D914D32E391F7E9B3A8A45906395A46249C5ED1197C1F7DE"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-slot-1-open.png",
+        "bytes": 634738,
+        "sha256": "CD8F9B3A5A2CEBA973E0519F3FBAE6A42F66E6A7D231A64554DB95D90F437262"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-slot-1-prompt-full.png",
+        "bytes": 1299547,
+        "sha256": "1765B764CFA8D74E91BC5DC39950A2499C65BEED887BEC725443BB675960B4D9"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-slot-1-prompt.png",
+        "bytes": 1274489,
+        "sha256": "F22BA2BF1F6418E8A8E1AC404963CB7DE51C7BF435359433D3218CA640F5CFF7"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-slot-1-result.png",
+        "bytes": 636509,
+        "sha256": "C93A6C04B60506E0993B195B68A29B7A9DB59CAADCD191F4BAF4560E36882A09"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-slot-1-return.png",
+        "bytes": 1274758,
+        "sha256": "22620903146D4696A0FCB85004F37328C1F7A6D6AD736B0CC656DE207A6B90AA"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-slot-2-prompt-full.png",
+        "bytes": 1299830,
+        "sha256": "B2C73B8EB0620B2DFA335815C29E87CA8CA6D87ED51D824E4F118CAF153B3829"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-slot-3-prompt-full.png",
+        "bytes": 1299657,
+        "sha256": "E31612D3F665090981A4128A81B5FBEFAEF494CA2A0570CAB822BE084B5ED382"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-slot-4-prompt-full.png",
+        "bytes": 1299619,
+        "sha256": "59623013A63CE91B87688D4A789F060C92755873DFD38B54C43A8EAD4495CDC4"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-slot-5-open.png",
+        "bytes": 638254,
+        "sha256": "33404C69455E8AEB633E5E0986EE079B5CB830EFF6754F1D923338A78FCE596B"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-slot-5-prompt-full.png",
+        "bytes": 1299786,
+        "sha256": "CAA4F30220CC36AE4C48841ACE77747ACB4C68A58860F9E00488346EFE7CF02B"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-slot-5-prompt.png",
+        "bytes": 1274859,
+        "sha256": "568C40147FEA421A55741807ED71D0D27EAA55CC2B78B23BB6DD4A4BCF575872"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-slot-5-result.png",
+        "bytes": 653180,
+        "sha256": "5D7529E0F029755ACB63C040216E68D28DEA110E11ED293AAAE9D20F591FF44E"
+      },
+      {
+        "path": "docs/screenshots/casino-games-desktop-slot-5-return.png",
+        "bytes": 1274470,
+        "sha256": "EFAD962004115309189C5FBB573035A6A39722C9A6ACA7B8EEC0112F39508215"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-blackjack-prompt.png",
+        "bytes": 1208591,
+        "sha256": "95AC29881E1D2897507679969091973DB6240A5FD42AE458ED105F43ABBEAAE1"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-blackjack-result.png",
+        "bytes": 633782,
+        "sha256": "F25561590B3F8D123DDFF9734C902390D18CD3BC9037C2DF42FF7266D9BCAFED"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-casino-south-return.png",
+        "bytes": 1386028,
+        "sha256": "63F1E30819BA29537AFAC8CBB4D53525140C933B0A25923B1FA70A96AFE07BA0"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-coin-flip-prompt-full.png",
+        "bytes": 1432837,
+        "sha256": "15D7A414622E43E524BEF46985A4DF99E1C13D9264B736AAB42353DED010A702"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-coinflip-open.png",
+        "bytes": 1142196,
+        "sha256": "1922C1CFE01FA1DA58479C0EAD7B7BE8F71695EB56D8DD6C1C65E0421698A18F"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-coinflip-pot.png",
+        "bytes": 1231523,
+        "sha256": "32AA68327C82D2191D750C8513C51353F2BF049E92940265A6A028063ECD6636"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-coinflip-prompt.png",
+        "bytes": 1367611,
+        "sha256": "1FEA193CB450BE088FDA979D980012D475D971423F29512DEC637205B0FD1917"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-coinflip-return.png",
+        "bytes": 1366475,
+        "sha256": "C38DCC7D9B3EFCDEA049CB719AE6022A27293C5A85C105BEE148EDE46DDB799D"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-interaction-debug.png",
+        "bytes": 1276715,
+        "sha256": "9FE51D98E98EB53B80C2BB84C306DEABD72F2C2272EF5A28681F9E35206D484A"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-lobby-return.png",
+        "bytes": 1352541,
+        "sha256": "6D9FBDA5D2A0697394E49433191FCB3AF0C407A5AD32D05C8426F4EF5BBC2A6D"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-roulette-board.png",
+        "bytes": 394367,
+        "sha256": "F2B5632077B8E4FDA7E79989AE83F317E7B5743B3D17209D023EEED7DD9FAE24"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-roulette-open.png",
+        "bytes": 1035313,
+        "sha256": "BCBB8CC15D8763724C126D364BE9398941A813BCAC287A91C0E3E0896FB91698"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-roulette-prompt-full.png",
+        "bytes": 1434382,
+        "sha256": "4F7D93772AB30C6040507194034A53C68CEA1787CFBA0D5CD7582AD40CDA654F"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-roulette-prompt.png",
+        "bytes": 1350912,
+        "sha256": "82CC71DF01A3BB0F82A323709005DBB7EA7EF645CE5BE6EAECE44B8FCE3341DD"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-roulette-result.png",
+        "bytes": 988345,
+        "sha256": "25826FB813ECCCD9116A5687A188BD23A1C5887C941CC98479B3D8EB185E0754"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-roulette-return.png",
+        "bytes": 1348616,
+        "sha256": "3094515BC8AD22AC70C7AB250AB79775E0DF3A4A46ACA9457291951AFBCA781A"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-slot-1-open.png",
+        "bytes": 1043785,
+        "sha256": "90567332689A0CFDB59CF9D3486479548766292170FE8A2123C54A4399440264"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-slot-1-prompt-full.png",
+        "bytes": 1439434,
+        "sha256": "720B1C78620F9CDDAA30A8D249C937B3E73219DB310F83E4C03826C0286CDDBC"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-slot-1-prompt.png",
+        "bytes": 1355367,
+        "sha256": "2B9DBAE9EB7FA8293E8F9D31BFCA0555B73636904E1835F76D96099F180BDE1A"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-slot-1-result.png",
+        "bytes": 1052689,
+        "sha256": "6C095F73D7316C8D431DB5D2579BB4AF9DEA143BF2D29AD1008EF8C0EF3C9FD8"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-slot-1-return.png",
+        "bytes": 1355260,
+        "sha256": "207CEACDC1FA963773F9FA6247931075952DCB5A3DD4624D12E7E27735DC6A2E"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-slot-2-prompt-full.png",
+        "bytes": 1440180,
+        "sha256": "6ABFE554762D35C2F4F3BD0AF69BF00DB1F2451347AE35BAD1892E0A9302FEE5"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-slot-3-prompt-full.png",
+        "bytes": 1440231,
+        "sha256": "B41E5E08AD684B6F67812373AEAFC0D1DF0545006407B6925A149CBC9C733AA0"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-slot-4-prompt-full.png",
+        "bytes": 1439613,
+        "sha256": "A837BCD9064F7E9302996A3030FF76ECAA50691149C1176E0097010D3B11CC98"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-slot-5-open.png",
+        "bytes": 1051329,
+        "sha256": "6CAB05F01CC172D59A6840F7D480B2CBBED94616766404817E0EFA3C01FC0100"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-slot-5-prompt-full.png",
+        "bytes": 1440292,
+        "sha256": "58E53F904BFD58A100E5DBFAFA768444F004DB46D90BB7FFFB0FAAC32592ADE8"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-slot-5-prompt.png",
+        "bytes": 1357479,
+        "sha256": "A4961C3E9448500A580F365FA5718BED93B1608C5B7662865841D8721E7161FB"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-slot-5-result.png",
+        "bytes": 1061156,
+        "sha256": "82DFBED2FC52457BD2863E0510858132BF408126A0897698F2D5857F1ED04B43"
+      },
+      {
+        "path": "docs/screenshots/casino-games-mobile-slot-5-return.png",
+        "bytes": 1354861,
+        "sha256": "F3F87A0F2EE45B71F4EA64091C485CE459CFD0FE3CFE186D7A924C47AEFC0243"
+      },
+      {
+        "path": "docs/recordings/casino-games-desktop-tour.webm",
+        "bytes": 4909031,
+        "sha256": "059334F8D967A196E1F2A99F8D69A71BC5D4EFABB976AF164EDA69A71FD1F0CE"
+      },
+      {
+        "path": "docs/recordings/casino-games-mobile-tour.webm",
+        "bytes": 5141774,
+        "sha256": "8A00252178877CBE91E47A45054E9E57F24D93FDAEC5A60C1CE08F5A69EF5B82"
+      }
+    ]
+  },
+  "limitations": [
+    "Original unfinished-wager hard-reload/process-loss behavior remains; no new refunds or round persistence.",
+    "Coin Flip original pagehide banks an idle pot; an in-flight flip/ride can lose it.",
+    "Storage quota divergence retains the original game document and ephemeral funds; no balance copying or repair.",
+    "New game documents start fresh after safe return; Blackjack keeps its existing retained document.",
+    "HTTP is the primary supported hosting mode; no new cross-tab transaction guarantee or casino NPC traffic."
+  ]
+}

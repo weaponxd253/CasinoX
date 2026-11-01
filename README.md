@@ -9,9 +9,17 @@ dialogue. See [architecture, mappings, tests and evidence](docs/PHASE_5E_ACTIVIT
 
 Phase 6A adds the explorable **Central Lobby ↔ Main Casino Floor ↔ Blackjack
 Lounge** route. The new floor uses the supplied artwork, shared owner controls,
-mapped collisions and foreground depth masks. Roulette, slots and the coin kiosk
-remain scenery; casino guest traffic comes later. See
+mapped collisions and foreground depth masks. See
 [room architecture, verification and evidence](docs/PHASE_6A_IMPLEMENTATION.md).
+
+Phase 6B connects the roulette table, all five slot cabinets and Coin Flip kiosk
+to the original casino games. Walk to an attraction and press E. A shared host
+pauses the owner and returns them to the exact position and facing. Finish a
+round, stop slot auto-play or cash out a Coin Flip pot before returning. The
+original wallet and games own every wager; hard reload retains their existing
+unfinished-round limitations. Blackjack keeps its existing lounge and retained
+table. Casino guest traffic comes later. See
+[integration, verification and evidence](docs/PHASE_6B_IMPLEMENTATION.md).
 
 **Live:** `https://weaponxd253.github.io/CasinoX/` · **Stack:** HTML · CSS · Vanilla JS · GSAP · Web Audio API · localStorage · Playwright tests
 

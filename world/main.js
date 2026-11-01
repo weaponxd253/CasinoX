@@ -4,6 +4,8 @@ import { BlackjackOverlay } from '../floor/blackjack-overlay.js';
 import { Dialogue } from './dialogue.js';
 import { readResortSnapshot } from './resort-snapshot.js';
 import { WORLD_ROOMS, routeFor, backRoute, routeEntry } from './room-routes.js';
+import { CasinoGameHost } from './casino-game-host.js';
+import { CASINO_ATTRACTIONS } from './casino-attractions.js';
 
 const host = document.getElementById('floor-canvas');
 const status = document.getElementById('world-status');
@@ -24,6 +26,8 @@ const rooms = new Map(), departures = new Map();
 let pendingEntry = null;
 let interactHeld = false, awaitingRelease = false;
 let overlay;
+let casinoGameHost;
+let casinoPose = null;
 let dialogue;
 let store;
 let returnPosition;
@@ -33,7 +37,7 @@ let lastSavedPosition;
 let allowLeaving = false;
 
 const activeScene = () => rooms.get(current);
-const isBlocked = () => failed || !ready || awaitingRelease || !activeScene()?.owner || dialog.open || conversation.open || performance.now() < unlockInteractionAt;
+const isBlocked = () => failed || !ready || awaitingRelease || !activeScene()?.owner || dialog.open || conversation.open || casinoGameHost?.isOpen || performance.now() < unlockInteractionAt;
 const samePosition = (a, b) => a && b && a.x === b.x && a.y === b.y && a.facing === b.facing;
 const setText = (id, value) => {
   const element = document.getElementById(id);
@@ -52,7 +56,7 @@ function fail(error) {
   if (activeScene()?.sys) {
     const scene = activeScene();
     scene.owner?.stop();
-    scene.input.keyboard.enabled = false;
+    if (scene.input?.keyboard) scene.input.keyboard.enabled = false;
     const pause = () => scene.owner ? scene.pauseWorld() : scene.game.scene.pause(scene);
     // SceneManager finishes create() by setting RUNNING. Pause after that
     // lifecycle event, rather than leaving status and active flags inconsistent.
@@ -97,7 +101,7 @@ function refresh() {
   setText('world-return', `Return to ${WORLD_ROOMS[WORLD_ROOMS[current].parent]?.label ?? 'Central Lobby'}`);
   const actionLabel = action && (routeFor(current, action.id)?.label ?? action.label);
   setText('world-interact', action ? `E · ${actionLabel}` : 'E · Interact');
-  setText('world-status', dialog.open ? 'At the blackjack table · world paused'
+  setText('world-status', casinoGameHost?.isOpen ? 'At a casino game · world paused' : dialog.open ? 'At the blackjack table · world paused'
     : conversation.open ? 'In conversation · world paused · Esc to close'
       : action ? [current === 'CasinoRoom' && action.id === 'blackjack' ? casino.dealer.greeting : null,
         `Press E · ${actionLabel}`].filter(Boolean).join(' · ')
@@ -146,6 +150,7 @@ function dispatch(definition) {
   if (action.type === 'door' || action.type === 'return') travel(routeFor(current, definition.id));
   else if (action.type === 'management') document.getElementById('management-link').click();
   else if (action.type === 'blackjack') overlay.open();
+  else if (action.type === 'casino-game' && current === 'MainCasinoFloor') casinoGameHost.open(action.gameId, action.attractionId);
   else if (action.type === 'dialogue') {
     try { dialogue.open(action.conversation, refreshResort()); }
     catch (error) { fail(error); }
@@ -156,7 +161,7 @@ function dispatch(definition) {
 // The existing page remains authoritative. This is only an unload warning;
 // it never serializes, refunds, restores or replays a blackjack hand.
 function hasActiveHand() {
-  return Boolean(document.getElementById('blackjack-frame').contentDocument?.body?.classList.contains('mid-hand'));
+  return Boolean(casinoGameHost?.hasUnresolved() || document.getElementById('blackjack-frame').contentDocument?.body?.classList.contains('mid-hand'));
 }
 
 document.querySelectorAll('[data-leave-world]').forEach(link => {
@@ -164,7 +169,9 @@ document.querySelectorAll('[data-leave-world]').forEach(link => {
     activeScene()?.owner?.stop();
     if (!failed && lobby?.owner && !persistLobby()) { event.preventDefault(); return; }
     if (hasActiveHand()) {
-      if (!confirm('Leaving will lose your unfinished blackjack hand. Its wager stays deducted. Leave anyway?')) {
+      if (!confirm(casinoGameHost?.hasUnresolved()
+        ? 'Leaving may lose your unfinished casino round or unbanked pot. Leave anyway?'
+        : 'Leaving will lose your unfinished blackjack hand. Its wager stays deducted. Leave anyway?')) {
         event.preventDefault();
         activeScene()?.focusCanvas();
       } else allowLeaving = true;
@@ -197,7 +204,9 @@ try {
   refreshResort();
   returnPosition = store.lobby;
   lastSavedPosition = store.state && !store.needsMigration ? store.lobby : null;
-  CasinoWallet.onChange(value => { document.getElementById('world-balance').textContent = value.toFixed(2); });
+  CasinoWallet.onChange(value => {
+    for (const id of ['world-balance', 'casino-game-balance']) document.getElementById(id).textContent = value.toFixed(2);
+  });
   if (!window.Phaser) throw new Error('The room runtime could not load. Use the existing resort links above.');
   const [{ LobbyScene }, { CasinoRoom }, { HotelScene }, { MainCasinoFloorScene }] = await Promise.all([
     import('./lobby-scene.js'), import('../floor/room-scene.js'), import('./hotel-scene.js'), import('./main-casino-scene.js'),
@@ -205,6 +214,7 @@ try {
   const onReady = scene => {
     if (failed) return;
     completeArrival(scene);
+    if (scene === mainFloor) scene.events.once('shutdown', () => casinoGameHost.dispose());
     if (scene === lobby) {
       const migrating = store.needsMigration;
       if (persistLobby() && migrating && store.relocated) {
@@ -240,6 +250,17 @@ try {
     onOpen: () => { casino.setBlackjackOpen(true); casino.pauseWorld(); refresh(); },
     onClose: () => { casino.setBlackjackOpen(false); resume(); },
   });
+  casinoGameHost = new CasinoGameHost({
+    dialog: document.getElementById('casino-game-overlay'),
+    onOpen: () => { casinoPose = { ...mainFloor.owner.snapshot() }; mainFloor.pauseWorld(); refresh(); },
+    onClose: ({ resume: shouldResume }) => {
+      if (!shouldResume || failed || current !== 'MainCasinoFloor' || !mainFloor.owner) return;
+      mainFloor.owner.restore(casinoPose); casinoPose = null;
+      document.getElementById('world-balance').textContent = CasinoWallet.get().toFixed(2);
+      refreshResort(); resume();
+    },
+    onNavigate: () => document.getElementById('management-link').click(),
+  });
   dialogue = new Dialogue({
     dialog: conversation,
     onOpen: () => { activeScene().pauseWorld(); refresh(); },
@@ -273,6 +294,13 @@ try {
       velocity: activeScene()?.player ? { x: activeScene().player.body.velocity.x, y: activeScene().player.body.velocity.y } : null,
       interaction: activeScene()?.owner ? activeScene().getInteraction() : null,
       returnPosition: { ...returnPosition }, overlayOpen: dialog.open, dialogueOpen: conversation.open,
+      casinoGameHost: casinoGameHost.snapshot(),
+      attraction: current === 'MainCasinoFloor' && mainFloor?.interactions ? (() => {
+        const a = CASINO_ATTRACTIONS.find(a => a.id === mainFloor.getInteraction());
+        return a ? { id: a.id, gameId: a.gameId, range: a.radius, position: { ...a.position }, approach: { ...a.approach } } : null;
+      })() : null,
+      ownerInput: { focused: Boolean(activeScene()?.owner?.hasFocus()), keyboardEnabled: Boolean(activeScene()?.input?.keyboard?.enabled),
+        blocked: Boolean(isBlocked()), casinoPose: casinoPose && { ...casinoPose } },
       ownerVisual: activeScene()?.owner?.visual.snapshot() ?? null,
       ownerBody: activeScene()?.player ? {
         radius: activeScene().player.body.radius, width: activeScene().player.body.width,

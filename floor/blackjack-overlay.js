@@ -54,13 +54,14 @@ export class BlackjackOverlay {
   open() {
     if (this.dialog.open) return;
     this.isOpen = true;
+    this.frame.inert = true;
     this.onOpen();
     document.body.classList.add('blackjack-open');
     this.dialog.showModal();
     // Load once. Never remove or reload this frame on close, including mid-hand.
     if (!this.frame.hasAttribute('src')) {
       this.frame.src = '../blackjack/index.html?embed=floor';
-    } else if (this.frame.inert) this.requestReady();
+    } else this.requestReady();
   }
 
   close() {

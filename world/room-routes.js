@@ -6,7 +6,7 @@ import { clearOf } from './collision-geometry.js';
 
 export const WORLD_ROOMS = Object.freeze({
   CentralLobby:{label:'Central Lobby',parent:null,help:'Visit reception, the casino, the manager’s office or the hotel entrance.'},
-  MainCasinoFloor:{label:'Main Casino Floor',parent:'CentralLobby',help:'Explore the casino floor. North to the Blackjack Lounge; south to the Central Lobby.'},
+  MainCasinoFloor:{label:'Main Casino Floor',parent:'CentralLobby',help:'Approach Roulette, a slot machine or Coin Flip and press E. North to Blackjack; south to the Central Lobby.'},
   CasinoRoom:{label:'Blackjack Lounge',parent:'MainCasinoFloor',help:'Approach the blackjack table, or walk south to return to the Main Casino Floor.'},
   HotelInterior:{label:'Hotel Interior',parent:'CentralLobby',help:'Explore the hotel preview. Read the directory, or return south to the lobby.'},
 });
