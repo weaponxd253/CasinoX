@@ -2,6 +2,17 @@
 
 A browser-based casino resort with a Phaser owner world, existing HTML/CSS casino games, hotel management, and separate chip and hotel-cash economies. No build step is required for static hosting.
 
+Phase 5E connects the Central Lobby to saved management conditions through a
+read-only adapter: occupancy guides future arrivals, canonical reception coverage
+sets the next service duration, and satisfaction colors future personality
+dialogue. See [architecture, mappings, tests and evidence](docs/PHASE_5E_ACTIVITY.md).
+
+Phase 6A adds the explorable **Central Lobby ↔ Main Casino Floor ↔ Blackjack
+Lounge** route. The new floor uses the supplied artwork, shared owner controls,
+mapped collisions and foreground depth masks. Roulette, slots and the coin kiosk
+remain scenery; casino guest traffic comes later. See
+[room architecture, verification and evidence](docs/PHASE_6A_IMPLEMENTATION.md).
+
 **Live:** `https://weaponxd253.github.io/CasinoX/` · **Stack:** HTML · CSS · Vanilla JS · GSAP · Web Audio API · localStorage · Playwright tests
 
 ---
@@ -138,7 +149,7 @@ npm test
 The root now opens the owner title screen. **Continue Resort** checks existing
 save availability without initializing the hotel. **New Game** is a nondestructive
 exploration placeholder: it never resets a resort or bankroll. The Central Lobby
-connects to the existing lounge within one Phaser game, retaining the blackjack
+connects through the Main Casino Floor to the existing lounge within one Phaser game, retaining the blackjack
 iframe across room visits. Hotel Management remains one click away (or press M).
 
 Only `casinoWorldState` stores the versioned lobby position and facing. Existing
@@ -147,12 +158,22 @@ or unsupported saves show an error and are preserved rather than reset. See
 [Phase 1 routes and save behavior](docs/STATE_AND_ROUTES.md) for exact boundaries,
 remaining decisions and a manual checklist. Run `npm run test:world` for Phase 1.
 
-Phase 5B adds three visual hotel travelers with staggered arrivals and an automatic
-reception queue. Guests physically advance, receive eight active seconds of
-service, and leave toward the hotel once per page load. See the
-[queue configuration, diagnostics and verification](docs/PHASE_5B_QUEUE.md).
-Run `npx playwright test tests/reception-queue.spec.js tests/reception-queue-capture.spec.js --workers=1`
-for dedicated queue coverage.
+The following Phase 5C/5D descriptions retain their historical defaults and
+verification results. [Phase 5E](docs/PHASE_5E_ACTIVITY.md) adds the current
+read-only management policy and preserves those defaults as per-feature fallbacks.
+
+Phase 5C adds continuous visual guest traffic: randomized 15–30 active-second
+arrivals, four journey purposes, up to six visible guests and four moving at once.
+It reuses the three existing appearances and Phase 5B reception queue, with
+owner-priority avoidance, reserved idle positions, pause/resume and bounded cleanup.
+See [traffic configuration, verification and visual evidence](docs/PHASE_5C_TRAFFIC.md).
+Run `npx playwright test tests/guest-traffic.spec.js tests/guest-traffic-capture.spec.js --workers=1`
+for dedicated traffic coverage. The earlier [fixed three-guest queue scenario](docs/PHASE_5B_QUEUE.md)
+remains available through an explicit debug fixture for regression testing.
+
+Phase 5D expands that traffic to eight appearances and five independent
+personalities, with occasional contextual speech. See the
+[asset preparation, personality settings, dialogue behavior and verification](docs/PHASE_5D_VARIETY.md).
 
 Phase 2 adds a receptionist conversation, a manager’s office shortcut to the
 original dashboard, and an explorable hotel interior preview. Doors, NPCs and the
@@ -161,8 +182,8 @@ nearby prompt; Esc closes dialogue or returns from an interior; M still opens
 management from anywhere. The HUD reads the saved hotel snapshot without starting
 another simulation. Reload/Continue uses the existing Central Lobby checkpoint.
 See [Phase 2 behavior, file inventory and safe follow-up recommendations](docs/PHASE_2.md).
-Run `npx playwright test tests/interactions.spec.js tests/resort-lobby.spec.js --workers=2`
-for the new coverage, or `npm test -- --workers=2` for all tests.
+Run `npx playwright test tests/interactions.spec.js tests/resort-lobby.spec.js --workers=1`
+for the new coverage, or `npx playwright test --workers=1` for all tests.
 
 Open `floor/index.html`, or choose **Explore the Blackjack Lounge** in the casino
 game lobby. Move with WASD or arrows, walk to the blackjack table, and press E.

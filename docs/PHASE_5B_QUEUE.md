@@ -1,5 +1,10 @@
 # Phase 5B: reception queue and three visual guests
 
+Phase 5C now uses this queue with continuous dynamic traffic in normal gameplay.
+This document describes the retained fixed regression fixture, selected with
+`?debug=1&trafficScenario=phase5b`. See [Phase 5C traffic](PHASE_5C_TRAFFIC.md)
+for current production behavior and verification.
+
 Three distinct guests enter once per world page load, queue for automatic visual
 check-in, physically advance in arrival order and leave toward the hotel. The
 hotel engine remains the sole business authority: no bookings, transactions,

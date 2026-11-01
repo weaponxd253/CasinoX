@@ -1,3 +1,4 @@
+const { approachLounge, enterLounge, returnToLobby } = require('./helpers/main-casino-world');
 const { test, expect } = require('@playwright/test');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -26,9 +27,11 @@ test('south-open lounge uses the original artwork at lobby scale and captures th
   await expect(page.locator('#world-interact')).toHaveText('E · Play blackjack');
   await page.screenshot({ path: info.outputPath('blackjack-lounge-table.png'), fullPage: true });
   await walkLoungeTo(page, LOUNGE_POINTS.exit);
-  await expect(page.locator('#world-interact')).toHaveText('E · Return to Central Lobby');
+  await expect(page.locator('#world-interact')).toHaveText('E · Return to Main Casino Floor');
   await page.screenshot({ path: info.outputPath('blackjack-lounge-exit.png'), fullPage: true });
   await page.keyboard.press('e');
+  await expect.poll(async () => (await snapshot(page)).scene).toBe('MainCasinoFloor');
+  await returnToLobby(page);
   await expect.poll(async () => (await snapshot(page)).scene).toBe('CentralLobby');
   expect((await snapshot(page)).player).toEqual(POINTS.casino);
   expect(await storage(page)).toEqual(seed);
@@ -131,7 +134,7 @@ test('delayed first entry blocks interaction until the lounge is ready and resto
   const gate = new Promise(resolve => { release = resolve; });
   await page.route('**/floor/assets/lounge/blackjack-lounge.png', async route => { requested = true; await gate; await route.continue(); });
   const errors = []; page.on('pageerror', e => errors.push(e.message));
-  await page.goto('/world/index.html?debug=1'); await loungeReady(page); await page.keyboard.press('e');
+  await page.goto('/world/index.html?debug=1'); await loungeReady(page); await approachLounge(page); await page.keyboard.press('e');
   await expect.poll(() => requested).toBe(true);
   await expect(page.locator('#floor-canvas')).toHaveAttribute('aria-busy', 'true');
   await expect(page.locator('#world-interact')).toBeDisabled(); await expect(page.locator('#world-return')).toBeDisabled();
@@ -149,7 +152,7 @@ for (const route of ['world', 'floor']) for (const failure of ['abort', 'wrong d
       : failure === 'wrong dimensions' ? r.fulfill({ path: path.resolve(__dirname, '../world/assets/owner/owner.png'), contentType: 'image/png' })
         : r.fulfill({ contentType: 'image/png', body: 'not an image' }));
     await page.goto(`/${route}/index.html?debug=1`);
-    if (route === 'world') { await loungeReady(page); await page.keyboard.press('e'); }
+    if (route === 'world') { await loungeReady(page); await approachLounge(page); await page.keyboard.press('e'); }
     await expect(page.locator(route === 'world' ? '#world-errors' : '#floor-status')).toContainText('artwork could not load');
     await expect.poll(async () => (await snapshot(page)).paused).toBe(true);
     expect((await snapshot(page)).player).toBeNull(); expect((await snapshot(page)).failed).toBe(true);
@@ -162,7 +165,7 @@ test('another tab changing the save during lounge loading stops stale creation a
   const seed = await seedWorld(page);
   let release, requested = false; const gate = new Promise(resolve => { release = resolve; });
   await page.route('**/floor/assets/lounge/blackjack-lounge.png', async r => { requested = true; await gate; await r.continue(); });
-  await page.goto('/world/index.html?debug=1'); await loungeReady(page); await page.keyboard.press('e');
+  await page.goto('/world/index.html?debug=1'); await loungeReady(page); await approachLounge(page); await page.keyboard.press('e');
   await expect.poll(() => requested).toBe(true);
   const other = await context.newPage(); await other.goto('/'); const replacement = currentWorld(POINTS.spawn, { otherTab: true });
   await other.evaluate(raw => localStorage.setItem('casinoWorldState', raw), replacement);
@@ -183,7 +186,7 @@ async function seedWorld(page) {
 }
 async function openWorldLounge(page) {
   const seed = await seedWorld(page); await page.goto('/world/index.html?debug=1'); await loungeReady(page);
-  await page.keyboard.press('e'); await expect.poll(async () => (await snapshot(page)).scene).toBe('CasinoRoom');
+  await enterLounge(page); await expect.poll(async () => (await snapshot(page)).scene).toBe('CasinoRoom');
   await loungeReady(page); return seed;
 }
 async function hold(page, key, ms) {

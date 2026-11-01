@@ -315,6 +315,120 @@ const CASINO_GAME_UNLOCKS = {
   texasHoldem: { casinoLevel:5, repRequired:20, label:"Texas Hold'em",    href:'holdem/index.html' },
 };
 
+// Canonical read-only selectors shared by management and world presentation.
+const PROMOTION_LADDER = [
+  { tier:0, label:'Associate', next:'Senior', reqLevel:2, reqBestStat:8, cost:650, wage:14, coverageBoost:0 },
+  { tier:1, label:'Senior', next:'Lead', reqLevel:4, reqBestStat:9, cost:1600, wage:24, coverageBoost:0.10 },
+  { tier:2, label:'Lead', next:'Manager', reqLevel:6, reqBestStat:10, cost:3600, wage:42, coverageBoost:0.22 },
+  { tier:3, label:'Manager', next:null, reqLevel:null, reqBestStat:null, cost:null, wage:0, coverageBoost:0.38 },
+];
+
+const TRAIT_EFFECTS = {
+  'Warm Welcome': { department:'lobby', patience:0.07, satisfaction:1, copy:'+7% lobby patience, +1 satisfaction' },
+  'Polished Welcome': { department:'lobby', patience:0.06, quality:0.25, copy:'+6% lobby patience, cleaner check-ins' },
+  'Fast Check-In': { department:'lobby', speed:-0.05, copy:'Lobby service runs 5% faster' },
+  'Guest Memory': { department:'lobby', income:0.03, satisfaction:1, copy:'+3% lobby income, +1 satisfaction' },
+  'Fast Turnover': { department:'rooms', speed:-0.06, copy:'Room service runs 6% faster' },
+  'Sharp Turnover': { department:'rooms', speed:-0.05, copy:'Room requests run 5% faster' },
+  'Quiet Detail': { department:'rooms', quality:0.3, satisfaction:1, copy:'Better room quality, +1 satisfaction' },
+  'Linen Lead': { department:'rooms', satisfaction:1, stamina:0.04, copy:'+1 satisfaction, lighter fatigue' },
+  'Quick Runner': { department:'rooms', speed:-0.05, income:0.02, copy:'Rooms run 5% faster, +2% income' },
+  'Fast Runner': { department:'rooms', speed:-0.05, copy:'Room service runs 5% faster' },
+  'Tray Balance': { department:'rooms', quality:0.25, copy:'Fewer room-service mistakes' },
+  'Late Shift': { department:'rooms', stamina:0.06, copy:'Lighter fatigue on room shifts' },
+  'VIP Whisperer': { department:'casino', income:0.06, satisfaction:1, copy:'+6% casino income, +1 satisfaction' },
+  'VIP Read': { department:'casino', income:0.05, copy:'+5% casino income' },
+  'Table Charm': { department:'casino', patience:0.04, income:0.03, copy:'+4% patience, +3% casino income' },
+  'Comp Sense': { department:'casino', quality:0.25, income:0.03, copy:'Better casino quality, +3% income' },
+  'Calm Floor': { department:'casino', quality:0.35, satisfaction:1, copy:'Calmer casino floor, +1 satisfaction' },
+  'Risk Watch': { department:'casino', quality:0.4, copy:'Stronger casino discipline' },
+  'Steady Post': { department:'casino', stamina:0.05, copy:'Lighter fatigue on casino shifts' },
+  'Tasting Notes': { department:'restaurant', quality:0.35, satisfaction:1, copy:'Better food quality, +1 satisfaction' },
+  'Table Rhythm': { department:'restaurant', speed:-0.04, quality:0.2, copy:'Restaurant runs 4% faster' },
+  'Menu Memory': { department:'restaurant', quality:0.3, copy:'Better restaurant quality' },
+  'Warm Service': { department:'restaurant', patience:0.04, satisfaction:1, copy:'+4% patience, +1 satisfaction' },
+  'Fast Pour': { department:'bar', speed:-0.05, income:0.02, copy:'Bar runs 5% faster, +2% income' },
+  'Regulars Know': { department:'bar', income:0.04, satisfaction:1, copy:'+4% bar income, +1 satisfaction' },
+  'Clean Close': { department:'bar', quality:0.25, stamina:0.04, copy:'Cleaner bar shifts, lighter fatigue' },
+  'Stage Timing': { department:'entertainment', speed:-0.04, quality:0.25, copy:'Shows resolve faster with better timing' },
+  'Crowd Pulse': { department:'entertainment', income:0.04, satisfaction:1, copy:'+4% show income, +1 satisfaction' },
+  'Show Runner': { department:'entertainment', speed:-0.05, copy:'Entertainment work runs 5% faster' },
+  'Quiet Luxury': { department:'spa', patience:0.05, quality:0.25, copy:'+5% spa patience, better quality' },
+  'Guest Recovery': { department:'spa', satisfaction:2, copy:'+2 satisfaction from spa coverage' },
+  'Wellness Notes': { department:'spa', quality:0.3, stamina:0.04, copy:'Better spa quality, lighter fatigue' },
+  'Quiet Fixes': { department:'rooms', quality:0.25, satisfaction:1, copy:'Subtle room fixes, +1 satisfaction' },
+};
+
+function getStaffTraitEffect(member, assignment = member?.assignment ?? member?.desiredDepartment ?? member?.specialty) {
+  const trait = member?.trait ?? '';
+  const base = TRAIT_EFFECTS[trait] ?? null;
+  const target = assignment ?? member?.assignment ?? member?.specialty;
+  const applies = !!base && (!base.department || base.department === target);
+  const fallbackCopy = trait ? 'Reliable personality fit' : 'No trait bonus';
+  return {
+    trait,
+    department: base?.department ?? member?.specialty ?? target,
+    applies,
+    patience: applies ? base?.patience ?? 0 : 0,
+    speed: applies ? base?.speed ?? 0 : 0,
+    income: applies ? base?.income ?? 0 : 0,
+    quality: applies ? base?.quality ?? 0 : 0,
+    satisfaction: applies ? base?.satisfaction ?? 0 : 0,
+    stamina: applies ? base?.stamina ?? 0 : 0,
+    copy: base?.copy ?? fallbackCopy,
+  };
+}
+
+function getStaffTraitSummary(assignment, state) {
+  const assigned = (state.staff?.roster ?? []).filter(member => member.assignment === assignment);
+  const totals = assigned.reduce((sum, member) => {
+    const effect = getStaffTraitEffect(member, assignment);
+    if (!effect.applies) return sum;
+    sum.patience += effect.patience;
+    sum.speed += effect.speed;
+    sum.income += effect.income;
+    sum.quality += effect.quality;
+    sum.satisfaction += effect.satisfaction;
+    sum.stamina += effect.stamina;
+    sum.active.push({ staffId:member.id, name:member.name, trait:effect.trait, copy:effect.copy });
+    return sum;
+  }, { patience:0, speed:0, income:0, quality:0, satisfaction:0, stamina:0, active:[] });
+  return {
+    ...totals,
+    label: totals.active.length ? totals.active.map(item => item.trait).join(', ') : 'No active trait bonuses',
+  };
+}
+
+function getStaffCoverage(assignment, state) {
+  const staff = state.staff?.roster ?? [];
+  const assigned = staff.filter(member => member.assignment === assignment);
+  const deptLevel = Math.max(1, state.departments?.[assignment]?.level ?? 1);
+  const demand = assignment === 'lobby'
+    ? Math.max(1, Math.ceil((state.guests?.population ?? 0) / 18))
+    : Math.max(1, Math.ceil(deptLevel / 2));
+  const raw = assigned.reduce((sum, member) => {
+    const specialtyBonus = member.specialty === assignment ? 1.25 : 1;
+    const staminaMult = Math.max(0.45, (member.stamina ?? 80) / 100);
+    const baseScore = ((member.speed ?? 5) + (member.service ?? 5) + (member.discipline ?? 5)) / 3;
+    const promotion = PROMOTION_LADDER[Math.max(0, Math.min(3, member.promotionTier ?? 0))]?.coverageBoost ?? 0;
+    return sum + baseScore * specialtyBonus * staminaMult * (1 + promotion);
+  }, 0);
+  const ratio = raw / Math.max(1, demand * 8);
+  const traitSummary = getStaffTraitSummary(assignment, state);
+  const score = Math.max(0, Math.min(100, Math.round(ratio * 100 + traitSummary.quality * 10)));
+  const status = score >= 85 ? 'covered' : score >= 55 ? 'thin' : 'short';
+  return { assignment, assigned, assignedCount: assigned.length, demand, raw, ratio, score, status, traitSummary };
+}
+
+function getRoomCapacity(state) {
+  const lvl = state.departments.rooms?.level ?? 1;
+  return UPGRADE_CATALOG.rooms?.[lvl - 1]?.capacity ?? 10;
+}
+
+function getOccupancyPercentage(population, capacity) {
+  return capacity > 0 ? Math.round((population / capacity) * 100) : 0;
+}
+
 if (typeof window !== 'undefined') {
   window.HotelConfig = {
     FLOOR_ORDER, DEPT_META, DEPT_UNLOCK_REP,
@@ -323,6 +437,7 @@ if (typeof window !== 'undefined') {
     ROOM_TYPES, GUEST_ROOM_PREFS, GUEST_PARTY_SIZE,
     STAY_PREFERENCES, SPECIAL_REQUESTS,
     CASINO_GAME_UNLOCKS,
-    isDevMode,
+    isDevMode, PROMOTION_LADDER, TRAIT_EFFECTS,
+    selectors: Object.freeze({ getStaffTraitEffect, getStaffTraitSummary, getStaffCoverage, getRoomCapacity, getOccupancyPercentage }),
   };
 }

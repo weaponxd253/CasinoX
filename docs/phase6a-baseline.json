@@ -1,0 +1,70 @@
+{
+  "full": {
+    "startTime": "2026-10-31T22:01:50.682Z",
+    "duration": 2767081.3279999997,
+    "expected": 671,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  },
+  "fullReportErrors": [],
+  "isolatedUnchangedRerun": {
+    "startTime": "2026-10-31T22:51:52.783Z",
+    "duration": 5048.543,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "failures": [
+    {
+      "title": "full-page management return reads an actual Eli assignment as thin coverage and starts a fresh transient population",
+      "project": "mobile-chrome",
+      "error": "Error: expect(received).toBeGreaterThan(expected)\n\nExpected: > 0\nReceived:   0\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n\n  87 |   await seedManagement(page, managementFixture(s => { s.guests.population = 4; }, POINTS.office)); await watchWrites(context);\n  88 |   await page.goto('/world/index.html?debug=1&trafficSeed=19&trafficProfile=busy'); await readyTraffic(page);\n> 89 |   await expect.poll(async () => (await traffic(page)).stats.created).toBeGreaterThan(0);\n     |                                                                      ^\n  90 |   const checkpoint = (await snap(page)).player;\n  91 |   await page.keyboard.press('e'); await expect(page).toHaveURL(/\\/"
+    }
+  ],
+  "startingFiles": 323,
+  "changedStartingFiles": [],
+  "cleanFullBaseline": false,
+  "status": "671/672 passed; one five-second mobile initial-arrival timeout; unchanged isolated rerun passed. Resolve intermittent test and rerun full before implementation.",
+  "applicationChanges": false,
+  "scope": "Original planning snapshot above; implementation preflight follow-up below.",
+  "implementationPreflight": {
+    "full": {
+      "startTime": "2026-11-01T00:18:41.238Z",
+      "duration": 16986967.745,
+      "expected": 671,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "failures": [
+      {
+        "title": "reception stays accessible and dialogue freezes the guest and its remaining reception wait",
+        "project": "mobile-chrome",
+        "durationMs": 14656776,
+        "errors": [
+          "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"WA\u001b[7mIT\u001b[27mING_\u001b[7mA\u001b[27mT_RECEPTION\"\u001b[39m\nReceived: \u001b[31m\"WA\u001b[7mLK\u001b[27mING_T\u001b[7mO\u001b[27m_RECEPTION\"\u001b[39m\n\nCall Log:\n- Timeout 30000ms exceeded while waiting on the predicate"
+        ]
+      }
+    ],
+    "managementReadinessRepeat": {
+      "startTime": "2026-11-01T00:16:11.467Z",
+      "duration": 14813.741999999998,
+      "expected": 3,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "receptionForegroundRepeat": {
+      "startTime": "2026-11-01T05:02:20.325Z",
+      "duration": 26998.678,
+      "expected": 3,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "cleanFullBaseline": false,
+    "interpretation": "Second full baseline had one four-hour-interrupted mobile physics test. Its unchanged gameplay assertions then passed three times with explicit foregrounding. All other 671 cases passed. Runtime implementation followed this evidence; no clean 672-pass full baseline is claimed."
+  }
+}

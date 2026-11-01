@@ -1,3 +1,4 @@
+const { enterLounge, returnToLobby } = require('./helpers/main-casino-world');
 const { test, expect } = require('@playwright/test');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -175,18 +176,18 @@ test('dealer survives scene sleep/wake, remains nonblocking behind the table and
   // The route around the east aisle passes the approach strip once.
   const sleeping = { ...npc, greetingCount: 1 };
   expect((await snapshot(page)).dealer).toEqual(sleeping);
-  await page.keyboard.press('e'); await expect.poll(async () => (await snapshot(page)).scene).toBe('CentralLobby');
+  await page.keyboard.press('e'); await expect.poll(async () => (await snapshot(page)).scene).toBe('MainCasinoFloor'); await returnToLobby(page); await expect.poll(async () => (await snapshot(page)).scene).toBe('CentralLobby');
   expect((await snapshot(page)).player).toEqual(POINTS.casino);
   expect((await snapshot(page)).dealer).toEqual(sleeping);
-  await page.waitForTimeout(280); await page.keyboard.press('e'); await loungeReady(page);
+  await page.waitForTimeout(280); await enterLounge(page); await loungeReady(page);
   await expect.poll(async () => (await snapshot(page)).scene).toBe('CasinoRoom');
   expect((await snapshot(page)).dealer).toEqual(sleeping); expect(requests).toBe(1);
-  await page.waitForTimeout(280); await page.keyboard.press('Escape');
+  await page.waitForTimeout(280); await returnToLobby(page);
   await expect.poll(async () => (await snapshot(page)).scene).toBe('CentralLobby');
   expect((await snapshot(page)).player).toEqual(POINTS.casino); expect(await storage(page)).toEqual(seed);
   await page.reload(); await loungeReady(page);
   expect((await snapshot(page)).player).toEqual(POINTS.casino);
-  await page.keyboard.press('e'); await loungeReady(page);
+  await enterLounge(page); await loungeReady(page);
   await expect.poll(async () => (await snapshot(page)).scene).toBe('CasinoRoom');
   expect((await snapshot(page)).dealer).toEqual(npc); expect(await storage(page)).toEqual(seed);
 });
@@ -202,7 +203,7 @@ async function openLounge(page, host) {
   }, seed);
   await page.goto(`/${host}/index.html?debug=1`); await loungeReady(page);
   if (host === 'world') {
-    await page.keyboard.press('e'); await expect.poll(async () => (await snapshot(page)).scene).toBe('CasinoRoom'); await loungeReady(page);
+    await enterLounge(page); await expect.poll(async () => (await snapshot(page)).scene).toBe('CasinoRoom'); await loungeReady(page);
   }
   return seed;
 }

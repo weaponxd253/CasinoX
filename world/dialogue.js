@@ -10,7 +10,7 @@ function conversation(id, resort) {
       ? `Welcome back, owner of ${resort.name}. The casino entrance is north, the manager’s office is northeast, and the hotel entrance is to the east.`
       : 'Welcome, owner. You can explore the resort now. Open Hotel Management when you are ready to set up the hotel; exploring and chatting do not create a hotel save.',
     choices: [
-      { label: 'Where can I go?', text: 'Walk north to the Blackjack Lounge or east to the hotel interior preview. Approach a marked entrance and press E. Return brings you to the same Central Lobby point.' },
+      { label: 'Where can I go?', text: 'Walk north to the Main Casino Floor, then continue north to the Blackjack Lounge, or east to the hotel interior preview. Approach a marked entrance and press E. Return brings you to the same Central Lobby point.' },
       { label: 'How do I manage the resort?', text: 'Visit the manager’s office in the northeast or press M anywhere in the world. Both open the existing Hotel Management dashboard. Its Return to Central Lobby link brings you back.' },
       { label: 'About hotel cash and chips', text: 'Hotel operating cash pays for the resort. Virtual casino chips are a separate balance used by the existing games. Talking and walking do not transfer or spend either balance.' },
     ],

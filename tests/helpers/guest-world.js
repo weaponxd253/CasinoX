@@ -12,9 +12,10 @@ async function openWorld(page, position = POINTS.spawn) {
     }
     sessionStorage.setItem('shellBonusPrompted', '1');
   }, seed);
-  await page.goto('/world/index.html?debug=1'); await ready(page); return seed;
+  await page.goto('/world/index.html?debug=1&trafficScenario=phase5b'); await ready(page); return seed;
 }
 async function ready(page) {
+  await page.bringToFront();
   await expect(page.locator('#floor-canvas')).toHaveAttribute('aria-busy', 'false', { timeout: 15000 });
   await expect.poll(async () => Boolean((await snap(page)).guest)).toBe(true); await page.locator('canvas').focus();
 }

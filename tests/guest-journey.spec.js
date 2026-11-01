@@ -1,3 +1,4 @@
+const { enterLounge, returnToLobby } = require('./helpers/main-casino-world');
 const { test, expect } = require('@playwright/test');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -77,7 +78,7 @@ test('scene sleep and blackjack overlay keep one guest frozen, then wake the sam
   test.setTimeout(90000);
   let requests = 0; page.on('request', r => { if (r.url().endsWith('/casual-traveler.png')) requests++; });
   const seed = await openWorld(page, POINTS.casino);
-  await page.keyboard.press('e'); await expect.poll(async () => (await snap(page)).scene).toBe('CasinoRoom');
+  await enterLounge(page); await expect.poll(async () => (await snap(page)).scene).toBe('CasinoRoom');
   await expect(page.locator('#floor-canvas')).toHaveAttribute('aria-busy', 'false');
   const sleeping = await guest(page);
   expect(sleeping).toMatchObject({ suspended: true, moving: false }); expect(sleeping.visual.playing).toBe(false);
@@ -86,7 +87,7 @@ test('scene sleep and blackjack overlay keep one guest frozen, then wake the sam
   expect(await guest(page)).toEqual(sleeping);
   await page.getByRole('button', { name: 'Return to floor' }).click();
   expect(await guest(page)).toEqual(sleeping);
-  await page.waitForTimeout(280); await page.keyboard.press('Escape');
+  await page.waitForTimeout(280); await returnToLobby(page);
   await expect.poll(async () => (await snap(page)).scene).toBe('CentralLobby');
   await expect.poll(async () => (await guest(page)).activeMs).toBeGreaterThan(sleeping.activeMs);
   expect((await snap(page)).player).toEqual(POINTS.casino); expect(requests).toBe(1);

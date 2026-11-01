@@ -1,3 +1,4 @@
+const { enterLounge } = require('./helpers/main-casino-world');
 const { test, expect } = require('@playwright/test');
 const path = require('node:path');
 const fs = require('node:fs');
@@ -78,7 +79,7 @@ async function seedStorage(page) {
 }
 async function openTable(page, host) {
   await loungeReady(page);
-  if (host === 'world') { await page.keyboard.press('e'); await expect.poll(async () => (await loungeSnapshot(page)).scene).toBe('CasinoRoom'); await loungeReady(page); }
+  if (host === 'world') { await enterLounge(page); await expect.poll(async () => (await loungeSnapshot(page)).scene).toBe('CasinoRoom'); await loungeReady(page); }
   await walkLoungeTo(page, LOUNGE_POINTS.table); await page.keyboard.press('e');
   await expect(page.locator('#blackjack-overlay')).toBeVisible();
 }

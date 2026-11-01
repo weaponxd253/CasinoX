@@ -1,0 +1,1383 @@
+{
+  "generatedAt": "2026-11-01T06:24:40.190199+00:00",
+  "baseline": {
+    "full": {
+      "startTime": "2026-10-31T22:01:50.682Z",
+      "duration": 2767081.3279999997,
+      "expected": 671,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "fullReportErrors": [],
+    "isolatedUnchangedRerun": {
+      "startTime": "2026-10-31T22:51:52.783Z",
+      "duration": 5048.543,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "failures": [
+      {
+        "title": "full-page management return reads an actual Eli assignment as thin coverage and starts a fresh transient population",
+        "project": "mobile-chrome",
+        "error": "Error: expect(received).toBeGreaterThan(expected)\n\nExpected: > 0\nReceived:   0\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n\n  87 |   await seedManagement(page, managementFixture(s => { s.guests.population = 4; }, POINTS.office)); await watchWrites(context);\n  88 |   await page.goto('/world/index.html?debug=1&trafficSeed=19&trafficProfile=busy'); await readyTraffic(page);\n> 89 |   await expect.poll(async () => (await traffic(page)).stats.created).toBeGreaterThan(0);\n     |                                                                      ^\n  90 |   const checkpoint = (await snap(page)).player;\n  91 |   await page.keyboard.press('e'); await expect(page).toHaveURL(/\\/"
+      }
+    ],
+    "startingFiles": 323,
+    "changedStartingFiles": [],
+    "cleanFullBaseline": false,
+    "status": "671/672 passed; one five-second mobile initial-arrival timeout; unchanged isolated rerun passed. Resolve intermittent test and rerun full before implementation.",
+    "applicationChanges": false,
+    "scope": "Original planning snapshot above; implementation preflight follow-up below.",
+    "implementationPreflight": {
+      "full": {
+        "startTime": "2026-11-01T00:18:41.238Z",
+        "duration": 16986967.745,
+        "expected": 671,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "failures": [
+        {
+          "title": "reception stays accessible and dialogue freezes the guest and its remaining reception wait",
+          "project": "mobile-chrome",
+          "durationMs": 14656776,
+          "errors": [
+            "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"WA\u001b[7mIT\u001b[27mING_\u001b[7mA\u001b[27mT_RECEPTION\"\u001b[39m\nReceived: \u001b[31m\"WA\u001b[7mLK\u001b[27mING_T\u001b[7mO\u001b[27m_RECEPTION\"\u001b[39m\n\nCall Log:\n- Timeout 30000ms exceeded while waiting on the predicate"
+          ]
+        }
+      ],
+      "managementReadinessRepeat": {
+        "startTime": "2026-11-01T00:16:11.467Z",
+        "duration": 14813.741999999998,
+        "expected": 3,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "receptionForegroundRepeat": {
+        "startTime": "2026-11-01T05:02:20.325Z",
+        "duration": 26998.678,
+        "expected": 3,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "cleanFullBaseline": false,
+      "interpretation": "Second full baseline had one four-hour-interrupted mobile physics test. Its unchanged gameplay assertions then passed three times with explicit foregrounding. All other 671 cases passed. Runtime implementation followed this evidence; no clean 672-pass full baseline is claimed."
+    }
+  },
+  "final": {
+    "startTime": "2026-11-01T05:37:53.813Z",
+    "duration": 2689262.626,
+    "expected": 716,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0,
+    "attempts": 716,
+    "retries": 0,
+    "errors": [],
+    "projects": {
+      "chromium": {
+        "total": 358,
+        "passed": 358,
+        "failed": 0
+      },
+      "mobile-chrome": {
+        "total": 358,
+        "passed": 358,
+        "failed": 0
+      }
+    },
+    "failures": []
+  },
+  "regressionGroups": {
+    "blackjack-bridge.spec.js": {
+      "chromium": {
+        "total": 5,
+        "passed": 5
+      },
+      "mobile-chrome": {
+        "total": 5,
+        "passed": 5
+      }
+    },
+    "casino.spec.js": {
+      "chromium": {
+        "total": 88,
+        "passed": 88
+      },
+      "mobile-chrome": {
+        "total": 88,
+        "passed": 88
+      }
+    },
+    "dealer-npc.spec.js": {
+      "chromium": {
+        "total": 12,
+        "passed": 12
+      },
+      "mobile-chrome": {
+        "total": 12,
+        "passed": 12
+      }
+    },
+    "floor.spec.js": {
+      "chromium": {
+        "total": 9,
+        "passed": 9
+      },
+      "mobile-chrome": {
+        "total": 9,
+        "passed": 9
+      }
+    },
+    "guest-activity-dialogue.spec.js": {
+      "chromium": {
+        "total": 6,
+        "passed": 6
+      },
+      "mobile-chrome": {
+        "total": 6,
+        "passed": 6
+      }
+    },
+    "guest-activity-refresh.spec.js": {
+      "chromium": {
+        "total": 5,
+        "passed": 5
+      },
+      "mobile-chrome": {
+        "total": 5,
+        "passed": 5
+      }
+    },
+    "guest-activity-service.spec.js": {
+      "chromium": {
+        "total": 4,
+        "passed": 4
+      },
+      "mobile-chrome": {
+        "total": 4,
+        "passed": 4
+      }
+    },
+    "guest-activity-stress.spec.js": {
+      "chromium": {
+        "total": 14,
+        "passed": 14
+      },
+      "mobile-chrome": {
+        "total": 14,
+        "passed": 14
+      }
+    },
+    "guest-activity.spec.js": {
+      "chromium": {
+        "total": 5,
+        "passed": 5
+      },
+      "mobile-chrome": {
+        "total": 5,
+        "passed": 5
+      }
+    },
+    "guest-capture.spec.js": {
+      "chromium": {
+        "total": 1,
+        "passed": 1
+      },
+      "mobile-chrome": {
+        "total": 1,
+        "passed": 1
+      }
+    },
+    "guest-dialogue.spec.js": {
+      "chromium": {
+        "total": 9,
+        "passed": 9
+      },
+      "mobile-chrome": {
+        "total": 9,
+        "passed": 9
+      }
+    },
+    "guest-journey.spec.js": {
+      "chromium": {
+        "total": 8,
+        "passed": 8
+      },
+      "mobile-chrome": {
+        "total": 8,
+        "passed": 8
+      }
+    },
+    "guest-navigation.spec.js": {
+      "chromium": {
+        "total": 6,
+        "passed": 6
+      },
+      "mobile-chrome": {
+        "total": 6,
+        "passed": 6
+      }
+    },
+    "guest-personalities.spec.js": {
+      "chromium": {
+        "total": 8,
+        "passed": 8
+      },
+      "mobile-chrome": {
+        "total": 8,
+        "passed": 8
+      }
+    },
+    "guest-traffic-capture.spec.js": {
+      "chromium": {
+        "total": 1,
+        "passed": 1
+      },
+      "mobile-chrome": {
+        "total": 1,
+        "passed": 1
+      }
+    },
+    "guest-traffic.spec.js": {
+      "chromium": {
+        "total": 19,
+        "passed": 19
+      },
+      "mobile-chrome": {
+        "total": 19,
+        "passed": 19
+      }
+    },
+    "guest-variety-capture.spec.js": {
+      "chromium": {
+        "total": 2,
+        "passed": 2
+      },
+      "mobile-chrome": {
+        "total": 2,
+        "passed": 2
+      }
+    },
+    "guest-variety.spec.js": {
+      "chromium": {
+        "total": 13,
+        "passed": 13
+      },
+      "mobile-chrome": {
+        "total": 13,
+        "passed": 13
+      }
+    },
+    "hotel-selectors.spec.js": {
+      "chromium": {
+        "total": 3,
+        "passed": 3
+      },
+      "mobile-chrome": {
+        "total": 3,
+        "passed": 3
+      }
+    },
+    "hotel-state-adapter.spec.js": {
+      "chromium": {
+        "total": 3,
+        "passed": 3
+      },
+      "mobile-chrome": {
+        "total": 3,
+        "passed": 3
+      }
+    },
+    "interactions.spec.js": {
+      "chromium": {
+        "total": 3,
+        "passed": 3
+      },
+      "mobile-chrome": {
+        "total": 3,
+        "passed": 3
+      }
+    },
+    "lobby-contacts.spec.js": {
+      "chromium": {
+        "total": 2,
+        "passed": 2
+      },
+      "mobile-chrome": {
+        "total": 2,
+        "passed": 2
+      }
+    },
+    "lobby-visual.spec.js": {
+      "chromium": {
+        "total": 20,
+        "passed": 20
+      },
+      "mobile-chrome": {
+        "total": 20,
+        "passed": 20
+      }
+    },
+    "lounge-visual.spec.js": {
+      "chromium": {
+        "total": 13,
+        "passed": 13
+      },
+      "mobile-chrome": {
+        "total": 13,
+        "passed": 13
+      }
+    },
+    "main-casino-capture.spec.js": {
+      "chromium": {
+        "total": 1,
+        "passed": 1
+      },
+      "mobile-chrome": {
+        "total": 1,
+        "passed": 1
+      }
+    },
+    "main-casino-geometry.spec.js": {
+      "chromium": {
+        "total": 4,
+        "passed": 4
+      },
+      "mobile-chrome": {
+        "total": 4,
+        "passed": 4
+      }
+    },
+    "main-casino-lifecycle.spec.js": {
+      "chromium": {
+        "total": 6,
+        "passed": 6
+      },
+      "mobile-chrome": {
+        "total": 6,
+        "passed": 6
+      }
+    },
+    "main-casino-transitions.spec.js": {
+      "chromium": {
+        "total": 11,
+        "passed": 11
+      },
+      "mobile-chrome": {
+        "total": 11,
+        "passed": 11
+      }
+    },
+    "management-guest-capture.spec.js": {
+      "chromium": {
+        "total": 2,
+        "passed": 2
+      },
+      "mobile-chrome": {
+        "total": 2,
+        "passed": 2
+      }
+    },
+    "management-guest-integration.spec.js": {
+      "chromium": {
+        "total": 3,
+        "passed": 3
+      },
+      "mobile-chrome": {
+        "total": 3,
+        "passed": 3
+      }
+    },
+    "owner-sprite.spec.js": {
+      "chromium": {
+        "total": 9,
+        "passed": 9
+      },
+      "mobile-chrome": {
+        "total": 9,
+        "passed": 9
+      }
+    },
+    "reception-queue-capture.spec.js": {
+      "chromium": {
+        "total": 1,
+        "passed": 1
+      },
+      "mobile-chrome": {
+        "total": 1,
+        "passed": 1
+      }
+    },
+    "reception-queue.spec.js": {
+      "chromium": {
+        "total": 16,
+        "passed": 16
+      },
+      "mobile-chrome": {
+        "total": 16,
+        "passed": 16
+      }
+    },
+    "receptionist-sprite.spec.js": {
+      "chromium": {
+        "total": 6,
+        "passed": 6
+      },
+      "mobile-chrome": {
+        "total": 6,
+        "passed": 6
+      }
+    },
+    "resort-lobby.spec.js": {
+      "chromium": {
+        "total": 11,
+        "passed": 11
+      },
+      "mobile-chrome": {
+        "total": 11,
+        "passed": 11
+      }
+    },
+    "world.spec.js": {
+      "chromium": {
+        "total": 29,
+        "passed": 29
+      },
+      "mobile-chrome": {
+        "total": 29,
+        "passed": 29
+      }
+    }
+  },
+  "trafficStress": {
+    "total": 40,
+    "passed": 40,
+    "cases": [
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of low management activity at configured cap 6",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 808,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of moderate management activity at configured cap 6",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 1174,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of high management activity at configured cap 6",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 1977,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of partial management activity at configured cap 6",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 1323,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of unavailable management activity at configured cap 6",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 1410,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of transition management activity at configured cap 6",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 1345,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of busy-cap management activity at configured cap 6",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 11831,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of low management activity at configured cap 8",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 800,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of moderate management activity at configured cap 8",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 1116,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of high management activity at configured cap 8",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 1548,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of partial management activity at configured cap 8",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 1729,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of unavailable management activity at configured cap 8",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 1568,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of transition management activity at configured cap 8",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 1621,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of busy-cap management activity at configured cap 8",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 16690,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of low management activity at configured cap 6",
+        "project": "mobile-chrome",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 783,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of moderate management activity at configured cap 6",
+        "project": "mobile-chrome",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 1095,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of high management activity at configured cap 6",
+        "project": "mobile-chrome",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 1829,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of partial management activity at configured cap 6",
+        "project": "mobile-chrome",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 1598,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of unavailable management activity at configured cap 6",
+        "project": "mobile-chrome",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 1342,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of transition management activity at configured cap 6",
+        "project": "mobile-chrome",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 1435,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of busy-cap management activity at configured cap 6",
+        "project": "mobile-chrome",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 11677,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of low management activity at configured cap 8",
+        "project": "mobile-chrome",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 803,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of moderate management activity at configured cap 8",
+        "project": "mobile-chrome",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 1102,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of high management activity at configured cap 8",
+        "project": "mobile-chrome",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 1534,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of partial management activity at configured cap 8",
+        "project": "mobile-chrome",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 1688,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of unavailable management activity at configured cap 8",
+        "project": "mobile-chrome",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 1640,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of transition management activity at configured cap 8",
+        "project": "mobile-chrome",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 1546,
+        "errors": []
+      },
+      {
+        "file": "guest-activity-stress.spec.js",
+        "title": "600 active seconds of busy-cap management activity at configured cap 8",
+        "project": "mobile-chrome",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 16464,
+        "errors": []
+      },
+      {
+        "file": "guest-traffic.spec.js",
+        "title": "600 active seconds at cap 6, seed 1: bounded traffic, collision safety and complete cleanup",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 10181,
+        "errors": []
+      },
+      {
+        "file": "guest-traffic.spec.js",
+        "title": "600 active seconds at cap 6, seed 19: bounded traffic, collision safety and complete cleanup",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 10305,
+        "errors": []
+      },
+      {
+        "file": "guest-traffic.spec.js",
+        "title": "600 active seconds at cap 6, seed 42: bounded traffic, collision safety and complete cleanup",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 10275,
+        "errors": []
+      },
+      {
+        "file": "guest-traffic.spec.js",
+        "title": "600 active seconds at cap 8, seed 1: bounded traffic, collision safety and complete cleanup",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 12780,
+        "errors": []
+      },
+      {
+        "file": "guest-traffic.spec.js",
+        "title": "600 active seconds at cap 8, seed 19: bounded traffic, collision safety and complete cleanup",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 12805,
+        "errors": []
+      },
+      {
+        "file": "guest-traffic.spec.js",
+        "title": "600 active seconds at cap 8, seed 42: bounded traffic, collision safety and complete cleanup",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 12899,
+        "errors": []
+      },
+      {
+        "file": "guest-traffic.spec.js",
+        "title": "600 active seconds at cap 6, seed 1: bounded traffic, collision safety and complete cleanup",
+        "project": "mobile-chrome",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 9934,
+        "errors": []
+      },
+      {
+        "file": "guest-traffic.spec.js",
+        "title": "600 active seconds at cap 6, seed 19: bounded traffic, collision safety and complete cleanup",
+        "project": "mobile-chrome",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 10130,
+        "errors": []
+      },
+      {
+        "file": "guest-traffic.spec.js",
+        "title": "600 active seconds at cap 6, seed 42: bounded traffic, collision safety and complete cleanup",
+        "project": "mobile-chrome",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 10182,
+        "errors": []
+      },
+      {
+        "file": "guest-traffic.spec.js",
+        "title": "600 active seconds at cap 8, seed 1: bounded traffic, collision safety and complete cleanup",
+        "project": "mobile-chrome",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 12587,
+        "errors": []
+      },
+      {
+        "file": "guest-traffic.spec.js",
+        "title": "600 active seconds at cap 8, seed 19: bounded traffic, collision safety and complete cleanup",
+        "project": "mobile-chrome",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 12268,
+        "errors": []
+      },
+      {
+        "file": "guest-traffic.spec.js",
+        "title": "600 active seconds at cap 8, seed 42: bounded traffic, collision safety and complete cleanup",
+        "project": "mobile-chrome",
+        "status": "expected",
+        "attempts": 1,
+        "durationMs": 12707,
+        "errors": []
+      }
+    ]
+  },
+  "phase6aCases": [
+    {
+      "file": "main-casino-capture.spec.js",
+      "title": "actual-input floor tour records both connections, side approaches and foreground ordering",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 16522,
+      "errors": []
+    },
+    {
+      "file": "main-casino-capture.spec.js",
+      "title": "actual-input floor tour records both connections, side approaches and foreground ordering",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 18697,
+      "errors": []
+    },
+    {
+      "file": "main-casino-geometry.spec.js",
+      "title": "Main floor preserves the exact supplied artwork",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 5,
+      "errors": []
+    },
+    {
+      "file": "main-casino-geometry.spec.js",
+      "title": "all Main floor guides, spawns and metadata anchors are clear with unchanged owner dimensions",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 148,
+      "errors": []
+    },
+    {
+      "file": "main-casino-geometry.spec.js",
+      "title": "all portal entries and future anchors share the south spawn connected component",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 173,
+      "errors": []
+    },
+    {
+      "file": "main-casino-geometry.spec.js",
+      "title": "route graph is bidirectional, preserves existing room IDs and validates every arrival",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 132,
+      "errors": []
+    },
+    {
+      "file": "main-casino-geometry.spec.js",
+      "title": "Main floor preserves the exact supplied artwork",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 4,
+      "errors": []
+    },
+    {
+      "file": "main-casino-geometry.spec.js",
+      "title": "all Main floor guides, spawns and metadata anchors are clear with unchanged owner dimensions",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 130,
+      "errors": []
+    },
+    {
+      "file": "main-casino-geometry.spec.js",
+      "title": "all portal entries and future anchors share the south spawn connected component",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 166,
+      "errors": []
+    },
+    {
+      "file": "main-casino-geometry.spec.js",
+      "title": "route graph is bidirectional, preserves existing room IDs and validates every arrival",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 127,
+      "errors": []
+    },
+    {
+      "file": "main-casino-lifecycle.spec.js",
+      "title": "repeated room loops keep one owner, bounded resources and the same sleeping lobby guests",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 11363,
+      "errors": []
+    },
+    {
+      "file": "main-casino-lifecycle.spec.js",
+      "title": "Main floor direction animations, feet anchoring and 190-speed movement use the shared owner",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 1777,
+      "errors": []
+    },
+    {
+      "file": "main-casino-lifecycle.spec.js",
+      "title": "actual pressure against a slot stool stops outside the footprint with no invalid contact",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 4185,
+      "errors": []
+    },
+    {
+      "file": "main-casino-lifecycle.spec.js",
+      "title": "management from Main floor uses the existing full-page UI and returns to the lobby checkpoint",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 1441,
+      "errors": []
+    },
+    {
+      "file": "main-casino-lifecycle.spec.js",
+      "title": "diagonal pressure at a column and a rounded table corner stays clear and permits retreat",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 6897,
+      "errors": []
+    },
+    {
+      "file": "main-casino-lifecycle.spec.js",
+      "title": "foreground silhouettes cover the owner behind furniture and release in front",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 21453,
+      "errors": []
+    },
+    {
+      "file": "main-casino-lifecycle.spec.js",
+      "title": "repeated room loops keep one owner, bounded resources and the same sleeping lobby guests",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 11409,
+      "errors": []
+    },
+    {
+      "file": "main-casino-lifecycle.spec.js",
+      "title": "Main floor direction animations, feet anchoring and 190-speed movement use the shared owner",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 1410,
+      "errors": []
+    },
+    {
+      "file": "main-casino-lifecycle.spec.js",
+      "title": "actual pressure against a slot stool stops outside the footprint with no invalid contact",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 4186,
+      "errors": []
+    },
+    {
+      "file": "main-casino-lifecycle.spec.js",
+      "title": "management from Main floor uses the existing full-page UI and returns to the lobby checkpoint",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 1433,
+      "errors": []
+    },
+    {
+      "file": "main-casino-lifecycle.spec.js",
+      "title": "diagonal pressure at a column and a rounded table corner stays clear and permits retreat",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 6864,
+      "errors": []
+    },
+    {
+      "file": "main-casino-lifecycle.spec.js",
+      "title": "foreground silhouettes cover the owner behind furniture and release in front",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 21447,
+      "errors": []
+    },
+    {
+      "file": "main-casino-transitions.spec.js",
+      "title": "both doors work in both directions, with safe spawns and the exact lobby checkpoint",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 5680,
+      "errors": []
+    },
+    {
+      "file": "main-casino-transitions.spec.js",
+      "title": "holding and repeating E cannot bounce through a doorway or skip the floor",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 1207,
+      "errors": []
+    },
+    {
+      "file": "main-casino-transitions.spec.js",
+      "title": "reload from MainCasinoFloor preserves version 2 lobby metadata and financial saves",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 1151,
+      "errors": []
+    },
+    {
+      "file": "main-casino-transitions.spec.js",
+      "title": "reload from CasinoRoom preserves version 2 lobby metadata and financial saves",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 3559,
+      "errors": []
+    },
+    {
+      "file": "main-casino-transitions.spec.js",
+      "title": "Main floor abort fails safely without a replacement image or owner",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 611,
+      "errors": []
+    },
+    {
+      "file": "main-casino-transitions.spec.js",
+      "title": "Main floor wrong-size fails safely without a replacement image or owner",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 632,
+      "errors": []
+    },
+    {
+      "file": "main-casino-transitions.spec.js",
+      "title": "Main floor decode fails safely without a replacement image or owner",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 619,
+      "errors": []
+    },
+    {
+      "file": "main-casino-transitions.spec.js",
+      "title": "all side approaches use real input and keep the circular footprint clear",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 9537,
+      "errors": []
+    },
+    {
+      "file": "main-casino-transitions.spec.js",
+      "title": "pointer doors and Escape return through each adjacent room",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 3581,
+      "errors": []
+    },
+    {
+      "file": "main-casino-transitions.spec.js",
+      "title": "delayed Main artwork keeps arrival input locked until owner creation",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 644,
+      "errors": []
+    },
+    {
+      "file": "main-casino-transitions.spec.js",
+      "title": "a stale save detected during Main loading prevents owner creation and preserves the newer payload",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 770,
+      "errors": []
+    },
+    {
+      "file": "main-casino-transitions.spec.js",
+      "title": "both doors work in both directions, with safe spawns and the exact lobby checkpoint",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 5701,
+      "errors": []
+    },
+    {
+      "file": "main-casino-transitions.spec.js",
+      "title": "holding and repeating E cannot bounce through a doorway or skip the floor",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 1220,
+      "errors": []
+    },
+    {
+      "file": "main-casino-transitions.spec.js",
+      "title": "reload from MainCasinoFloor preserves version 2 lobby metadata and financial saves",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 1072,
+      "errors": []
+    },
+    {
+      "file": "main-casino-transitions.spec.js",
+      "title": "reload from CasinoRoom preserves version 2 lobby metadata and financial saves",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 3508,
+      "errors": []
+    },
+    {
+      "file": "main-casino-transitions.spec.js",
+      "title": "Main floor abort fails safely without a replacement image or owner",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 626,
+      "errors": []
+    },
+    {
+      "file": "main-casino-transitions.spec.js",
+      "title": "Main floor wrong-size fails safely without a replacement image or owner",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 635,
+      "errors": []
+    },
+    {
+      "file": "main-casino-transitions.spec.js",
+      "title": "Main floor decode fails safely without a replacement image or owner",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 614,
+      "errors": []
+    },
+    {
+      "file": "main-casino-transitions.spec.js",
+      "title": "all side approaches use real input and keep the circular footprint clear",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 9691,
+      "errors": []
+    },
+    {
+      "file": "main-casino-transitions.spec.js",
+      "title": "pointer doors and Escape return through each adjacent room",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 3627,
+      "errors": []
+    },
+    {
+      "file": "main-casino-transitions.spec.js",
+      "title": "delayed Main artwork keeps arrival input locked until owner creation",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 681,
+      "errors": []
+    },
+    {
+      "file": "main-casino-transitions.spec.js",
+      "title": "a stale save detected during Main loading prevents owner creation and preserves the newer payload",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 781,
+      "errors": []
+    }
+  ],
+  "managementUiCases": [
+    {
+      "file": "main-casino-lifecycle.spec.js",
+      "title": "management from Main floor uses the existing full-page UI and returns to the lobby checkpoint",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 1441,
+      "errors": []
+    },
+    {
+      "file": "main-casino-lifecycle.spec.js",
+      "title": "management from Main floor uses the existing full-page UI and returns to the lobby checkpoint",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 1433,
+      "errors": []
+    },
+    {
+      "file": "management-guest-integration.spec.js",
+      "title": "retained lobby reflects an actual Rooms UI purchase, retains its live guest and makes zero hotel or financial writes",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 64839,
+      "errors": []
+    },
+    {
+      "file": "management-guest-integration.spec.js",
+      "title": "actual staff Rest UI updates retained reception while active service keeps six seconds and the next queued guest gets twelve",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 17918,
+      "errors": []
+    },
+    {
+      "file": "management-guest-integration.spec.js",
+      "title": "full-page management return reads an actual Eli assignment as thin coverage and starts a fresh transient population",
+      "project": "chromium",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 3640,
+      "errors": []
+    },
+    {
+      "file": "management-guest-integration.spec.js",
+      "title": "retained lobby reflects an actual Rooms UI purchase, retains its live guest and makes zero hotel or financial writes",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 64811,
+      "errors": []
+    },
+    {
+      "file": "management-guest-integration.spec.js",
+      "title": "actual staff Rest UI updates retained reception while active service keeps six seconds and the next queued guest gets twelve",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 17931,
+      "errors": []
+    },
+    {
+      "file": "management-guest-integration.spec.js",
+      "title": "full-page management return reads an actual Eli assignment as thin coverage and starts a fresh transient population",
+      "project": "mobile-chrome",
+      "status": "expected",
+      "attempts": 1,
+      "durationMs": 3644,
+      "errors": []
+    }
+  ],
+  "hotelSelectorAudit": {
+    "cases": 1795,
+    "capacities": 48,
+    "writes": 0,
+    "parity": "exact"
+  },
+  "hotelFinancialAudit": {
+    "cases": 360,
+    "writes": 0,
+    "parity": "exact"
+  },
+  "sourceIntegrity": {
+    "startingFiles": 323,
+    "byteIdentical": 305,
+    "allowedChangedFiles": [
+      "tests/guest-dialogue.spec.js",
+      "tests/guest-traffic.spec.js",
+      "tests/management-guest-integration.spec.js",
+      "README.md",
+      "tests/blackjack-bridge.spec.js",
+      "tests/dealer-npc.spec.js",
+      "tests/guest-journey.spec.js",
+      "tests/helpers/guest-world.js",
+      "tests/interactions.spec.js",
+      "tests/lounge-visual.spec.js",
+      "tests/owner-sprite.spec.js",
+      "tests/reception-queue.spec.js",
+      "tests/receptionist-sprite.spec.js",
+      "tests/resort-lobby.spec.js",
+      "tests/world.spec.js",
+      "world/dialogue.js",
+      "world/interactables.js",
+      "world/main.js"
+    ],
+    "unexpectedChanges": [],
+    "protectedCoreFiles": 113,
+    "changedProtectedFiles": [],
+    "finalRunFrozenFiles": 241,
+    "changedDuringFinalRun": []
+  },
+  "asset": {
+    "path": "world/assets/casino/main-casino-floor.png",
+    "bytes": 3362962,
+    "sha256": "143498d10180471a83e1a7eef4bbf89dc40fe7bc45f3f2e7011932fc85e6ca0b",
+    "dimensions": [
+      1536,
+      1024
+    ]
+  },
+  "evidence": {
+    "screenshots": [
+      "docs/screenshots/main-casino-cabinet-2-behind.png",
+      "docs/screenshots/main-casino-cabinet-2-front.png",
+      "docs/screenshots/main-casino-coin-sculpture-behind.png",
+      "docs/screenshots/main-casino-coin-sculpture-front.png",
+      "docs/screenshots/main-casino-coin.png",
+      "docs/screenshots/main-casino-debug.png",
+      "docs/screenshots/main-casino-lobby-stairs.png",
+      "docs/screenshots/main-casino-lounge-arrival.png",
+      "docs/screenshots/main-casino-mobile-coin.png",
+      "docs/screenshots/main-casino-mobile-debug.png",
+      "docs/screenshots/main-casino-mobile-roulette.png",
+      "docs/screenshots/main-casino-mobile-slots.png",
+      "docs/screenshots/main-casino-north-arrival.png",
+      "docs/screenshots/main-casino-roulette-east-lamp-behind.png",
+      "docs/screenshots/main-casino-roulette-east-lamp-front.png",
+      "docs/screenshots/main-casino-roulette-rail-behind.png",
+      "docs/screenshots/main-casino-roulette-rail-front.png",
+      "docs/screenshots/main-casino-roulette.png",
+      "docs/screenshots/main-casino-slots.png",
+      "docs/screenshots/main-casino-south-arrival.png",
+      "docs/screenshots/main-casino-south-exit.png"
+    ],
+    "recordings": [
+      "docs/recordings/main-casino-floor.webm"
+    ]
+  },
+  "scope": {
+    "worldVersion": 2,
+    "ownerRadius": 14,
+    "ownerSpeed": 190,
+    "newGames": false,
+    "casinoNpcTraffic": false,
+    "hotelEngineChanged": false,
+    "walletChanged": false
+  }
+}

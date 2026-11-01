@@ -1,0 +1,2882 @@
+[
+  {
+    "level": 1,
+    "population": 0,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "65259aad7c2a0120346443031c6a07f391a20d2d017d2e3e22dec9ca68362119"
+  },
+  {
+    "level": 1,
+    "population": 0,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "502a8f12e8feb5ecfea5b0153f7728180787165fcc9b466a0a128d9b21b067f9"
+  },
+  {
+    "level": 1,
+    "population": 0,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "502a8f12e8feb5ecfea5b0153f7728180787165fcc9b466a0a128d9b21b067f9"
+  },
+  {
+    "level": 1,
+    "population": 0,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "098913a8f80d7381ffe54eea836ea536e425faaabdd5c0b32051f6aff9983409"
+  },
+  {
+    "level": 1,
+    "population": 0,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "65259aad7c2a0120346443031c6a07f391a20d2d017d2e3e22dec9ca68362119"
+  },
+  {
+    "level": 1,
+    "population": 0,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "502a8f12e8feb5ecfea5b0153f7728180787165fcc9b466a0a128d9b21b067f9"
+  },
+  {
+    "level": 1,
+    "population": 0,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "502a8f12e8feb5ecfea5b0153f7728180787165fcc9b466a0a128d9b21b067f9"
+  },
+  {
+    "level": 1,
+    "population": 0,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "098913a8f80d7381ffe54eea836ea536e425faaabdd5c0b32051f6aff9983409"
+  },
+  {
+    "level": 1,
+    "population": 0,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "1a2e68abcbef010fb8dd145d818a3705e79ca6d348db1abebf85b4e6b041a26a"
+  },
+  {
+    "level": 1,
+    "population": 0,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "72939e801fdc467b48ba6c7c836995cd11e208f4749ac25abe43acd3ae2639e6"
+  },
+  {
+    "level": 1,
+    "population": 0,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "64b1752ed9b769591c3a4b43b01c184be0d4fb1384e460820c2ea2480dc13db5"
+  },
+  {
+    "level": 1,
+    "population": 0,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "8320f74b897ff7916bb47be00fb29a64a6a3f8a7e6bcf0e88409d4868d8aef09"
+  },
+  {
+    "level": 1,
+    "population": 4,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "65259aad7c2a0120346443031c6a07f391a20d2d017d2e3e22dec9ca68362119"
+  },
+  {
+    "level": 1,
+    "population": 4,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "502a8f12e8feb5ecfea5b0153f7728180787165fcc9b466a0a128d9b21b067f9"
+  },
+  {
+    "level": 1,
+    "population": 4,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "502a8f12e8feb5ecfea5b0153f7728180787165fcc9b466a0a128d9b21b067f9"
+  },
+  {
+    "level": 1,
+    "population": 4,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "098913a8f80d7381ffe54eea836ea536e425faaabdd5c0b32051f6aff9983409"
+  },
+  {
+    "level": 1,
+    "population": 4,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "65259aad7c2a0120346443031c6a07f391a20d2d017d2e3e22dec9ca68362119"
+  },
+  {
+    "level": 1,
+    "population": 4,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "502a8f12e8feb5ecfea5b0153f7728180787165fcc9b466a0a128d9b21b067f9"
+  },
+  {
+    "level": 1,
+    "population": 4,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "502a8f12e8feb5ecfea5b0153f7728180787165fcc9b466a0a128d9b21b067f9"
+  },
+  {
+    "level": 1,
+    "population": 4,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "098913a8f80d7381ffe54eea836ea536e425faaabdd5c0b32051f6aff9983409"
+  },
+  {
+    "level": 1,
+    "population": 4,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "1a2e68abcbef010fb8dd145d818a3705e79ca6d348db1abebf85b4e6b041a26a"
+  },
+  {
+    "level": 1,
+    "population": 4,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "72939e801fdc467b48ba6c7c836995cd11e208f4749ac25abe43acd3ae2639e6"
+  },
+  {
+    "level": 1,
+    "population": 4,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "64b1752ed9b769591c3a4b43b01c184be0d4fb1384e460820c2ea2480dc13db5"
+  },
+  {
+    "level": 1,
+    "population": 4,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "8320f74b897ff7916bb47be00fb29a64a6a3f8a7e6bcf0e88409d4868d8aef09"
+  },
+  {
+    "level": 1,
+    "population": 10,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "65259aad7c2a0120346443031c6a07f391a20d2d017d2e3e22dec9ca68362119"
+  },
+  {
+    "level": 1,
+    "population": 10,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "502a8f12e8feb5ecfea5b0153f7728180787165fcc9b466a0a128d9b21b067f9"
+  },
+  {
+    "level": 1,
+    "population": 10,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "502a8f12e8feb5ecfea5b0153f7728180787165fcc9b466a0a128d9b21b067f9"
+  },
+  {
+    "level": 1,
+    "population": 10,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "098913a8f80d7381ffe54eea836ea536e425faaabdd5c0b32051f6aff9983409"
+  },
+  {
+    "level": 1,
+    "population": 10,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "65259aad7c2a0120346443031c6a07f391a20d2d017d2e3e22dec9ca68362119"
+  },
+  {
+    "level": 1,
+    "population": 10,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "502a8f12e8feb5ecfea5b0153f7728180787165fcc9b466a0a128d9b21b067f9"
+  },
+  {
+    "level": 1,
+    "population": 10,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "502a8f12e8feb5ecfea5b0153f7728180787165fcc9b466a0a128d9b21b067f9"
+  },
+  {
+    "level": 1,
+    "population": 10,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "098913a8f80d7381ffe54eea836ea536e425faaabdd5c0b32051f6aff9983409"
+  },
+  {
+    "level": 1,
+    "population": 10,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "1a2e68abcbef010fb8dd145d818a3705e79ca6d348db1abebf85b4e6b041a26a"
+  },
+  {
+    "level": 1,
+    "population": 10,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "72939e801fdc467b48ba6c7c836995cd11e208f4749ac25abe43acd3ae2639e6"
+  },
+  {
+    "level": 1,
+    "population": 10,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "64b1752ed9b769591c3a4b43b01c184be0d4fb1384e460820c2ea2480dc13db5"
+  },
+  {
+    "level": 1,
+    "population": 10,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "8320f74b897ff7916bb47be00fb29a64a6a3f8a7e6bcf0e88409d4868d8aef09"
+  },
+  {
+    "level": 1,
+    "population": 18,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "001392b09ddc62ac82ece40a8c7a66084abe71699c22ceedc9ab66928058f387"
+  },
+  {
+    "level": 1,
+    "population": 18,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "debc50e711e2a25531cda5d1264b7702de1efd488792b0077fd1048c933e5a80"
+  },
+  {
+    "level": 1,
+    "population": 18,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "debc50e711e2a25531cda5d1264b7702de1efd488792b0077fd1048c933e5a80"
+  },
+  {
+    "level": 1,
+    "population": 18,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "4313b04f30c0e52cb0c2a60b9b7fcc20b5b42e93e482f32355de8f757689e8ae"
+  },
+  {
+    "level": 1,
+    "population": 18,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "001392b09ddc62ac82ece40a8c7a66084abe71699c22ceedc9ab66928058f387"
+  },
+  {
+    "level": 1,
+    "population": 18,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "debc50e711e2a25531cda5d1264b7702de1efd488792b0077fd1048c933e5a80"
+  },
+  {
+    "level": 1,
+    "population": 18,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "debc50e711e2a25531cda5d1264b7702de1efd488792b0077fd1048c933e5a80"
+  },
+  {
+    "level": 1,
+    "population": 18,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "4313b04f30c0e52cb0c2a60b9b7fcc20b5b42e93e482f32355de8f757689e8ae"
+  },
+  {
+    "level": 1,
+    "population": 18,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "25006cf4138fe124e316015740c37d3fb21a48608f0a88995eb12d64ffa83618"
+  },
+  {
+    "level": 1,
+    "population": 18,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "0aa25e8785e011410db3c603a64160ad309a31713011b89ffc51588d10ee70b9"
+  },
+  {
+    "level": 1,
+    "population": 18,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "554863f210a14b7f8d72d17aef927044179d577fa61fbb4ac4f8c3c3d05469fe"
+  },
+  {
+    "level": 1,
+    "population": 18,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "9d75c1f367d82573b3612e50ec608aa457de69e9ce0f3222437497ff3bac2086"
+  },
+  {
+    "level": 1,
+    "population": 48,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "f9980cbe48ce619339b38ae4dd28a339e2a7ef2c357e9b820e5f0eee9023ac54"
+  },
+  {
+    "level": 1,
+    "population": 48,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "391a4c78c5f59dc13d6ab670e168d3af213b5be018ffe275b034892c04cccffe"
+  },
+  {
+    "level": 1,
+    "population": 48,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "391a4c78c5f59dc13d6ab670e168d3af213b5be018ffe275b034892c04cccffe"
+  },
+  {
+    "level": 1,
+    "population": 48,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "b5db41034cd8b667db12f551789bc4624b4e23fcf9f5102bc665234985145a4d"
+  },
+  {
+    "level": 1,
+    "population": 48,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "f9980cbe48ce619339b38ae4dd28a339e2a7ef2c357e9b820e5f0eee9023ac54"
+  },
+  {
+    "level": 1,
+    "population": 48,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "391a4c78c5f59dc13d6ab670e168d3af213b5be018ffe275b034892c04cccffe"
+  },
+  {
+    "level": 1,
+    "population": 48,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "391a4c78c5f59dc13d6ab670e168d3af213b5be018ffe275b034892c04cccffe"
+  },
+  {
+    "level": 1,
+    "population": 48,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "b5db41034cd8b667db12f551789bc4624b4e23fcf9f5102bc665234985145a4d"
+  },
+  {
+    "level": 1,
+    "population": 48,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "f181fef36f52bf533228070c20b9c7cb608a21944dfa0478d877996fa8dd878c"
+  },
+  {
+    "level": 1,
+    "population": 48,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "64420cf8df7e6e5f0afb319f75d900e88085748c1e250563028de6cc9bbaf091"
+  },
+  {
+    "level": 1,
+    "population": 48,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "812793bb10cb505cacca314affa970e80cf9c890f6b237a7c9e2e29e18c720ac"
+  },
+  {
+    "level": 1,
+    "population": 48,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "545803cdd609fa5c188fc925678c5b5181bddd132107815b045705a0add4287f"
+  },
+  {
+    "level": 1,
+    "population": 200,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "48d746baf019baa3c0abacdad99e023295f2b3e9cc70708ea393f4cc56dd28e3"
+  },
+  {
+    "level": 1,
+    "population": 200,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "b7a4231a628482eddc0ed52e22a475781f5bd76f92b908551213886278e59bed"
+  },
+  {
+    "level": 1,
+    "population": 200,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "b7a4231a628482eddc0ed52e22a475781f5bd76f92b908551213886278e59bed"
+  },
+  {
+    "level": 1,
+    "population": 200,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "e0869528c59c3da13304853055d946d1fb8b711e2e58c3a4a09572e060273ea7"
+  },
+  {
+    "level": 1,
+    "population": 200,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "48d746baf019baa3c0abacdad99e023295f2b3e9cc70708ea393f4cc56dd28e3"
+  },
+  {
+    "level": 1,
+    "population": 200,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "b7a4231a628482eddc0ed52e22a475781f5bd76f92b908551213886278e59bed"
+  },
+  {
+    "level": 1,
+    "population": 200,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "b7a4231a628482eddc0ed52e22a475781f5bd76f92b908551213886278e59bed"
+  },
+  {
+    "level": 1,
+    "population": 200,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "e0869528c59c3da13304853055d946d1fb8b711e2e58c3a4a09572e060273ea7"
+  },
+  {
+    "level": 1,
+    "population": 200,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "543f484a8cc5cd0283c47d56f24d8fe9b4514979a66becc4ff1fd48233bcd286"
+  },
+  {
+    "level": 1,
+    "population": 200,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "d0fe5d6105f8474e719e5a8cb762a519d1606e0f8c113a2e2a72737213a5394e"
+  },
+  {
+    "level": 1,
+    "population": 200,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "375072232f9fb6f28e398847e6049e32700e81ca123c85035a1a3443f3abe1ee"
+  },
+  {
+    "level": 1,
+    "population": 200,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "74ce57a7384a9aecae667c21f70e6ce9fee8d0f9367aced24aec40ed83e3f964"
+  },
+  {
+    "level": 2,
+    "population": 0,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "b75385f7c92e7275e4e537039508564242336a2b452ea2e232e3ce352bc5dbc8"
+  },
+  {
+    "level": 2,
+    "population": 0,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "83bcbc0ddf8e7b417aaf8b904866730fc43e2eeb706f47a2871e624a39c4b5ae"
+  },
+  {
+    "level": 2,
+    "population": 0,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "07fcafa3a8f027b24390d118607eac595229464027781f325f43ea5d41944787"
+  },
+  {
+    "level": 2,
+    "population": 0,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "9e5ee0fe8c203095cabeeb7be68eebd6cd5206de096f4ea25a4aeb1c84c3b9c7"
+  },
+  {
+    "level": 2,
+    "population": 0,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "b75385f7c92e7275e4e537039508564242336a2b452ea2e232e3ce352bc5dbc8"
+  },
+  {
+    "level": 2,
+    "population": 0,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "83bcbc0ddf8e7b417aaf8b904866730fc43e2eeb706f47a2871e624a39c4b5ae"
+  },
+  {
+    "level": 2,
+    "population": 0,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "07fcafa3a8f027b24390d118607eac595229464027781f325f43ea5d41944787"
+  },
+  {
+    "level": 2,
+    "population": 0,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "9e5ee0fe8c203095cabeeb7be68eebd6cd5206de096f4ea25a4aeb1c84c3b9c7"
+  },
+  {
+    "level": 2,
+    "population": 0,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "82ca2b0742da8e04ff882fdabc82f402959130f208c4cbdd7a247ee7a1b66e8a"
+  },
+  {
+    "level": 2,
+    "population": 0,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "62fd023b6ca18df1536f478022b87f2a178624bc3948ab778314033b679bad08"
+  },
+  {
+    "level": 2,
+    "population": 0,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "85261a8ce0734e892e68320e2b227f5ecb02839e09908247be2da15e967cdc2f"
+  },
+  {
+    "level": 2,
+    "population": 0,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "960675527db7e907ee1418fa6c818180349aca47478be50e1c521b83724eeb20"
+  },
+  {
+    "level": 2,
+    "population": 4,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "b75385f7c92e7275e4e537039508564242336a2b452ea2e232e3ce352bc5dbc8"
+  },
+  {
+    "level": 2,
+    "population": 4,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "83bcbc0ddf8e7b417aaf8b904866730fc43e2eeb706f47a2871e624a39c4b5ae"
+  },
+  {
+    "level": 2,
+    "population": 4,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "07fcafa3a8f027b24390d118607eac595229464027781f325f43ea5d41944787"
+  },
+  {
+    "level": 2,
+    "population": 4,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "9e5ee0fe8c203095cabeeb7be68eebd6cd5206de096f4ea25a4aeb1c84c3b9c7"
+  },
+  {
+    "level": 2,
+    "population": 4,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "b75385f7c92e7275e4e537039508564242336a2b452ea2e232e3ce352bc5dbc8"
+  },
+  {
+    "level": 2,
+    "population": 4,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "83bcbc0ddf8e7b417aaf8b904866730fc43e2eeb706f47a2871e624a39c4b5ae"
+  },
+  {
+    "level": 2,
+    "population": 4,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "07fcafa3a8f027b24390d118607eac595229464027781f325f43ea5d41944787"
+  },
+  {
+    "level": 2,
+    "population": 4,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "9e5ee0fe8c203095cabeeb7be68eebd6cd5206de096f4ea25a4aeb1c84c3b9c7"
+  },
+  {
+    "level": 2,
+    "population": 4,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "82ca2b0742da8e04ff882fdabc82f402959130f208c4cbdd7a247ee7a1b66e8a"
+  },
+  {
+    "level": 2,
+    "population": 4,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "62fd023b6ca18df1536f478022b87f2a178624bc3948ab778314033b679bad08"
+  },
+  {
+    "level": 2,
+    "population": 4,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "85261a8ce0734e892e68320e2b227f5ecb02839e09908247be2da15e967cdc2f"
+  },
+  {
+    "level": 2,
+    "population": 4,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "960675527db7e907ee1418fa6c818180349aca47478be50e1c521b83724eeb20"
+  },
+  {
+    "level": 2,
+    "population": 10,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "b75385f7c92e7275e4e537039508564242336a2b452ea2e232e3ce352bc5dbc8"
+  },
+  {
+    "level": 2,
+    "population": 10,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "83bcbc0ddf8e7b417aaf8b904866730fc43e2eeb706f47a2871e624a39c4b5ae"
+  },
+  {
+    "level": 2,
+    "population": 10,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "07fcafa3a8f027b24390d118607eac595229464027781f325f43ea5d41944787"
+  },
+  {
+    "level": 2,
+    "population": 10,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "9e5ee0fe8c203095cabeeb7be68eebd6cd5206de096f4ea25a4aeb1c84c3b9c7"
+  },
+  {
+    "level": 2,
+    "population": 10,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "b75385f7c92e7275e4e537039508564242336a2b452ea2e232e3ce352bc5dbc8"
+  },
+  {
+    "level": 2,
+    "population": 10,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "83bcbc0ddf8e7b417aaf8b904866730fc43e2eeb706f47a2871e624a39c4b5ae"
+  },
+  {
+    "level": 2,
+    "population": 10,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "07fcafa3a8f027b24390d118607eac595229464027781f325f43ea5d41944787"
+  },
+  {
+    "level": 2,
+    "population": 10,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "9e5ee0fe8c203095cabeeb7be68eebd6cd5206de096f4ea25a4aeb1c84c3b9c7"
+  },
+  {
+    "level": 2,
+    "population": 10,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "82ca2b0742da8e04ff882fdabc82f402959130f208c4cbdd7a247ee7a1b66e8a"
+  },
+  {
+    "level": 2,
+    "population": 10,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "62fd023b6ca18df1536f478022b87f2a178624bc3948ab778314033b679bad08"
+  },
+  {
+    "level": 2,
+    "population": 10,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "85261a8ce0734e892e68320e2b227f5ecb02839e09908247be2da15e967cdc2f"
+  },
+  {
+    "level": 2,
+    "population": 10,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "960675527db7e907ee1418fa6c818180349aca47478be50e1c521b83724eeb20"
+  },
+  {
+    "level": 2,
+    "population": 18,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "ebf470cdc900aa4d0b199c09c24b7a6214946920c96c2d1c2dd81716f2569c2b"
+  },
+  {
+    "level": 2,
+    "population": 18,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "29ea7d705dc7cb705574aebd5be230afa1e60ef4a5b8efe31c677ec1c9a1a1b3"
+  },
+  {
+    "level": 2,
+    "population": 18,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "9ed89008e793ae98dbd4ff617cbca15499644f68a7f0b1a5f88fb78699215766"
+  },
+  {
+    "level": 2,
+    "population": 18,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "e6a0b1f61bc97753189bfd95c4c7d13fa88f75df13571c7ed84ccabaa4305510"
+  },
+  {
+    "level": 2,
+    "population": 18,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "ebf470cdc900aa4d0b199c09c24b7a6214946920c96c2d1c2dd81716f2569c2b"
+  },
+  {
+    "level": 2,
+    "population": 18,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "29ea7d705dc7cb705574aebd5be230afa1e60ef4a5b8efe31c677ec1c9a1a1b3"
+  },
+  {
+    "level": 2,
+    "population": 18,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "9ed89008e793ae98dbd4ff617cbca15499644f68a7f0b1a5f88fb78699215766"
+  },
+  {
+    "level": 2,
+    "population": 18,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "e6a0b1f61bc97753189bfd95c4c7d13fa88f75df13571c7ed84ccabaa4305510"
+  },
+  {
+    "level": 2,
+    "population": 18,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "4f903229d6b8f09ecdda929d8e2ca612b5167bb71ad01d9869e6a9d6bd7b3d7c"
+  },
+  {
+    "level": 2,
+    "population": 18,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "8fb4f0952f896e04ed3416a0a6e8d06b47a1edf7b081d2a295ba63f93e71aee1"
+  },
+  {
+    "level": 2,
+    "population": 18,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "b70f88978e2a3c7bd6f74b77b2531cba3d05a3ba4a5ecf620b2e7ec2a0493cc0"
+  },
+  {
+    "level": 2,
+    "population": 18,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "79e8c5ce787449c522484139edde74a4fc6f132723e04b1212c7375ef058e609"
+  },
+  {
+    "level": 2,
+    "population": 48,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "3a8f60b3d4cce805df242d8b4410a87745dd07544720d60b7009a9e31c29dddd"
+  },
+  {
+    "level": 2,
+    "population": 48,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "df0852609164d18f2a8dd905966718bff6eab9f81515071f65bea64c3eb96417"
+  },
+  {
+    "level": 2,
+    "population": 48,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "2a7de7c1c0239d78a40b5d3db2aef5a207ab66f3365c0debb8cc5e13634a3c1f"
+  },
+  {
+    "level": 2,
+    "population": 48,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "4700abf1c79209749f678e185b34109601f5698a67589098de524b14fc2533a2"
+  },
+  {
+    "level": 2,
+    "population": 48,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "3a8f60b3d4cce805df242d8b4410a87745dd07544720d60b7009a9e31c29dddd"
+  },
+  {
+    "level": 2,
+    "population": 48,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "df0852609164d18f2a8dd905966718bff6eab9f81515071f65bea64c3eb96417"
+  },
+  {
+    "level": 2,
+    "population": 48,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "2a7de7c1c0239d78a40b5d3db2aef5a207ab66f3365c0debb8cc5e13634a3c1f"
+  },
+  {
+    "level": 2,
+    "population": 48,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "4700abf1c79209749f678e185b34109601f5698a67589098de524b14fc2533a2"
+  },
+  {
+    "level": 2,
+    "population": 48,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "7b85b680ab3c34f8291ff6d60c84c47678c8a47127e135f3f4c523acd4d80471"
+  },
+  {
+    "level": 2,
+    "population": 48,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "588ffa19e2fc147c841641ccbcdb2cc18b4e4a6df61a43f0b0849db58b522b1b"
+  },
+  {
+    "level": 2,
+    "population": 48,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "6d33a144e2ba4c24db966668ec91321aa05b53ed42e9f73b1dcdb3f42eb24db1"
+  },
+  {
+    "level": 2,
+    "population": 48,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "d80b6f6d319b0f6cdd97f0afe10c913f651923f04bcea24738f0e5f1c87dde53"
+  },
+  {
+    "level": 2,
+    "population": 200,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "273543cda4be075e9ecc176688162615cb80ff39bcf9f8ddd8e10c768cabc717"
+  },
+  {
+    "level": 2,
+    "population": 200,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "288ead6211536451fe7b2d1ae5dd997cb376945b5cf115d9a2ebaf98a7d91909"
+  },
+  {
+    "level": 2,
+    "population": 200,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "d507eaf217cd89c42bed4b6b21f94308251a8743633aec0470a9f2a533dee874"
+  },
+  {
+    "level": 2,
+    "population": 200,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "2385328f15f349298a9a4b42b487621d40bd05c193e51bab422fe14d997d0822"
+  },
+  {
+    "level": 2,
+    "population": 200,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "273543cda4be075e9ecc176688162615cb80ff39bcf9f8ddd8e10c768cabc717"
+  },
+  {
+    "level": 2,
+    "population": 200,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "288ead6211536451fe7b2d1ae5dd997cb376945b5cf115d9a2ebaf98a7d91909"
+  },
+  {
+    "level": 2,
+    "population": 200,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "d507eaf217cd89c42bed4b6b21f94308251a8743633aec0470a9f2a533dee874"
+  },
+  {
+    "level": 2,
+    "population": 200,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "2385328f15f349298a9a4b42b487621d40bd05c193e51bab422fe14d997d0822"
+  },
+  {
+    "level": 2,
+    "population": 200,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "84a230b2efef9c018d573af04ff96f288a5a0d6b811d40363b503dac0856eaa0"
+  },
+  {
+    "level": 2,
+    "population": 200,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "1b6a1c411d3bb4a9cb9d8b7ed3cb00971cefcbd350f8d742927190355be6994c"
+  },
+  {
+    "level": 2,
+    "population": 200,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "c1adbba20d704be41bae28270e844e9cff8727362ab3906164a95d55a52a0ee2"
+  },
+  {
+    "level": 2,
+    "population": 200,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "1a848a11dd0e28b8c5adf669947bd94166bb11c28f05888ecad6250b207a0a21"
+  },
+  {
+    "level": 3,
+    "population": 0,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "5d803b656e49f55617af9ad48a41431394141bbc809053a0832f618ddf882bcd"
+  },
+  {
+    "level": 3,
+    "population": 0,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "e95affea62f0ef28a8fa601172135dd627f364990dcfbd5d8765a826217842f5"
+  },
+  {
+    "level": 3,
+    "population": 0,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "d8faa023d88b53b218f05a445b3cd3cc261c905d08489b2ef96f7a7764af1f8b"
+  },
+  {
+    "level": 3,
+    "population": 0,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "5000f74ee7f2ba9fba7bc54f7930c193422492e82ac7ce33fdd51a01c0d29ead"
+  },
+  {
+    "level": 3,
+    "population": 0,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "5d803b656e49f55617af9ad48a41431394141bbc809053a0832f618ddf882bcd"
+  },
+  {
+    "level": 3,
+    "population": 0,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "e95affea62f0ef28a8fa601172135dd627f364990dcfbd5d8765a826217842f5"
+  },
+  {
+    "level": 3,
+    "population": 0,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "d8faa023d88b53b218f05a445b3cd3cc261c905d08489b2ef96f7a7764af1f8b"
+  },
+  {
+    "level": 3,
+    "population": 0,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "5000f74ee7f2ba9fba7bc54f7930c193422492e82ac7ce33fdd51a01c0d29ead"
+  },
+  {
+    "level": 3,
+    "population": 0,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "9dc796a439bba157d41d075b4e3fbf8bcc14d677be9ec58b9abdfe48ac1b903e"
+  },
+  {
+    "level": 3,
+    "population": 0,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "840bd90290a9df64913f695235826c481cd40af169c7ba9e4932a0882b5ef7c3"
+  },
+  {
+    "level": 3,
+    "population": 0,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "db54602bad470cdd7b1e1f8695e42bb3a5c364d35f60fe72110cfd81ef115f27"
+  },
+  {
+    "level": 3,
+    "population": 0,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "7641dc3dae2d34b4ee9cbf323f74a67d73fb746f462154f226c8246f60f34d64"
+  },
+  {
+    "level": 3,
+    "population": 4,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "5d803b656e49f55617af9ad48a41431394141bbc809053a0832f618ddf882bcd"
+  },
+  {
+    "level": 3,
+    "population": 4,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "e95affea62f0ef28a8fa601172135dd627f364990dcfbd5d8765a826217842f5"
+  },
+  {
+    "level": 3,
+    "population": 4,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "d8faa023d88b53b218f05a445b3cd3cc261c905d08489b2ef96f7a7764af1f8b"
+  },
+  {
+    "level": 3,
+    "population": 4,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "5000f74ee7f2ba9fba7bc54f7930c193422492e82ac7ce33fdd51a01c0d29ead"
+  },
+  {
+    "level": 3,
+    "population": 4,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "5d803b656e49f55617af9ad48a41431394141bbc809053a0832f618ddf882bcd"
+  },
+  {
+    "level": 3,
+    "population": 4,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "e95affea62f0ef28a8fa601172135dd627f364990dcfbd5d8765a826217842f5"
+  },
+  {
+    "level": 3,
+    "population": 4,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "d8faa023d88b53b218f05a445b3cd3cc261c905d08489b2ef96f7a7764af1f8b"
+  },
+  {
+    "level": 3,
+    "population": 4,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "5000f74ee7f2ba9fba7bc54f7930c193422492e82ac7ce33fdd51a01c0d29ead"
+  },
+  {
+    "level": 3,
+    "population": 4,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "9dc796a439bba157d41d075b4e3fbf8bcc14d677be9ec58b9abdfe48ac1b903e"
+  },
+  {
+    "level": 3,
+    "population": 4,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "840bd90290a9df64913f695235826c481cd40af169c7ba9e4932a0882b5ef7c3"
+  },
+  {
+    "level": 3,
+    "population": 4,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "db54602bad470cdd7b1e1f8695e42bb3a5c364d35f60fe72110cfd81ef115f27"
+  },
+  {
+    "level": 3,
+    "population": 4,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "7641dc3dae2d34b4ee9cbf323f74a67d73fb746f462154f226c8246f60f34d64"
+  },
+  {
+    "level": 3,
+    "population": 10,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "5d803b656e49f55617af9ad48a41431394141bbc809053a0832f618ddf882bcd"
+  },
+  {
+    "level": 3,
+    "population": 10,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "e95affea62f0ef28a8fa601172135dd627f364990dcfbd5d8765a826217842f5"
+  },
+  {
+    "level": 3,
+    "population": 10,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "d8faa023d88b53b218f05a445b3cd3cc261c905d08489b2ef96f7a7764af1f8b"
+  },
+  {
+    "level": 3,
+    "population": 10,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "5000f74ee7f2ba9fba7bc54f7930c193422492e82ac7ce33fdd51a01c0d29ead"
+  },
+  {
+    "level": 3,
+    "population": 10,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "5d803b656e49f55617af9ad48a41431394141bbc809053a0832f618ddf882bcd"
+  },
+  {
+    "level": 3,
+    "population": 10,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "e95affea62f0ef28a8fa601172135dd627f364990dcfbd5d8765a826217842f5"
+  },
+  {
+    "level": 3,
+    "population": 10,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "d8faa023d88b53b218f05a445b3cd3cc261c905d08489b2ef96f7a7764af1f8b"
+  },
+  {
+    "level": 3,
+    "population": 10,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "5000f74ee7f2ba9fba7bc54f7930c193422492e82ac7ce33fdd51a01c0d29ead"
+  },
+  {
+    "level": 3,
+    "population": 10,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "9dc796a439bba157d41d075b4e3fbf8bcc14d677be9ec58b9abdfe48ac1b903e"
+  },
+  {
+    "level": 3,
+    "population": 10,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "840bd90290a9df64913f695235826c481cd40af169c7ba9e4932a0882b5ef7c3"
+  },
+  {
+    "level": 3,
+    "population": 10,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "db54602bad470cdd7b1e1f8695e42bb3a5c364d35f60fe72110cfd81ef115f27"
+  },
+  {
+    "level": 3,
+    "population": 10,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "7641dc3dae2d34b4ee9cbf323f74a67d73fb746f462154f226c8246f60f34d64"
+  },
+  {
+    "level": 3,
+    "population": 18,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "5d803b656e49f55617af9ad48a41431394141bbc809053a0832f618ddf882bcd"
+  },
+  {
+    "level": 3,
+    "population": 18,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "e95affea62f0ef28a8fa601172135dd627f364990dcfbd5d8765a826217842f5"
+  },
+  {
+    "level": 3,
+    "population": 18,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "d8faa023d88b53b218f05a445b3cd3cc261c905d08489b2ef96f7a7764af1f8b"
+  },
+  {
+    "level": 3,
+    "population": 18,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "5000f74ee7f2ba9fba7bc54f7930c193422492e82ac7ce33fdd51a01c0d29ead"
+  },
+  {
+    "level": 3,
+    "population": 18,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "5d803b656e49f55617af9ad48a41431394141bbc809053a0832f618ddf882bcd"
+  },
+  {
+    "level": 3,
+    "population": 18,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "e95affea62f0ef28a8fa601172135dd627f364990dcfbd5d8765a826217842f5"
+  },
+  {
+    "level": 3,
+    "population": 18,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "d8faa023d88b53b218f05a445b3cd3cc261c905d08489b2ef96f7a7764af1f8b"
+  },
+  {
+    "level": 3,
+    "population": 18,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "5000f74ee7f2ba9fba7bc54f7930c193422492e82ac7ce33fdd51a01c0d29ead"
+  },
+  {
+    "level": 3,
+    "population": 18,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "9dc796a439bba157d41d075b4e3fbf8bcc14d677be9ec58b9abdfe48ac1b903e"
+  },
+  {
+    "level": 3,
+    "population": 18,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "840bd90290a9df64913f695235826c481cd40af169c7ba9e4932a0882b5ef7c3"
+  },
+  {
+    "level": 3,
+    "population": 18,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "db54602bad470cdd7b1e1f8695e42bb3a5c364d35f60fe72110cfd81ef115f27"
+  },
+  {
+    "level": 3,
+    "population": 18,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "7641dc3dae2d34b4ee9cbf323f74a67d73fb746f462154f226c8246f60f34d64"
+  },
+  {
+    "level": 3,
+    "population": 48,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "752e7f5b1a52056acf564436fcadb2d9ca6f96f1e09e0760271fdbe0f1c484ea"
+  },
+  {
+    "level": 3,
+    "population": 48,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "47178e403fb84775bc1decd209808b9e2b8a8502fe3e2fd12145e57ce647a595"
+  },
+  {
+    "level": 3,
+    "population": 48,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "e61d6392ff3481790535d76b0509d0f391e361dbecd71c9e08174845887dc189"
+  },
+  {
+    "level": 3,
+    "population": 48,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "2b06962976abc1de2523347054cc1e82ecb76de8cc9863fec58980d851c510ac"
+  },
+  {
+    "level": 3,
+    "population": 48,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "752e7f5b1a52056acf564436fcadb2d9ca6f96f1e09e0760271fdbe0f1c484ea"
+  },
+  {
+    "level": 3,
+    "population": 48,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "47178e403fb84775bc1decd209808b9e2b8a8502fe3e2fd12145e57ce647a595"
+  },
+  {
+    "level": 3,
+    "population": 48,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "e61d6392ff3481790535d76b0509d0f391e361dbecd71c9e08174845887dc189"
+  },
+  {
+    "level": 3,
+    "population": 48,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "2b06962976abc1de2523347054cc1e82ecb76de8cc9863fec58980d851c510ac"
+  },
+  {
+    "level": 3,
+    "population": 48,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "36153b85e3c950006bac9ad4e687a750f87ac6c98df9aa5298227b9d0c929d64"
+  },
+  {
+    "level": 3,
+    "population": 48,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "e2363ff5242decf8cc2534330e5113bccb49001d82ca5cb749f247ae7eb3a884"
+  },
+  {
+    "level": 3,
+    "population": 48,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "99b67ba925e7930d59cdcc3763dc66c9550658fd4c7357216078a59a9eea1848"
+  },
+  {
+    "level": 3,
+    "population": 48,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "579f568d62f4fecd9e2d0f247ad8f4ca210b214315e3b2e03c28771a773fabd9"
+  },
+  {
+    "level": 3,
+    "population": 200,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "7e0fbaf1471c2e5c40fe0719a710a30301b1f3c435c9d16ce0197df3b1d3bbf6"
+  },
+  {
+    "level": 3,
+    "population": 200,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "c0875fc174be2c7bea3927b48100421387eb018eadc4e93c9f5a7b71ed708982"
+  },
+  {
+    "level": 3,
+    "population": 200,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "f661b370a98ff4533c6de4aec4044952ea0479e78e51029d9615e555c43bdd56"
+  },
+  {
+    "level": 3,
+    "population": 200,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "7ceddad7777e2b1c17ddc6097bc2a2f578698cae94eb314f7dc003b98df7a58a"
+  },
+  {
+    "level": 3,
+    "population": 200,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "7e0fbaf1471c2e5c40fe0719a710a30301b1f3c435c9d16ce0197df3b1d3bbf6"
+  },
+  {
+    "level": 3,
+    "population": 200,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "c0875fc174be2c7bea3927b48100421387eb018eadc4e93c9f5a7b71ed708982"
+  },
+  {
+    "level": 3,
+    "population": 200,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "f661b370a98ff4533c6de4aec4044952ea0479e78e51029d9615e555c43bdd56"
+  },
+  {
+    "level": 3,
+    "population": 200,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "7ceddad7777e2b1c17ddc6097bc2a2f578698cae94eb314f7dc003b98df7a58a"
+  },
+  {
+    "level": 3,
+    "population": 200,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "ef9e7d4249c93ecf6f5423abd9fe212522506ad1b4443ddf86ccf42c146099d2"
+  },
+  {
+    "level": 3,
+    "population": 200,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "364409c3702db1d4ec2821f2c984755178e8bbca04bdfc0e7c3c5044eaf19af4"
+  },
+  {
+    "level": 3,
+    "population": 200,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "8e97326a9a20dd08169529028138db06ed87557f08392d1481dc529d1a0ebce0"
+  },
+  {
+    "level": 3,
+    "population": 200,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "52d9f630044fa35c71c98de3f26a013aac57b44f003562a8c24e16dea0d2b147"
+  },
+  {
+    "level": 4,
+    "population": 0,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "577b67c6d06cafe98dcefd63e0bfac05de3ebf90522ce89175034834ed16dcfd"
+  },
+  {
+    "level": 4,
+    "population": 0,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "7f58c55622d52cd7aaa57f3b512011c45cd68d4c09863ef3a6542726f1996f89"
+  },
+  {
+    "level": 4,
+    "population": 0,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "faff5e90877abd2314d5b02a674eaa1e88cc8660e0a51f55579a76a8a310367a"
+  },
+  {
+    "level": 4,
+    "population": 0,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "e598084f178c1a0e37b668aad9521bb29951c01a9daf63f9fa5ffadbd63d117d"
+  },
+  {
+    "level": 4,
+    "population": 0,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "577b67c6d06cafe98dcefd63e0bfac05de3ebf90522ce89175034834ed16dcfd"
+  },
+  {
+    "level": 4,
+    "population": 0,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "7f58c55622d52cd7aaa57f3b512011c45cd68d4c09863ef3a6542726f1996f89"
+  },
+  {
+    "level": 4,
+    "population": 0,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "faff5e90877abd2314d5b02a674eaa1e88cc8660e0a51f55579a76a8a310367a"
+  },
+  {
+    "level": 4,
+    "population": 0,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "e598084f178c1a0e37b668aad9521bb29951c01a9daf63f9fa5ffadbd63d117d"
+  },
+  {
+    "level": 4,
+    "population": 0,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "98bff0e78457832f6acb75a17b0c593b5807ef0e251560b25f3076d377cf2396"
+  },
+  {
+    "level": 4,
+    "population": 0,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "5fe7b496ec0abd5a25610949fefcc7ce6f008aa91b0ba90cb8d8e5cbb63a3e2f"
+  },
+  {
+    "level": 4,
+    "population": 0,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "ab9d1e9fccfe55ff51be5523bb4f8300413ff37eff3baeeccaf02d04af2787af"
+  },
+  {
+    "level": 4,
+    "population": 0,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "70b25f48734e39d92b89c0fd83a5d1807016d5adba7df07e6e6be0a5b55eed1c"
+  },
+  {
+    "level": 4,
+    "population": 4,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "577b67c6d06cafe98dcefd63e0bfac05de3ebf90522ce89175034834ed16dcfd"
+  },
+  {
+    "level": 4,
+    "population": 4,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "7f58c55622d52cd7aaa57f3b512011c45cd68d4c09863ef3a6542726f1996f89"
+  },
+  {
+    "level": 4,
+    "population": 4,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "faff5e90877abd2314d5b02a674eaa1e88cc8660e0a51f55579a76a8a310367a"
+  },
+  {
+    "level": 4,
+    "population": 4,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "e598084f178c1a0e37b668aad9521bb29951c01a9daf63f9fa5ffadbd63d117d"
+  },
+  {
+    "level": 4,
+    "population": 4,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "577b67c6d06cafe98dcefd63e0bfac05de3ebf90522ce89175034834ed16dcfd"
+  },
+  {
+    "level": 4,
+    "population": 4,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "7f58c55622d52cd7aaa57f3b512011c45cd68d4c09863ef3a6542726f1996f89"
+  },
+  {
+    "level": 4,
+    "population": 4,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "faff5e90877abd2314d5b02a674eaa1e88cc8660e0a51f55579a76a8a310367a"
+  },
+  {
+    "level": 4,
+    "population": 4,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "e598084f178c1a0e37b668aad9521bb29951c01a9daf63f9fa5ffadbd63d117d"
+  },
+  {
+    "level": 4,
+    "population": 4,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "98bff0e78457832f6acb75a17b0c593b5807ef0e251560b25f3076d377cf2396"
+  },
+  {
+    "level": 4,
+    "population": 4,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "5fe7b496ec0abd5a25610949fefcc7ce6f008aa91b0ba90cb8d8e5cbb63a3e2f"
+  },
+  {
+    "level": 4,
+    "population": 4,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "ab9d1e9fccfe55ff51be5523bb4f8300413ff37eff3baeeccaf02d04af2787af"
+  },
+  {
+    "level": 4,
+    "population": 4,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "70b25f48734e39d92b89c0fd83a5d1807016d5adba7df07e6e6be0a5b55eed1c"
+  },
+  {
+    "level": 4,
+    "population": 10,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "577b67c6d06cafe98dcefd63e0bfac05de3ebf90522ce89175034834ed16dcfd"
+  },
+  {
+    "level": 4,
+    "population": 10,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "7f58c55622d52cd7aaa57f3b512011c45cd68d4c09863ef3a6542726f1996f89"
+  },
+  {
+    "level": 4,
+    "population": 10,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "faff5e90877abd2314d5b02a674eaa1e88cc8660e0a51f55579a76a8a310367a"
+  },
+  {
+    "level": 4,
+    "population": 10,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "e598084f178c1a0e37b668aad9521bb29951c01a9daf63f9fa5ffadbd63d117d"
+  },
+  {
+    "level": 4,
+    "population": 10,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "577b67c6d06cafe98dcefd63e0bfac05de3ebf90522ce89175034834ed16dcfd"
+  },
+  {
+    "level": 4,
+    "population": 10,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "7f58c55622d52cd7aaa57f3b512011c45cd68d4c09863ef3a6542726f1996f89"
+  },
+  {
+    "level": 4,
+    "population": 10,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "faff5e90877abd2314d5b02a674eaa1e88cc8660e0a51f55579a76a8a310367a"
+  },
+  {
+    "level": 4,
+    "population": 10,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "e598084f178c1a0e37b668aad9521bb29951c01a9daf63f9fa5ffadbd63d117d"
+  },
+  {
+    "level": 4,
+    "population": 10,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "98bff0e78457832f6acb75a17b0c593b5807ef0e251560b25f3076d377cf2396"
+  },
+  {
+    "level": 4,
+    "population": 10,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "5fe7b496ec0abd5a25610949fefcc7ce6f008aa91b0ba90cb8d8e5cbb63a3e2f"
+  },
+  {
+    "level": 4,
+    "population": 10,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "ab9d1e9fccfe55ff51be5523bb4f8300413ff37eff3baeeccaf02d04af2787af"
+  },
+  {
+    "level": 4,
+    "population": 10,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "70b25f48734e39d92b89c0fd83a5d1807016d5adba7df07e6e6be0a5b55eed1c"
+  },
+  {
+    "level": 4,
+    "population": 18,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "577b67c6d06cafe98dcefd63e0bfac05de3ebf90522ce89175034834ed16dcfd"
+  },
+  {
+    "level": 4,
+    "population": 18,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "7f58c55622d52cd7aaa57f3b512011c45cd68d4c09863ef3a6542726f1996f89"
+  },
+  {
+    "level": 4,
+    "population": 18,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "faff5e90877abd2314d5b02a674eaa1e88cc8660e0a51f55579a76a8a310367a"
+  },
+  {
+    "level": 4,
+    "population": 18,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "e598084f178c1a0e37b668aad9521bb29951c01a9daf63f9fa5ffadbd63d117d"
+  },
+  {
+    "level": 4,
+    "population": 18,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "577b67c6d06cafe98dcefd63e0bfac05de3ebf90522ce89175034834ed16dcfd"
+  },
+  {
+    "level": 4,
+    "population": 18,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "7f58c55622d52cd7aaa57f3b512011c45cd68d4c09863ef3a6542726f1996f89"
+  },
+  {
+    "level": 4,
+    "population": 18,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "faff5e90877abd2314d5b02a674eaa1e88cc8660e0a51f55579a76a8a310367a"
+  },
+  {
+    "level": 4,
+    "population": 18,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "e598084f178c1a0e37b668aad9521bb29951c01a9daf63f9fa5ffadbd63d117d"
+  },
+  {
+    "level": 4,
+    "population": 18,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "98bff0e78457832f6acb75a17b0c593b5807ef0e251560b25f3076d377cf2396"
+  },
+  {
+    "level": 4,
+    "population": 18,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "5fe7b496ec0abd5a25610949fefcc7ce6f008aa91b0ba90cb8d8e5cbb63a3e2f"
+  },
+  {
+    "level": 4,
+    "population": 18,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "ab9d1e9fccfe55ff51be5523bb4f8300413ff37eff3baeeccaf02d04af2787af"
+  },
+  {
+    "level": 4,
+    "population": 18,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "70b25f48734e39d92b89c0fd83a5d1807016d5adba7df07e6e6be0a5b55eed1c"
+  },
+  {
+    "level": 4,
+    "population": 48,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "58cd8111301c17e8211041108f7a9f64c77726ccf7daa547b086917d5fab7528"
+  },
+  {
+    "level": 4,
+    "population": 48,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "b5c90d2036ab19a3171d8b792d671c0bec4b2a44b563ee30d529119adca3ddf9"
+  },
+  {
+    "level": 4,
+    "population": 48,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "5920485327b8a089863203e069d08599c39c5ca1e9743f588a1673bc4994118b"
+  },
+  {
+    "level": 4,
+    "population": 48,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "32db58bd36e4a865d2cc1e79fd8b54dfc7789b6c329c3ff5bf0325323c5a4f11"
+  },
+  {
+    "level": 4,
+    "population": 48,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "58cd8111301c17e8211041108f7a9f64c77726ccf7daa547b086917d5fab7528"
+  },
+  {
+    "level": 4,
+    "population": 48,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "b5c90d2036ab19a3171d8b792d671c0bec4b2a44b563ee30d529119adca3ddf9"
+  },
+  {
+    "level": 4,
+    "population": 48,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "5920485327b8a089863203e069d08599c39c5ca1e9743f588a1673bc4994118b"
+  },
+  {
+    "level": 4,
+    "population": 48,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "32db58bd36e4a865d2cc1e79fd8b54dfc7789b6c329c3ff5bf0325323c5a4f11"
+  },
+  {
+    "level": 4,
+    "population": 48,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "7ba22e5799367333787b29762ac42b58bc84c900b99862cf350d7111924b1092"
+  },
+  {
+    "level": 4,
+    "population": 48,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "3601a72f36ad566bf067bbfa7ed339a59ed9bffc46ccf631b41ba444f7e89b36"
+  },
+  {
+    "level": 4,
+    "population": 48,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "7ef26d1882d77f5f64a454c5bca4d4da9ff02bfa1ac189ffd3468e121f365819"
+  },
+  {
+    "level": 4,
+    "population": 48,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "a64d58ca6425eb91cb9aaaead7043fe06cfc30222a28d8beacf0ea56e81bf2cd"
+  },
+  {
+    "level": 4,
+    "population": 200,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "d1ef3dc7e172d9033d4f6c3a2e828e100e78b74e4666f28f1f74afa34c177d9c"
+  },
+  {
+    "level": 4,
+    "population": 200,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "c0189340489fb4e64c9bd8953b65d07af354cfb2ebeea630c15278249b2117ef"
+  },
+  {
+    "level": 4,
+    "population": 200,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "de597ac1abb47c422f8dd119aa5d0c86700c8a1d592c2eca076973b25fe8b231"
+  },
+  {
+    "level": 4,
+    "population": 200,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "c657041e58fc7d0ddf45d26a49afcd685a9c54a5c996305d235d5831ee974997"
+  },
+  {
+    "level": 4,
+    "population": 200,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "d1ef3dc7e172d9033d4f6c3a2e828e100e78b74e4666f28f1f74afa34c177d9c"
+  },
+  {
+    "level": 4,
+    "population": 200,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "c0189340489fb4e64c9bd8953b65d07af354cfb2ebeea630c15278249b2117ef"
+  },
+  {
+    "level": 4,
+    "population": 200,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "de597ac1abb47c422f8dd119aa5d0c86700c8a1d592c2eca076973b25fe8b231"
+  },
+  {
+    "level": 4,
+    "population": 200,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "c657041e58fc7d0ddf45d26a49afcd685a9c54a5c996305d235d5831ee974997"
+  },
+  {
+    "level": 4,
+    "population": 200,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "f7d22f637052ad8295ad4d16106b137cb4a6a65f5e597e81d622b1b13822cd08"
+  },
+  {
+    "level": 4,
+    "population": 200,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "9fb652ca95936a27728de922c0038835f15df43d863c3a813ff8951235d67cb4"
+  },
+  {
+    "level": 4,
+    "population": 200,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "2a0a702842f95bfa17835dd1b1728a0472eea8209a11f07fea3ac8b171722229"
+  },
+  {
+    "level": 4,
+    "population": 200,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "8c824be379671709955196fdf3f93a7c0ae91b2fe406076368605d11e42b2eed"
+  },
+  {
+    "level": 5,
+    "population": 0,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "819a2b0c939736274798de7943d99322d630e53027c32506d3d6936693d5ef51"
+  },
+  {
+    "level": 5,
+    "population": 0,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "040d8a4a5f1a8c67851a9ecf20df1f3e0f49b5bbbbde926a7beaed56460699a5"
+  },
+  {
+    "level": 5,
+    "population": 0,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "5ec06ffb7732be41cbe6240ba12f2d0cf9b6dcf504e8742427155aa77017ea9b"
+  },
+  {
+    "level": 5,
+    "population": 0,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "cbb21fccceb62f94f31948f3885150775e0b8bd395e986b3b4ace75562ab53ae"
+  },
+  {
+    "level": 5,
+    "population": 0,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "819a2b0c939736274798de7943d99322d630e53027c32506d3d6936693d5ef51"
+  },
+  {
+    "level": 5,
+    "population": 0,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "040d8a4a5f1a8c67851a9ecf20df1f3e0f49b5bbbbde926a7beaed56460699a5"
+  },
+  {
+    "level": 5,
+    "population": 0,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "5ec06ffb7732be41cbe6240ba12f2d0cf9b6dcf504e8742427155aa77017ea9b"
+  },
+  {
+    "level": 5,
+    "population": 0,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "cbb21fccceb62f94f31948f3885150775e0b8bd395e986b3b4ace75562ab53ae"
+  },
+  {
+    "level": 5,
+    "population": 0,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "58d5af4151c1c469346a981b2a43d3981636534a4a5f667f22257185e0182721"
+  },
+  {
+    "level": 5,
+    "population": 0,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "595c2dfd6d2a43691ab2a92398e716343a4e0a435bc2d97a73bf8d585aa5a9fd"
+  },
+  {
+    "level": 5,
+    "population": 0,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "22230f5e2e1211f74a8f179d06c234e9f5564d54e5b20124965119bc63bcaedb"
+  },
+  {
+    "level": 5,
+    "population": 0,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "06dd5d4ea1c70dc8c259c7b295e24ad7732e0ca51cdd4bc2ecbc359079f09a06"
+  },
+  {
+    "level": 5,
+    "population": 4,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "819a2b0c939736274798de7943d99322d630e53027c32506d3d6936693d5ef51"
+  },
+  {
+    "level": 5,
+    "population": 4,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "040d8a4a5f1a8c67851a9ecf20df1f3e0f49b5bbbbde926a7beaed56460699a5"
+  },
+  {
+    "level": 5,
+    "population": 4,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "5ec06ffb7732be41cbe6240ba12f2d0cf9b6dcf504e8742427155aa77017ea9b"
+  },
+  {
+    "level": 5,
+    "population": 4,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "cbb21fccceb62f94f31948f3885150775e0b8bd395e986b3b4ace75562ab53ae"
+  },
+  {
+    "level": 5,
+    "population": 4,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "819a2b0c939736274798de7943d99322d630e53027c32506d3d6936693d5ef51"
+  },
+  {
+    "level": 5,
+    "population": 4,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "040d8a4a5f1a8c67851a9ecf20df1f3e0f49b5bbbbde926a7beaed56460699a5"
+  },
+  {
+    "level": 5,
+    "population": 4,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "5ec06ffb7732be41cbe6240ba12f2d0cf9b6dcf504e8742427155aa77017ea9b"
+  },
+  {
+    "level": 5,
+    "population": 4,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "cbb21fccceb62f94f31948f3885150775e0b8bd395e986b3b4ace75562ab53ae"
+  },
+  {
+    "level": 5,
+    "population": 4,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "58d5af4151c1c469346a981b2a43d3981636534a4a5f667f22257185e0182721"
+  },
+  {
+    "level": 5,
+    "population": 4,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "595c2dfd6d2a43691ab2a92398e716343a4e0a435bc2d97a73bf8d585aa5a9fd"
+  },
+  {
+    "level": 5,
+    "population": 4,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "22230f5e2e1211f74a8f179d06c234e9f5564d54e5b20124965119bc63bcaedb"
+  },
+  {
+    "level": 5,
+    "population": 4,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "06dd5d4ea1c70dc8c259c7b295e24ad7732e0ca51cdd4bc2ecbc359079f09a06"
+  },
+  {
+    "level": 5,
+    "population": 10,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "819a2b0c939736274798de7943d99322d630e53027c32506d3d6936693d5ef51"
+  },
+  {
+    "level": 5,
+    "population": 10,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "040d8a4a5f1a8c67851a9ecf20df1f3e0f49b5bbbbde926a7beaed56460699a5"
+  },
+  {
+    "level": 5,
+    "population": 10,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "5ec06ffb7732be41cbe6240ba12f2d0cf9b6dcf504e8742427155aa77017ea9b"
+  },
+  {
+    "level": 5,
+    "population": 10,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "cbb21fccceb62f94f31948f3885150775e0b8bd395e986b3b4ace75562ab53ae"
+  },
+  {
+    "level": 5,
+    "population": 10,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "819a2b0c939736274798de7943d99322d630e53027c32506d3d6936693d5ef51"
+  },
+  {
+    "level": 5,
+    "population": 10,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "040d8a4a5f1a8c67851a9ecf20df1f3e0f49b5bbbbde926a7beaed56460699a5"
+  },
+  {
+    "level": 5,
+    "population": 10,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "5ec06ffb7732be41cbe6240ba12f2d0cf9b6dcf504e8742427155aa77017ea9b"
+  },
+  {
+    "level": 5,
+    "population": 10,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "cbb21fccceb62f94f31948f3885150775e0b8bd395e986b3b4ace75562ab53ae"
+  },
+  {
+    "level": 5,
+    "population": 10,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "58d5af4151c1c469346a981b2a43d3981636534a4a5f667f22257185e0182721"
+  },
+  {
+    "level": 5,
+    "population": 10,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "595c2dfd6d2a43691ab2a92398e716343a4e0a435bc2d97a73bf8d585aa5a9fd"
+  },
+  {
+    "level": 5,
+    "population": 10,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "22230f5e2e1211f74a8f179d06c234e9f5564d54e5b20124965119bc63bcaedb"
+  },
+  {
+    "level": 5,
+    "population": 10,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "06dd5d4ea1c70dc8c259c7b295e24ad7732e0ca51cdd4bc2ecbc359079f09a06"
+  },
+  {
+    "level": 5,
+    "population": 18,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "819a2b0c939736274798de7943d99322d630e53027c32506d3d6936693d5ef51"
+  },
+  {
+    "level": 5,
+    "population": 18,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "040d8a4a5f1a8c67851a9ecf20df1f3e0f49b5bbbbde926a7beaed56460699a5"
+  },
+  {
+    "level": 5,
+    "population": 18,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "5ec06ffb7732be41cbe6240ba12f2d0cf9b6dcf504e8742427155aa77017ea9b"
+  },
+  {
+    "level": 5,
+    "population": 18,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "cbb21fccceb62f94f31948f3885150775e0b8bd395e986b3b4ace75562ab53ae"
+  },
+  {
+    "level": 5,
+    "population": 18,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "819a2b0c939736274798de7943d99322d630e53027c32506d3d6936693d5ef51"
+  },
+  {
+    "level": 5,
+    "population": 18,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "040d8a4a5f1a8c67851a9ecf20df1f3e0f49b5bbbbde926a7beaed56460699a5"
+  },
+  {
+    "level": 5,
+    "population": 18,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "5ec06ffb7732be41cbe6240ba12f2d0cf9b6dcf504e8742427155aa77017ea9b"
+  },
+  {
+    "level": 5,
+    "population": 18,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "cbb21fccceb62f94f31948f3885150775e0b8bd395e986b3b4ace75562ab53ae"
+  },
+  {
+    "level": 5,
+    "population": 18,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "58d5af4151c1c469346a981b2a43d3981636534a4a5f667f22257185e0182721"
+  },
+  {
+    "level": 5,
+    "population": 18,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "595c2dfd6d2a43691ab2a92398e716343a4e0a435bc2d97a73bf8d585aa5a9fd"
+  },
+  {
+    "level": 5,
+    "population": 18,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "22230f5e2e1211f74a8f179d06c234e9f5564d54e5b20124965119bc63bcaedb"
+  },
+  {
+    "level": 5,
+    "population": 18,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "06dd5d4ea1c70dc8c259c7b295e24ad7732e0ca51cdd4bc2ecbc359079f09a06"
+  },
+  {
+    "level": 5,
+    "population": 48,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "027ebc91014ad499a1a4e1c1ce561931968d3742be954a999e8396690cabc8a4"
+  },
+  {
+    "level": 5,
+    "population": 48,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "97f1a316c174179a0ac3db096fef62ad3bd2f2ce523c084e23a7507cdfc2a893"
+  },
+  {
+    "level": 5,
+    "population": 48,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "f149aa3b84d950b432869a4b941d6168198f4e74b6d776ac51b3059feebeb39b"
+  },
+  {
+    "level": 5,
+    "population": 48,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "f035ad9754727a880c5542b2d542101f40417a1b512b5f6ccb6820cb07a6481d"
+  },
+  {
+    "level": 5,
+    "population": 48,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "027ebc91014ad499a1a4e1c1ce561931968d3742be954a999e8396690cabc8a4"
+  },
+  {
+    "level": 5,
+    "population": 48,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "97f1a316c174179a0ac3db096fef62ad3bd2f2ce523c084e23a7507cdfc2a893"
+  },
+  {
+    "level": 5,
+    "population": 48,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "f149aa3b84d950b432869a4b941d6168198f4e74b6d776ac51b3059feebeb39b"
+  },
+  {
+    "level": 5,
+    "population": 48,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "f035ad9754727a880c5542b2d542101f40417a1b512b5f6ccb6820cb07a6481d"
+  },
+  {
+    "level": 5,
+    "population": 48,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "7f4a7f8d2ad8a7b1a37a126fc51eaf629a8053fc190470fb47d155c205b3267b"
+  },
+  {
+    "level": 5,
+    "population": 48,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "867f1669bb8ea6ea0a85549867cbc874fc4fe4ea0ce8e8e7347972d618e651de"
+  },
+  {
+    "level": 5,
+    "population": 48,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "2b697c916360c769f25bd48ac96ee095d117583be6f975cad854d011871208a9"
+  },
+  {
+    "level": 5,
+    "population": 48,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "2e0958bf34902c84018f0d1802f1bab82ca23273dbabf68d55cb1897ac63efe5"
+  },
+  {
+    "level": 5,
+    "population": 200,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "60ad8b33dabd34e768bc63499a7e3392525310d5951330d4b1948283cc295aa1"
+  },
+  {
+    "level": 5,
+    "population": 200,
+    "stamina": 0,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "0182142aa29488a7887eb082e9c27e7d6b6322c1a9b8d27ff66390572f84d5a5"
+  },
+  {
+    "level": 5,
+    "population": 200,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "0296179d42a26b2f8fc5f285234d61348e503a90bef71f596813771fc53d58b7"
+  },
+  {
+    "level": 5,
+    "population": 200,
+    "stamina": 0,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "31e44b1ecf5a1eeb25e25ac50a2bf19db3e6f61336da5020effd72f795b90dca"
+  },
+  {
+    "level": 5,
+    "population": 200,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "60ad8b33dabd34e768bc63499a7e3392525310d5951330d4b1948283cc295aa1"
+  },
+  {
+    "level": 5,
+    "population": 200,
+    "stamina": 45,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "0182142aa29488a7887eb082e9c27e7d6b6322c1a9b8d27ff66390572f84d5a5"
+  },
+  {
+    "level": 5,
+    "population": 200,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "0296179d42a26b2f8fc5f285234d61348e503a90bef71f596813771fc53d58b7"
+  },
+  {
+    "level": 5,
+    "population": 200,
+    "stamina": 45,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "31e44b1ecf5a1eeb25e25ac50a2bf19db3e6f61336da5020effd72f795b90dca"
+  },
+  {
+    "level": 5,
+    "population": 200,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 0,
+    "sha256": "69ad62c2da33eb79d8a021278f9c3fe09c40b4db46b85526825d9ca5a187017a"
+  },
+  {
+    "level": 5,
+    "population": 200,
+    "stamina": 100,
+    "promotionTier": 0,
+    "morale": 100,
+    "sha256": "3ccd3551c6c7fbb4a3bcd1e2a0d67a9eb04d25caac4a5e100587542a129e4418"
+  },
+  {
+    "level": 5,
+    "population": 200,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 0,
+    "sha256": "a75984828fa7d6b145a1274574aeb7260ec929e75d8736ae4f5b498df4278566"
+  },
+  {
+    "level": 5,
+    "population": 200,
+    "stamina": 100,
+    "promotionTier": 3,
+    "morale": 100,
+    "sha256": "cbf6bed7e0dce8eae87d798121dc17325cdd89f0311ad190a20c326a0c17f167"
+  }
+]

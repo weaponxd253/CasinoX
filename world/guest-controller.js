@@ -61,6 +61,8 @@ export class GuestController {
     this.velocity = { x: 0, y: 0 };
     this.peers = [];
     this.intent = { x: 0, y: 0 };
+    this.movementHeld = false;
+    this.heldMs = 0;
   }
 
   get stop() { return this.managedStop ?? this.stops[this.stage]; }
@@ -75,11 +77,20 @@ export class GuestController {
   get state() {
     if (this.complete) return 'COMPLETE';
     if (!this.spawned) return 'WAITING_TO_SPAWN';
-    if (this.blockedMs > 0) return 'YIELDING';
+    if (this.blockedMs > 0 || (this.movementHeld && !this.arrived)) return 'YIELDING';
     return `${this.waiting ? 'WAITING_AT' : 'WALKING_TO'}_${this.stop.id.toUpperCase()}`;
   }
   suspend() { this.suspended = true; this.moving = false; this.velocity = { x: 0, y: 0 }; this.intent = { x: 0, y: 0 }; }
   resume() { this.suspended = false; }
+
+  needsOwnerYield(owner) {
+    if (!owner || !((owner.vx ?? 0) || (owner.vy ?? 0))) return false;
+    const minimum = this.radius + (owner.radius ?? 14);
+    const from = owner.previous ?? owner;
+    const future = { x: owner.x + owner.vx * 0.25, y: owner.y + owner.vy * 0.25 };
+    return distance(this.position, from) <= minimum + 52
+      && pointSegmentDistance(this.position, from, future) < minimum + 12;
+  }
 
   blockers(owner, margin = 6) {
     const blockers = [];
@@ -102,8 +113,47 @@ export class GuestController {
     if (this.activeMs - this.lastPlanMs < this.replanMs) return;
     this.lastPlanMs = this.activeMs;
     this.replans++;
-    try { this.route = this.path(this.position, this.goals[0], this.blockers(owner)); }
+    const blockers = this.blockers(owner);
+    const endpointClear = p => this.clear(p, p, blockers);
+    if (this.stop.softVia && this.goals.length > 1 && !this.goals[0].required
+      && distance(this.position, this.goals[0]) < 96 && !endpointClear(this.goals[0])) {
+      this.goals.shift(); this.waypointsReached++;
+    }
+    try { this.route = endpointClear(this.goals[0]) ? this.path(this.position, this.goals[0], blockers) : []; }
     catch (_) { this.route = []; } // A temporarily occupied route is not a save/game error.
+    if (!this.route.length && this.stop.softVia && this.goals.length > 1
+      && !this.goals[0].required && distance(this.position, this.goals[0]) < 96) {
+      try {
+        const route = this.path(this.position, this.goals[1], this.blockers(owner));
+        if (route.length) { this.goals.shift(); this.waypointsReached++; this.route = route; }
+      } catch (_) { /* Retry at the normal bounded planning interval. */ }
+    }
+    if (!this.route.length && this.stop.softVia && !endpointClear(this.goals[0])
+      && distance(this.position, this.goals[0]) > 96) {
+      // An occupied final endpoint must not immobilize a guest across the room.
+      // Approach a clear nearby point without changing the actual destination.
+      // Once nearby, hold/yield instead of circling around a stationary blocker.
+      const goal = this.goals[0], angle = Math.atan2(this.position.y - goal.y, this.position.x - goal.x);
+      approach: for (const radius of [48, 64]) for (const turn of [0, Math.PI / 4, -Math.PI / 4]) {
+        const p = { x: goal.x + Math.cos(angle + turn) * radius, y: goal.y + Math.sin(angle + turn) * radius };
+        if (!endpointClear(p)) continue;
+        try {
+          const route = this.path(this.position, p, blockers);
+          if (route.length) { this.route = route; break approach; }
+        } catch (_) { /* Bounded candidate set; retry on the normal interval. */ }
+      }
+    }
+    if (!this.route.length && this.peers.length) {
+      // Preserve a bounded, geometry-valid request for right of way even when
+      // peers currently prevent a route. This is intent only, never movement.
+      try {
+        const hint = this.path(this.position, this.goals[0], []).find(p => distance(p, this.position) > 0.01);
+        if (hint) {
+          const d = distance(hint, this.position);
+          this.intent = { x: (hint.x - this.position.x) * this.speed / d, y: (hint.y - this.position.y) * this.speed / d };
+        }
+      } catch (_) { /* Static destinations are separately validated. */ }
+    }
   }
 
   beginStop() {
@@ -141,7 +191,7 @@ export class GuestController {
     return true;
   }
 
-  update(deltaMs, owner, peers = []) {
+  update(deltaMs, owner, peers = [], { allowMovement = true } = {}) {
     if (this.suspended || this.complete) return;
     this.peers = peers;
     const dt = Math.max(0, Math.min(deltaMs, 50));
@@ -150,6 +200,13 @@ export class GuestController {
     const previous = { ...this.position };
     this.moving = false;
     this.velocity = { x: 0, y: 0 };
+    this.movementHeld = !allowMovement;
+    if (!allowMovement) {
+      if (this.goals.length || !this.arrived) this.heldMs += dt;
+      if (this.arrived) this.facing = this.stop.facing ?? this.facing;
+      return;
+    }
+    this.heldMs = 0;
     if (!this.spawned) {
       if (!this.walkable(this.position) || this.blockers(owner).some(b => distance(this.position, b) < this.radius + b.radius)) {
         this.blockedMs += dt; return;
@@ -227,6 +284,7 @@ export class GuestController {
       speed: this.speed, radius: this.radius, velocity: { ...this.velocity }, activeMs: this.activeMs,
       waitRemainingMs: this.waitRemainingMs, blockedMs: this.blockedMs, stuck: this.blockedMs >= this.stuckMs,
       replans: this.replans,
+      movementHeld: this.movementHeld, heldMs: this.heldMs,
       destination: { ...this.stop.position }, route: this.route.map(p => ({ ...p })) };
   }
 }

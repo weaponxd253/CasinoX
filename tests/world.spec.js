@@ -1,3 +1,4 @@
+const { enterMain, enterLounge, returnToLobby } = require('./helpers/main-casino-world');
 const { test, expect } = require('@playwright/test');
 const { savedResort } = require('./helpers/saved-resort');
 const { dealerBustDeck } = require('./helpers/blackjack-deck');
@@ -179,11 +180,13 @@ test('E enters only near the casino and the south exit restores the exact lobby 
   await approachEntrance(page);
   const entry = (await snapshot(page)).player;
   await page.screenshot({ path: testInfo.outputPath('central-lobby.png'), fullPage: true });
-  await page.keyboard.press('e');
+  await enterLounge(page);
   await expect.poll(async () => (await snapshot(page)).scene).toBe('CasinoRoom');
   await expect(page.locator('#world-return')).toBeEnabled();
   await moveUntil(page, 's', s => s.interaction === 'lobby');
   await page.keyboard.press('e');
+  await expect.poll(async () => (await snapshot(page)).scene).toBe('MainCasinoFloor');
+  await returnToLobby(page);
   await expect.poll(async () => (await snapshot(page)).scene).toBe('CentralLobby');
   expect((await snapshot(page)).player).toEqual(entry);
   await expect(page.locator('#floor-canvas canvas')).toBeFocused();
@@ -209,7 +212,7 @@ test('the same blackjack hand survives scene visits and settles exactly once', a
   await seedStorage(page, seed);
   await openWorld(page); await approachEntrance(page);
   const entry = (await snapshot(page)).player;
-  await page.keyboard.press('e');
+  await enterLounge(page);
   await expect(page.locator('#world-return')).toBeEnabled();
   await moveUntil(page, 'w', s => s.interaction === 'blackjack');
   await page.keyboard.press('e');
@@ -225,10 +228,10 @@ test('the same blackjack hand survives scene visits and settles exactly once', a
   await hold(page, 'a', 160);
   expect((await snapshot(page)).player).toEqual(parked);
   await page.getByRole('button', { name: 'Return to floor' }).click();
-  await page.locator('#world-return').click();
+  await returnToLobby(page);
   expect((await snapshot(page)).player).toEqual(entry);
   await expect(page.locator('#world-interact')).toBeEnabled();
-  await page.keyboard.press('e');
+  await enterLounge(page);
   await expect(page.locator('#world-interact')).toBeEnabled();
   await page.keyboard.press('e');
   await expect(table.locator('body')).toHaveAttribute('data-hand-lifetime', 'retained');
@@ -240,7 +243,7 @@ test('the same blackjack hand survives scene visits and settles exactly once', a
   await expect(page.locator('#world-balance')).toHaveText('255.25');
   await expect(table.locator('#leaderboard-list li')).toHaveCount(1);
   await table.locator('#speed-range').focus(); await page.keyboard.press('Escape');
-  await page.locator('#world-return').click();
+  await returnToLobby(page);
   expect((await snapshot(page)).player).toEqual(entry);
   await expect(page.locator('#world-balance')).toHaveText('255.25');
   expect(JSON.parse((await storage(page)).hotelGameState).currencies.hotelCash).toBe(4321);
@@ -250,7 +253,7 @@ test('hard reload still loses an unfinished hand and never refunds or replays it
   await seedStorage(page, savedResort());
   await openWorld(page); await approachEntrance(page);
   const entry = (await snapshot(page)).player;
-  await page.keyboard.press('e');
+  await enterLounge(page);
   await expect(page.locator('#world-return')).toBeEnabled();
   await moveUntil(page, 'w', s => s.interaction === 'blackjack');
   await page.keyboard.press('e');
@@ -265,7 +268,7 @@ test('hard reload still loses an unfinished hand and never refunds or replays it
   expect((await snapshot(page)).player).toEqual(entry);
   await expect(page.locator('#world-balance')).toHaveText('245.25');
   await expect(page.locator('#world-interact')).toBeEnabled();
-  await page.keyboard.press('e');
+  await enterLounge(page);
   await expect(page.locator('#world-return')).toBeEnabled();
   await moveUntil(page, 'w', s => s.interaction === 'blackjack');
   await page.keyboard.press('e');
@@ -326,12 +329,13 @@ test('all six minigame shell return links still open hotel management', async ({
 
 test('M reaches the original management page from either world room', async ({ page }) => {
   await seedStorage(page, savedResort());
-  for (const room of ['CentralLobby', 'CasinoRoom']) {
+  for (const room of ['CentralLobby', 'MainCasinoFloor', 'CasinoRoom']) {
     await openWorld(page);
     if (room === 'CasinoRoom') {
-      await approachEntrance(page); await page.keyboard.press('e');
+      await approachEntrance(page); await enterLounge(page);
       await expect(page.locator('#world-return')).toBeEnabled();
     }
+    if(room === 'MainCasinoFloor'){await approachEntrance(page);await enterMain(page);await expect(page.locator('#world-return')).toBeEnabled();}
     await page.keyboard.press('m');
     await expect(page).toHaveURL(/\/hotel\/index\.html$/);
     await expect(page.locator('#hotel-name-display')).toContainText('Existing Resort');

@@ -1,3 +1,4 @@
+const { enterLounge, returnToLobby } = require('./helpers/main-casino-world');
 const { test, expect } = require('@playwright/test');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -99,7 +100,7 @@ test('hotel visits retain each room position and facing, and reload preserves th
 test('lounge sprite and blackjack pause preserve owner facing, position, focus and the original body', async ({ page }, testInfo) => {
   const seed = await openWorld(page, { ...POINTS.casino, facing: 'left' });
   const entry = (await snapshot(page)).player;
-  await page.keyboard.press('e'); await roomReady(page, 'CasinoRoom');
+  await enterLounge(page); await roomReady(page, 'CasinoRoom');
   await moveUntil(page, 's', state => state.player.y > 495);
   await page.screenshot({ path: testInfo.outputPath('owner-blackjack-lounge.png'), fullPage: true });
   await moveUntil(page, 'w', state => state.interaction === 'blackjack');
@@ -113,7 +114,7 @@ test('lounge sprite and blackjack pause preserve owner facing, position, focus a
   expect((await snapshot(page)).player).toEqual(parked);
   await page.getByRole('button', { name: 'Return to floor' }).click();
   await expect(page.locator('canvas')).toBeFocused();
-  await page.locator('#world-return').click(); await roomReady(page, 'CentralLobby');
+  await returnToLobby(page); await roomReady(page, 'CentralLobby');
   expect((await snapshot(page)).player).toEqual(entry); expect((await snapshot(page)).ownerVisual.frame).toBe(4);
   expect((await snapshot(page)).ownerBody).toEqual(paused.ownerBody);
   await expectLegacyUnchanged(page, seed);
@@ -150,7 +151,7 @@ test('missing sprite falls back in all rooms, keeps navigation synchronous, and 
   expect((await snapshot(page)).ownerVisual.mode).toBe('circle');
   await page.keyboard.press('Escape'); await roomReady(page, 'CentralLobby');
   await walkTo(page, POINTS.casino);
-  await page.keyboard.press('e'); await roomReady(page, 'CasinoRoom');
+  await enterLounge(page); await roomReady(page, 'CasinoRoom');
   expect((await snapshot(page)).ownerVisual.mode).toBe('circle');
   expect(requests).toBe(initialRequests);
   await expectLegacyUnchanged(page, seed);

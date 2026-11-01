@@ -1,0 +1,559 @@
+{
+  "sourceSize": [
+    1024,
+    1536
+  ],
+  "sourceSha256": "cb4d1b94ab56775df600d025b62ea957999e097734764cf81f1694d3904a7652",
+  "sheetSize": [
+    1024,
+    1536
+  ],
+  "frameSize": [
+    256,
+    384
+  ],
+  "footBaseline": 368,
+  "sourceRowCuts": [
+    391,
+    770,
+    1142
+  ],
+  "resampling": "none",
+  "cleanup": {
+    "silhouetteMinAlpha": 32,
+    "edgeRadius": 2,
+    "method": "retain original RGBA within two pixels of alpha>=32 silhouette",
+    "sourcePixels": 743844,
+    "retainedPixels": 670132,
+    "removedBackgroundPixels": 73712,
+    "removedAlphaSum": 112000,
+    "retainedFaintEdgePixels": 36816
+  },
+  "directions": [
+    "down",
+    "left",
+    "right",
+    "up"
+  ],
+  "idleFrames": {
+    "down": 0,
+    "left": 4,
+    "right": 8,
+    "up": 12
+  },
+  "preparedSha256": "887800ab047ff26f993aebe763c3590b305959b1aa6c09f9c9dcf0fbec2caacb",
+  "frames": [
+    {
+      "frame": 0,
+      "direction": "down",
+      "sourceWindow": [
+        0,
+        0,
+        256,
+        391
+      ],
+      "translation": [
+        1,
+        -1
+      ],
+      "sourceCoreBounds": [
+        43,
+        39,
+        210,
+        369
+      ],
+      "preparedBounds": [
+        42,
+        36,
+        213,
+        370
+      ],
+      "preparedCoreBounds": [
+        44,
+        38,
+        211,
+        368
+      ]
+    },
+    {
+      "frame": 1,
+      "direction": "down",
+      "sourceWindow": [
+        256,
+        0,
+        512,
+        391
+      ],
+      "translation": [
+        3,
+        -4
+      ],
+      "sourceCoreBounds": [
+        293,
+        39,
+        469,
+        372
+      ],
+      "preparedBounds": [
+        38,
+        33,
+        218,
+        370
+      ],
+      "preparedCoreBounds": [
+        40,
+        35,
+        216,
+        368
+      ]
+    },
+    {
+      "frame": 2,
+      "direction": "down",
+      "sourceWindow": [
+        512,
+        0,
+        768,
+        391
+      ],
+      "translation": [
+        0,
+        -4
+      ],
+      "sourceCoreBounds": [
+        555,
+        39,
+        725,
+        372
+      ],
+      "preparedBounds": [
+        41,
+        33,
+        215,
+        370
+      ],
+      "preparedCoreBounds": [
+        43,
+        35,
+        213,
+        368
+      ]
+    },
+    {
+      "frame": 3,
+      "direction": "down",
+      "sourceWindow": [
+        768,
+        0,
+        1024,
+        391
+      ],
+      "translation": [
+        2,
+        -4
+      ],
+      "sourceCoreBounds": [
+        807,
+        39,
+        981,
+        372
+      ],
+      "preparedBounds": [
+        39,
+        33,
+        217,
+        370
+      ],
+      "preparedCoreBounds": [
+        41,
+        35,
+        215,
+        368
+      ]
+    },
+    {
+      "frame": 4,
+      "direction": "left",
+      "sourceWindow": [
+        0,
+        391,
+        256,
+        770
+      ],
+      "translation": [
+        3,
+        13
+      ],
+      "sourceCoreBounds": [
+        43,
+        410,
+        207,
+        746
+      ],
+      "preparedBounds": [
+        44,
+        30,
+        212,
+        370
+      ],
+      "preparedCoreBounds": [
+        46,
+        32,
+        210,
+        368
+      ]
+    },
+    {
+      "frame": 5,
+      "direction": "left",
+      "sourceWindow": [
+        256,
+        391,
+        512,
+        770
+      ],
+      "translation": [
+        3,
+        13
+      ],
+      "sourceCoreBounds": [
+        298,
+        410,
+        463,
+        746
+      ],
+      "preparedBounds": [
+        43,
+        30,
+        212,
+        370
+      ],
+      "preparedCoreBounds": [
+        45,
+        32,
+        210,
+        368
+      ]
+    },
+    {
+      "frame": 6,
+      "direction": "left",
+      "sourceWindow": [
+        512,
+        391,
+        768,
+        770
+      ],
+      "translation": [
+        6,
+        10
+      ],
+      "sourceCoreBounds": [
+        551,
+        410,
+        717,
+        749
+      ],
+      "preparedBounds": [
+        43,
+        27,
+        213,
+        370
+      ],
+      "preparedCoreBounds": [
+        45,
+        29,
+        211,
+        368
+      ]
+    },
+    {
+      "frame": 7,
+      "direction": "left",
+      "sourceWindow": [
+        768,
+        391,
+        1024,
+        770
+      ],
+      "translation": [
+        -1,
+        10
+      ],
+      "sourceCoreBounds": [
+        809,
+        410,
+        985,
+        749
+      ],
+      "preparedBounds": [
+        38,
+        27,
+        218,
+        370
+      ],
+      "preparedCoreBounds": [
+        40,
+        29,
+        216,
+        368
+      ]
+    },
+    {
+      "frame": 8,
+      "direction": "right",
+      "sourceWindow": [
+        0,
+        770,
+        256,
+        1142
+      ],
+      "translation": [
+        0,
+        17
+      ],
+      "sourceCoreBounds": [
+        46,
+        792,
+        209,
+        1121
+      ],
+      "preparedBounds": [
+        44,
+        37,
+        211,
+        370
+      ],
+      "preparedCoreBounds": [
+        46,
+        39,
+        209,
+        368
+      ]
+    },
+    {
+      "frame": 9,
+      "direction": "right",
+      "sourceWindow": [
+        256,
+        770,
+        512,
+        1142
+      ],
+      "translation": [
+        -1,
+        14
+      ],
+      "sourceCoreBounds": [
+        298,
+        792,
+        471,
+        1124
+      ],
+      "preparedBounds": [
+        39,
+        34,
+        216,
+        370
+      ],
+      "preparedCoreBounds": [
+        41,
+        36,
+        214,
+        368
+      ]
+    },
+    {
+      "frame": 10,
+      "direction": "right",
+      "sourceWindow": [
+        512,
+        770,
+        768,
+        1142
+      ],
+      "translation": [
+        -1,
+        14
+      ],
+      "sourceCoreBounds": [
+        555,
+        792,
+        727,
+        1124
+      ],
+      "preparedBounds": [
+        40,
+        34,
+        216,
+        370
+      ],
+      "preparedCoreBounds": [
+        42,
+        36,
+        214,
+        368
+      ]
+    },
+    {
+      "frame": 11,
+      "direction": "right",
+      "sourceWindow": [
+        768,
+        770,
+        1024,
+        1142
+      ],
+      "translation": [
+        0,
+        17
+      ],
+      "sourceCoreBounds": [
+        809,
+        791,
+        983,
+        1121
+      ],
+      "preparedBounds": [
+        39,
+        36,
+        217,
+        370
+      ],
+      "preparedCoreBounds": [
+        41,
+        38,
+        215,
+        368
+      ]
+    },
+    {
+      "frame": 12,
+      "direction": "up",
+      "sourceWindow": [
+        0,
+        1142,
+        256,
+        1536
+      ],
+      "translation": [
+        1,
+        13
+      ],
+      "sourceCoreBounds": [
+        43,
+        1161,
+        210,
+        1497
+      ],
+      "preparedBounds": [
+        42,
+        30,
+        213,
+        370
+      ],
+      "preparedCoreBounds": [
+        44,
+        32,
+        211,
+        368
+      ]
+    },
+    {
+      "frame": 13,
+      "direction": "up",
+      "sourceWindow": [
+        256,
+        1142,
+        512,
+        1536
+      ],
+      "translation": [
+        0,
+        10
+      ],
+      "sourceCoreBounds": [
+        293,
+        1161,
+        475,
+        1500
+      ],
+      "preparedBounds": [
+        35,
+        27,
+        221,
+        370
+      ],
+      "preparedCoreBounds": [
+        37,
+        29,
+        219,
+        368
+      ]
+    },
+    {
+      "frame": 14,
+      "direction": "up",
+      "sourceWindow": [
+        512,
+        1142,
+        768,
+        1536
+      ],
+      "translation": [
+        3,
+        10
+      ],
+      "sourceCoreBounds": [
+        552,
+        1161,
+        722,
+        1500
+      ],
+      "preparedBounds": [
+        41,
+        27,
+        215,
+        370
+      ],
+      "preparedCoreBounds": [
+        43,
+        29,
+        213,
+        368
+      ]
+    },
+    {
+      "frame": 15,
+      "direction": "up",
+      "sourceWindow": [
+        768,
+        1142,
+        1024,
+        1536
+      ],
+      "translation": [
+        0,
+        10
+      ],
+      "sourceCoreBounds": [
+        812,
+        1161,
+        980,
+        1500
+      ],
+      "preparedBounds": [
+        42,
+        27,
+        214,
+        370
+      ],
+      "preparedCoreBounds": [
+        44,
+        29,
+        212,
+        368
+      ]
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+const { enterLounge, returnToLobby } = require('./helpers/main-casino-world');
 const { test, expect } = require('@playwright/test');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -305,9 +306,9 @@ test('reception dialogue freezes all three queued guests while owner access and 
 test('sleeping in the lounge preserves a full queue and returning/reloading creates no duplicate guests', async ({ page }) => {
   test.setTimeout(50000); const seed=await openWorld(page,POINTS.casino);
   await expect.poll(async()=> (await snap(page)).guestTraffic.guests.every(g=>['WAITING','BEING_SERVED'].includes(g.behavior)),{timeout:25000,intervals:[50]}).toBe(true);
-  await page.keyboard.press('e'); await expect.poll(async()=> (await snap(page)).scene).toBe('CasinoRoom');
+  await enterLounge(page); await expect.poll(async()=> (await snap(page)).scene).toBe('CasinoRoom');
   const frozen=(await snap(page)).guestTraffic; await page.waitForTimeout(250); expect((await snap(page)).guestTraffic).toEqual(frozen);
-  await page.keyboard.press('Escape'); await expect.poll(async()=> (await snap(page)).scene).toBe('CentralLobby');
+  await returnToLobby(page); await expect.poll(async()=> (await snap(page)).scene).toBe('CentralLobby');
   await expect.poll(async()=> (await snap(page)).guestTraffic.activeMs).toBeGreaterThan(frozen.activeMs);
   const resumed=(await snap(page)).guestTraffic; expect(resumed.guests.map(g=>g.id)).toEqual(ids);expect(resumed.queue.arrivalOrder).toEqual(ids);
   expect(await storage(page)).toEqual(seed); await page.reload(); await ready(page);

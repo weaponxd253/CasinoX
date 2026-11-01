@@ -1,3 +1,4 @@
+const { enterLounge, returnToLobby } = require('./helpers/main-casino-world');
 const { test, expect } = require('@playwright/test');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -117,8 +118,8 @@ test('reception dialogue and both scene returns keep a single stationary recepti
   await page.keyboard.press('Escape'); await expect(page.locator('canvas')).toBeFocused();
   for (const [point, scene] of [[POINTS.casino, 'CasinoRoom'], [POINTS.hotel, 'HotelInterior']]) {
     await walkTo(page, point); const entry = (await snapshot(page)).player;
-    await page.keyboard.press('e'); await expect.poll(async () => (await snapshot(page)).scene).toBe(scene);
-    await expect(page.locator('#world-return')).toBeEnabled(); await page.keyboard.press('Escape');
+    if(scene==='CasinoRoom')await enterLounge(page);else await page.keyboard.press('e'); await expect.poll(async () => (await snapshot(page)).scene).toBe(scene);
+    await expect(page.locator('#world-return')).toBeEnabled(); if(scene==='CasinoRoom')await returnToLobby(page);else await page.keyboard.press('Escape');
     await expect.poll(async () => (await snapshot(page)).scene).toBe('CentralLobby');
     await expect(page.locator('canvas')).toBeFocused();
     expect((await snapshot(page)).player).toEqual(entry); expect((await snapshot(page)).receptionist).toEqual(npc);

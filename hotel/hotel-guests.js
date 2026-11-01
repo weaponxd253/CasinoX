@@ -23,8 +23,7 @@ const HotelGuests = (() => {
      ─────────────────────────────────────────────────────────── */
 
   function getRoomCapacity(state) {
-    const lvl = state.departments.rooms?.level ?? 1;
-    return HotelConfig.UPGRADE_CATALOG.rooms?.[lvl - 1]?.capacity ?? 10;
+    return HotelConfig.selectors.getRoomCapacity(state);
   }
 
   function targetPopulation(state) {
@@ -355,7 +354,7 @@ const HotelGuests = (() => {
   }
 
   function occupancyLabel(population, capacity) {
-    const pct = capacity > 0 ? Math.round((population / capacity) * 100) : 0;
+    const pct = HotelConfig.selectors.getOccupancyPercentage(population, capacity);
     if (pct >= 120) return 'Overbooked';
     if (pct >= 95)  return 'Full House';
     if (pct >= 75)  return 'Busy';
@@ -382,7 +381,7 @@ const HotelGuests = (() => {
     return {
       population,
       capacity,
-      pct:            capacity > 0 ? Math.round((population / capacity) * 100) : 0,
+      pct:            HotelConfig.selectors.getOccupancyPercentage(population, capacity),
       occupancyLabel: occupancyLabel(population, capacity),
       checkInRate:    state.guests.checkInRate,
       checkOutRate:   state.guests.checkOutRate,

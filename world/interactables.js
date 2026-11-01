@@ -2,11 +2,14 @@ import { LOBBY } from './lobby-config.js';
 import { ROOM } from '../floor/room-config.js';
 import { HOTEL } from './hotel-config.js';
 import { LOBBY_INTERACTIONS } from './lobby-layout.js';
+import { MAIN_PORTALS } from './main-casino-layout.js';
 
 // Presentation/navigation definitions only. Availability never unlocks a department.
 export const INTERACTABLES = [
+  { id:'main-south',scene:'MainCasinoFloor',position:MAIN_PORTALS.south,radius:MAIN_PORTALS.south.reach,label:'Return to Central Lobby',availability:true,action:{type:'return'} },
+  { id:'main-north',scene:'MainCasinoFloor',position:MAIN_PORTALS.north,radius:MAIN_PORTALS.north.reach,label:'Enter Blackjack Lounge',availability:true,action:{type:'door',destination:'CasinoRoom'} },
   { id: 'casino', scene: 'CentralLobby', position: LOBBY.entrance, radius: LOBBY.entrance.reach,
-    label: 'Enter Blackjack Lounge', availability: true, action: { type: 'door', destination: 'CasinoRoom' } },
+    label: 'Enter Main Casino Floor', availability: true, action: { type: 'door', destination: 'MainCasinoFloor' } },
   { id: 'receptionist', scene: 'CentralLobby', position: LOBBY_INTERACTIONS.receptionist, radius: LOBBY_INTERACTIONS.receptionist.reach,
     label: 'Talk to receptionist', availability: true, action: { type: 'dialogue', conversation: 'reception' } },
   { id: 'office', scene: 'CentralLobby', position: LOBBY_INTERACTIONS.office, radius: LOBBY_INTERACTIONS.office.reach,

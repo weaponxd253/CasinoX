@@ -1,0 +1,97 @@
+{
+  "status": "Planning-only static geometry check; not runtime contact/mask validation",
+  "radius": 14.25,
+  "sourcePrimitives": 51,
+  "logicalGuards": 2,
+  "routes": {
+    "central": {
+      "samples": 449,
+      "blockedSamples": 0
+    },
+    "westUpper": {
+      "samples": 186,
+      "blockedSamples": 0
+    },
+    "westLower": {
+      "samples": 366,
+      "blockedSamples": 0
+    },
+    "eastSlots": {
+      "samples": 404,
+      "blockedSamples": 0
+    },
+    "eastKiosk": {
+      "samples": 207,
+      "blockedSamples": 0
+    }
+  },
+  "portals": {
+    "south": {
+      "rectangle": {
+        "x": 480,
+        "y": 572.4609375,
+        "width": 65.625,
+        "height": 31.640625
+      },
+      "reach": 18,
+      "spawn": {
+        "x": 480,
+        "y": 508.59375
+      },
+      "approach": {
+        "x": 480,
+        "y": 544.921875
+      },
+      "facing": "up",
+      "spawnClear": true,
+      "approachClear": true,
+      "spawnEligible": false,
+      "approachEligible": true
+    },
+    "north": {
+      "rectangle": {
+        "x": 480,
+        "y": 76.171875,
+        "width": 65.625,
+        "height": 21.09375
+      },
+      "reach": 18,
+      "spawn": {
+        "x": 480,
+        "y": 140.625
+      },
+      "approach": {
+        "x": 480,
+        "y": 103.125
+      },
+      "facing": "down",
+      "spawnClear": true,
+      "approachClear": true,
+      "spawnEligible": false,
+      "approachEligible": true
+    }
+  },
+  "anchors": {
+    "roulette": {
+      "position": {
+        "x": 208.125,
+        "y": 342.1875
+      },
+      "clear": true
+    },
+    "slots": {
+      "position": {
+        "x": 761.25,
+        "y": 292.96875
+      },
+      "clear": true
+    },
+    "coinFlip": {
+      "position": {
+        "x": 655.78125,
+        "y": 377.34375
+      },
+      "clear": true
+    }
+  }
+}

@@ -61,6 +61,6 @@ test('declarative destinations share the system and standalone lounge has no wor
     };
   });
   expect(result).toEqual({ idsUnique: true, types: ['blackjack', 'dialogue', 'door', 'management', 'return'],
-    casino: { type: 'door', destination: 'CasinoRoom' }, hotel: { type: 'door', destination: 'HotelInterior' },
+    casino: { type: 'door', destination: 'MainCasinoFloor' }, hotel: { type: 'door', destination: 'HotelInterior' },
     worldExit: 'lobby', standaloneExit: null });
 });

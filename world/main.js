@@ -3,6 +3,7 @@ import { LOBBY } from './lobby-config.js';
 import { BlackjackOverlay } from '../floor/blackjack-overlay.js';
 import { Dialogue } from './dialogue.js';
 import { readResortSnapshot } from './resort-snapshot.js';
+import { WORLD_ROOMS, routeFor, backRoute, routeEntry } from './room-routes.js';
 
 const host = document.getElementById('floor-canvas');
 const status = document.getElementById('world-status');
@@ -18,6 +19,10 @@ let failed = false;
 let lobby;
 let casino;
 let hotel;
+let mainFloor;
+const rooms = new Map(), departures = new Map();
+let pendingEntry = null;
+let interactHeld = false, awaitingRelease = false;
 let overlay;
 let dialogue;
 let store;
@@ -27,8 +32,8 @@ let lastSaveAt = 0;
 let lastSavedPosition;
 let allowLeaving = false;
 
-const activeScene = () => ({ CentralLobby: lobby, CasinoRoom: casino, HotelInterior: hotel })[current];
-const isBlocked = () => failed || !ready || !activeScene()?.owner || dialog.open || conversation.open || performance.now() < unlockInteractionAt;
+const activeScene = () => rooms.get(current);
+const isBlocked = () => failed || !ready || awaitingRelease || !activeScene()?.owner || dialog.open || conversation.open || performance.now() < unlockInteractionAt;
 const samePosition = (a, b) => a && b && a.x === b.x && a.y === b.y && a.facing === b.facing;
 const setText = (id, value) => {
   const element = document.getElementById(id);
@@ -88,58 +93,57 @@ function refresh() {
   interact.disabled = !action || locked;
   returnButton.hidden = current === 'CentralLobby';
   returnButton.disabled = locked;
-  setText('world-location', { CentralLobby: 'Central Lobby', CasinoRoom: 'Blackjack Lounge', HotelInterior: 'Hotel Interior' }[current]);
-  setText('world-interact', action ? `E · ${action.label}` : 'E · Interact');
+  setText('world-location', WORLD_ROOMS[current].label);
+  setText('world-return', `Return to ${WORLD_ROOMS[WORLD_ROOMS[current].parent]?.label ?? 'Central Lobby'}`);
+  const actionLabel = action && (routeFor(current, action.id)?.label ?? action.label);
+  setText('world-interact', action ? `E · ${actionLabel}` : 'E · Interact');
   setText('world-status', dialog.open ? 'At the blackjack table · world paused'
     : conversation.open ? 'In conversation · world paused · Esc to close'
       : action ? [current === 'CasinoRoom' && action.id === 'blackjack' ? casino.dealer.greeting : null,
-        `Press E · ${action.label}`].filter(Boolean).join(' · ')
-        : current === 'CentralLobby' ? 'Visit reception, the casino, the manager’s office or the hotel entrance.'
-          : current === 'HotelInterior' ? 'Explore the hotel preview. Read the directory, or return south to the lobby.'
-            : 'Approach the blackjack table, or walk south to return to the lobby.');
+        `Press E · ${actionLabel}`].filter(Boolean).join(' · ')
+        : WORLD_ROOMS[current].help);
   if (current === 'CentralLobby' && performance.now() - lastSaveAt > 750) persistLobby();
 }
 
-function activate(key) {
-  activeScene().stopMovement();
-  game.scene.sleep(current);
-  current = key;
-  ready = false;
-  host.setAttribute('aria-busy', 'true');
-  interact.disabled = true;
-  returnButton.disabled = true;
-  setText('world-status', 'Loading the room…');
-  unlockInteractionAt = performance.now() + 250;
-  game.scene.run(key);
-  // First entry can wait for artwork. Existing sleeping scenes wake immediately.
-  if (activeScene().owner && !failed) {
-    ready = true;
-    activeScene().focusCanvas();
-    host.setAttribute('aria-busy', 'false');
-  }
-  refresh();
+function completeArrival(scene) {
+  if (failed) return;
+  if (pendingEntry?.key === current) { scene.owner.restore(pendingEntry.position); pendingEntry = null; }
+  ready = true;
+  host.setAttribute('aria-busy', 'false');
+  scene.focusCanvas();
 }
 
-function enterRoom(destination) {
-  if (isBlocked() || current !== 'CentralLobby' || !['CasinoRoom', 'HotelInterior'].includes(destination)) return;
-  lobby.stopMovement();
-  if (!persistLobby()) return;
-  returnPosition = lobby.owner.snapshot();
-  activate(destination);
+function travel(route) {
+  if (!route || isBlocked() || route.from !== current) return;
+  try {
+    const source = activeScene(), destination = rooms.get(route.to);
+    const position = routeEntry(route, returnPosition, destination?.owner?.snapshot());
+    if (!destination) throw new Error('The destination room is unavailable.');
+    source.stopMovement();
+    if (current === 'CentralLobby') {
+      if (!persistLobby()) return;
+      returnPosition = lobby.owner.snapshot();
+    }
+    departures.set(current, source.owner.snapshot());
+    pendingEntry = { key: route.to, position };
+    if (destination.owner) { destination.owner.restore(position); pendingEntry = null; }
+    const previous = current;
+    ready = false; awaitingRelease = interactHeld;
+    host.setAttribute('aria-busy', 'true'); interact.disabled = true; returnButton.disabled = true;
+    setText('world-status', 'Loading the room…');
+    unlockInteractionAt = performance.now() + 250;
+    game.scene.sleep(previous); current = route.to; game.scene.run(current);
+    if (destination.owner && !failed) completeArrival(destination);
+    refresh();
+  } catch (error) { fail(error); }
 }
-
-function returnToLobby() {
-  if (isBlocked() || current === 'CentralLobby') return;
-  lobby.owner.restore(returnPosition);
-  activate('CentralLobby');
-}
+function returnToParent() { travel(backRoute(current)); }
 
 // Scenes and definitions request actions; this host owns navigation and modals.
 function dispatch(definition) {
   if (isBlocked() || activeScene().interactions.current()?.id !== definition.id) return;
   const action = definition.action;
-  if (action.type === 'door') enterRoom(action.destination);
-  else if (action.type === 'return') returnToLobby();
+  if (action.type === 'door' || action.type === 'return') travel(routeFor(current, definition.id));
   else if (action.type === 'management') document.getElementById('management-link').click();
   else if (action.type === 'blackjack') overlay.open();
   else if (action.type === 'dialogue') {
@@ -183,7 +187,7 @@ window.addEventListener('storage', event => {
     fail(new Error('Your world save changed in another tab. Reload to continue; no position was overwritten.'));
   }
   if (!failed && (event.key === 'hotelGameState' || event.key === null)) {
-    try { refreshResort(); } catch (error) { fail(error); }
+    try { refreshResort(); lobby?.guests?.requestActivityRefresh(); } catch (error) { fail(error); }
   }
 });
 
@@ -195,14 +199,12 @@ try {
   lastSavedPosition = store.state && !store.needsMigration ? store.lobby : null;
   CasinoWallet.onChange(value => { document.getElementById('world-balance').textContent = value.toFixed(2); });
   if (!window.Phaser) throw new Error('The room runtime could not load. Use the existing resort links above.');
-  const [{ LobbyScene }, { CasinoRoom }, { HotelScene }] = await Promise.all([
-    import('./lobby-scene.js'), import('../floor/room-scene.js'), import('./hotel-scene.js'),
+  const [{ LobbyScene }, { CasinoRoom }, { HotelScene }, { MainCasinoFloorScene }] = await Promise.all([
+    import('./lobby-scene.js'), import('../floor/room-scene.js'), import('./hotel-scene.js'), import('./main-casino-scene.js'),
   ]);
   const onReady = scene => {
     if (failed) return;
-    ready = true;
-    host.setAttribute('aria-busy', 'false');
-    scene.focusCanvas();
+    completeArrival(scene);
     if (scene === lobby) {
       const migrating = store.needsMigration;
       if (persistLobby() && migrating && store.relocated) {
@@ -215,17 +217,20 @@ try {
   };
   const sceneHost = {
     onAction: dispatch, isBlocked, onReady, onError: fail, hasFailed: () => failed,
-    onBack: returnToLobby,
+    onBack: returnToParent,
     onManagement: () => document.getElementById('management-link').click(),
   };
   lobby = new LobbyScene(sceneHost, store.lobby);
   hotel = new HotelScene(sceneHost);
+  mainFloor = new MainCasinoFloorScene(sceneHost);
   casino = new CasinoRoom({
     ...sceneHost,
     onProximity() {},
     onReady: () => onReady(casino),
   });
+  for (const scene of [lobby, mainFloor, casino, hotel]) rooms.set(scene.sys.settings.key, scene);
   const resume = () => {
+    interactHeld = false; awaitingRelease = false;
     if (!failed) activeScene().resumeWorld();
     unlockInteractionAt = performance.now() + 250;
     refresh();
@@ -241,7 +246,10 @@ try {
     onClose: resume,
   });
   interact.addEventListener('click', () => activeScene()?.interactions?.trigger({ pointer: true }));
-  returnButton.addEventListener('click', returnToLobby);
+  returnButton.addEventListener('click', returnToParent);
+  window.addEventListener('keydown', event => { if (event.code === 'KeyE') interactHeld = true; }, true);
+  window.addEventListener('keyup', event => { if (event.code === 'KeyE') { interactHeld = false; awaitingRelease = false; } }, true);
+  host.addEventListener('focusout', () => { interactHeld = false; awaitingRelease = false; });
   const collisionButton = document.getElementById('world-collisions');
   collisionButton.hidden = !new URLSearchParams(location.search).has('debug');
   collisionButton.addEventListener('click', () => {
@@ -255,7 +263,7 @@ try {
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     input: { keyboard: { target: host } },
     physics: { default: 'arcade', arcade: { gravity: { x: 0, y: 0 }, debug: false } },
-    audio: { noAudio: true }, scene: [lobby, casino, hotel],
+    audio: { noAudio: true }, scene: [lobby, casino, hotel, mainFloor],
   });
   game.events.on('poststep', refresh);
   if (new URLSearchParams(location.search).has('debug')) {
@@ -276,6 +284,11 @@ try {
         sourceWidth: lobby.background.texture.getSourceImage().width, sourceHeight: lobby.background.texture.getSourceImage().height,
         scaleMode: lobby.background.frame.source.scaleMode } : null,
       loungeArtwork: casino?.artworkSnapshot() ?? null,
+      mainCasinoArtwork: mainFloor?.artworkSnapshot() ?? null,
+      mainCasino: mainFloor?.owner ? mainFloor.geometrySnapshot() : null,
+      roomDepartures: Object.fromEntries([...departures].map(([k,p]) => [k,{...p}])),
+      awaitingRelease,
+      roomLifecycle: Object.fromEntries([...rooms].map(([k,s]) => [k,{created:Boolean(s.owner),sleeping:game.scene.isSleeping(k),paused:game.scene.isPaused(k)}])),
       dealer: casino?.dealer?.snapshot() ?? null,
       receptionist: lobby?.receptionist?.snapshot() ?? null,
       guest: lobby?.guests?.snapshot() ?? null,

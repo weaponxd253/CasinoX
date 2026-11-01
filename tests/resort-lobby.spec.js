@@ -1,3 +1,4 @@
+const { enterLounge, returnToLobby } = require('./helpers/main-casino-world');
 const { test, expect } = require('@playwright/test');
 const { savedResort } = require('./helpers/saved-resort');
 const { dealerBustDeck } = require('./helpers/blackjack-deck');
@@ -196,7 +197,7 @@ test('walking across mapped door approaches preserves valid current lobby coordi
 test('a paid blackjack hand survives a hotel visit without another deduction or payout', async ({ page }) => {
   test.setTimeout(90000);
   await openWorld(page, POINTS.casino);
-  await page.keyboard.press('e'); await expectScene(page, 'CasinoRoom');
+  await enterLounge(page); await expectScene(page, 'CasinoRoom');
   await moveUntil(page, 'w', s => s.interaction === 'blackjack');
   await page.keyboard.press('e');
   const table = page.frameLocator('#blackjack-frame');
@@ -208,12 +209,12 @@ test('a paid blackjack hand survives a hotel visit without another deduction or 
   await expect(page.locator('#world-balance')).toHaveText('245.25');
   await table.locator('body').evaluate(body => { body.dataset.phase2Hand = 'kept'; });
   await page.getByRole('button', { name: 'Return to floor' }).click();
-  await page.locator('#world-return').click(); await expectScene(page, 'CentralLobby');
+  await returnToLobby(page); await expectScene(page, 'CentralLobby');
   await walkTo(page, POINTS.hotel);
   await page.keyboard.press('e'); await expectScene(page, 'HotelInterior');
   await page.keyboard.press('Escape'); await expectScene(page, 'CentralLobby');
   await walkTo(page, POINTS.casino);
-  await page.keyboard.press('e'); await expectScene(page, 'CasinoRoom');
+  await enterLounge(page); await expectScene(page, 'CasinoRoom');
   await expect(page.locator('#world-interact')).toBeEnabled(); await page.keyboard.press('e');
   await expect(table.locator('body')).toHaveAttribute('data-phase2-hand', 'kept');
   await expect(page.locator('#world-balance')).toHaveText('245.25');

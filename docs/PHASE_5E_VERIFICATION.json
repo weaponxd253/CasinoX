@@ -1,0 +1,1378 @@
+{
+  "generatedAt": "2026-10-31T21:44:43.647Z",
+  "baseline": {
+    "startTime": "2026-10-31T19:58:54.146Z",
+    "duration": 1826508.875,
+    "expected": 582,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0,
+    "errors": []
+  },
+  "final": {
+    "startTime": "2026-10-31T21:05:35.183Z",
+    "duration": 2336409.056,
+    "expected": 672,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0,
+    "errors": [],
+    "projects": {
+      "chromium": {
+        "tests": 336,
+        "passed": 336,
+        "failed": 0,
+        "skipped": 0,
+        "attempts": 336,
+        "retries": 0
+      },
+      "mobile-chrome": {
+        "tests": 336,
+        "passed": 336,
+        "failed": 0,
+        "skipped": 0,
+        "attempts": 336,
+        "retries": 0
+      }
+    },
+    "attempts": 672,
+    "retries": 0
+  },
+  "selectorParity": {
+    "staffingCases": 1795,
+    "capacityOccupancyCases": 48,
+    "financialCases": 360,
+    "writes": 0,
+    "comparison": "exact pre-extraction JSON SHA-256 outputs; frozen inputs",
+    "fixtures": [
+      {
+        "path": "tests/fixtures/hotel-selector-baseline.json",
+        "sha256": "138147fdd0fdb55596b945c57f35e3ac808f147ef5ef81ecf5ef40b1aefd4523"
+      },
+      {
+        "path": "tests/fixtures/hotel-finance-baseline.json",
+        "sha256": "ca98185be8c90a84ded40c0383f05ecdf4e69c14a268969992e715373691421e"
+      }
+    ]
+  },
+  "stress": [
+    {
+      "project": "chromium",
+      "cap": 6,
+      "scenario": "low",
+      "maximumVisible": 2,
+      "maximumMoving": 2,
+      "created": 15,
+      "completed": 15,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "chromium",
+      "cap": 6,
+      "scenario": "moderate",
+      "maximumVisible": 2,
+      "maximumMoving": 2,
+      "created": 23,
+      "completed": 23,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "chromium",
+      "cap": 6,
+      "scenario": "high",
+      "maximumVisible": 2,
+      "maximumMoving": 2,
+      "created": 35,
+      "completed": 35,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "chromium",
+      "cap": 6,
+      "scenario": "partial",
+      "maximumVisible": 2,
+      "maximumMoving": 2,
+      "created": 28,
+      "completed": 28,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "chromium",
+      "cap": 6,
+      "scenario": "unavailable",
+      "maximumVisible": 2,
+      "maximumMoving": 2,
+      "created": 28,
+      "completed": 28,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "chromium",
+      "cap": 6,
+      "scenario": "transition",
+      "maximumVisible": 3,
+      "maximumMoving": 2,
+      "created": 29,
+      "completed": 29,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "chromium",
+      "cap": 6,
+      "scenario": "busy-cap",
+      "maximumVisible": 6,
+      "maximumMoving": 4,
+      "created": 187,
+      "completed": 187,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "chromium",
+      "cap": 8,
+      "scenario": "low",
+      "maximumVisible": 2,
+      "maximumMoving": 2,
+      "created": 15,
+      "completed": 15,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "chromium",
+      "cap": 8,
+      "scenario": "moderate",
+      "maximumVisible": 2,
+      "maximumMoving": 2,
+      "created": 23,
+      "completed": 23,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "chromium",
+      "cap": 8,
+      "scenario": "high",
+      "maximumVisible": 2,
+      "maximumMoving": 2,
+      "created": 35,
+      "completed": 35,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "chromium",
+      "cap": 8,
+      "scenario": "partial",
+      "maximumVisible": 2,
+      "maximumMoving": 2,
+      "created": 28,
+      "completed": 28,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "chromium",
+      "cap": 8,
+      "scenario": "unavailable",
+      "maximumVisible": 2,
+      "maximumMoving": 2,
+      "created": 28,
+      "completed": 28,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "chromium",
+      "cap": 8,
+      "scenario": "transition",
+      "maximumVisible": 3,
+      "maximumMoving": 2,
+      "created": 29,
+      "completed": 29,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "chromium",
+      "cap": 8,
+      "scenario": "busy-cap",
+      "maximumVisible": 8,
+      "maximumMoving": 4,
+      "created": 243,
+      "completed": 243,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "mobile-chrome",
+      "cap": 6,
+      "scenario": "low",
+      "maximumVisible": 2,
+      "maximumMoving": 2,
+      "created": 15,
+      "completed": 15,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "mobile-chrome",
+      "cap": 6,
+      "scenario": "moderate",
+      "maximumVisible": 2,
+      "maximumMoving": 2,
+      "created": 23,
+      "completed": 23,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "mobile-chrome",
+      "cap": 6,
+      "scenario": "high",
+      "maximumVisible": 2,
+      "maximumMoving": 2,
+      "created": 35,
+      "completed": 35,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "mobile-chrome",
+      "cap": 6,
+      "scenario": "partial",
+      "maximumVisible": 2,
+      "maximumMoving": 2,
+      "created": 28,
+      "completed": 28,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "mobile-chrome",
+      "cap": 6,
+      "scenario": "unavailable",
+      "maximumVisible": 2,
+      "maximumMoving": 2,
+      "created": 28,
+      "completed": 28,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "mobile-chrome",
+      "cap": 6,
+      "scenario": "transition",
+      "maximumVisible": 3,
+      "maximumMoving": 2,
+      "created": 29,
+      "completed": 29,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "mobile-chrome",
+      "cap": 6,
+      "scenario": "busy-cap",
+      "maximumVisible": 6,
+      "maximumMoving": 4,
+      "created": 187,
+      "completed": 187,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "mobile-chrome",
+      "cap": 8,
+      "scenario": "low",
+      "maximumVisible": 2,
+      "maximumMoving": 2,
+      "created": 15,
+      "completed": 15,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "mobile-chrome",
+      "cap": 8,
+      "scenario": "moderate",
+      "maximumVisible": 2,
+      "maximumMoving": 2,
+      "created": 23,
+      "completed": 23,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "mobile-chrome",
+      "cap": 8,
+      "scenario": "high",
+      "maximumVisible": 2,
+      "maximumMoving": 2,
+      "created": 35,
+      "completed": 35,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "mobile-chrome",
+      "cap": 8,
+      "scenario": "partial",
+      "maximumVisible": 2,
+      "maximumMoving": 2,
+      "created": 28,
+      "completed": 28,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "mobile-chrome",
+      "cap": 8,
+      "scenario": "unavailable",
+      "maximumVisible": 2,
+      "maximumMoving": 2,
+      "created": 28,
+      "completed": 28,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "mobile-chrome",
+      "cap": 8,
+      "scenario": "transition",
+      "maximumVisible": 3,
+      "maximumMoving": 2,
+      "created": 29,
+      "completed": 29,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    },
+    {
+      "project": "mobile-chrome",
+      "cap": 8,
+      "scenario": "busy-cap",
+      "maximumVisible": 8,
+      "maximumMoving": 4,
+      "created": 243,
+      "completed": 243,
+      "invalid": [],
+      "stateUnchanged": true,
+      "pathUnchanged": true
+    }
+  ],
+  "deterministicAcrossDesktopMobile": true,
+  "actualManagement": [
+    {
+      "project": "chromium",
+      "name": "actual-management-rooms",
+      "before": {
+        "population": 4,
+        "capacity": 10,
+        "cash": 4321
+      },
+      "after": {
+        "population": 4,
+        "capacity": 16,
+        "cash": 3821
+      },
+      "coverage": null,
+      "returnedReception": null,
+      "occupancy": {
+        "metric": "guest-capacity-utilization",
+        "available": true,
+        "guestPopulation": 4,
+        "guestCapacity": 16,
+        "percentage": 25,
+        "reason": null
+      },
+      "reception": {
+        "assignment": "lobby",
+        "available": true,
+        "assignedCount": 1,
+        "coverageScore": 100,
+        "coverageStatus": "covered",
+        "reason": null
+      },
+      "policy": {
+        "profile": "low",
+        "nearFull": false,
+        "dialogueMood": "average",
+        "serviceMs": 6000,
+        "traffic": {
+          "minArrivalMs": 30000,
+          "maxArrivalMs": 50000,
+          "admissionCeiling": 3,
+          "weights": {
+            "checkIn": 20,
+            "casino": 50,
+            "relaxing": 20,
+            "hotelDeparture": 10
+          }
+        }
+      },
+      "worldWrites": [],
+      "legitimateManagementWriteKeys": [
+        "__casino_probe__",
+        "theme",
+        "hotelGameState",
+        "hotelGameState",
+        "hotelGameState",
+        "hotelGameState",
+        "hotelGameState",
+        "hotelGameState"
+      ],
+      "saveUnchangedAfterManagementClosed": true,
+      "checkpoint": null
+    },
+    {
+      "project": "chromium",
+      "name": "actual-management-staff",
+      "before": null,
+      "after": null,
+      "coverage": "short",
+      "returnedReception": null,
+      "occupancy": {
+        "metric": "guest-capacity-utilization",
+        "available": true,
+        "guestPopulation": 4,
+        "guestCapacity": 10,
+        "percentage": 40,
+        "reason": null
+      },
+      "reception": {
+        "assignment": "lobby",
+        "available": true,
+        "assignedCount": 0,
+        "coverageScore": 0,
+        "coverageStatus": "short",
+        "reason": null
+      },
+      "policy": {
+        "profile": "moderate",
+        "nearFull": false,
+        "dialogueMood": "average",
+        "serviceMs": 12000,
+        "traffic": {
+          "minArrivalMs": 20000,
+          "maxArrivalMs": 35000,
+          "admissionCeiling": 5,
+          "weights": {
+            "checkIn": 40,
+            "casino": 30,
+            "relaxing": 15,
+            "hotelDeparture": 15
+          }
+        }
+      },
+      "worldWrites": [],
+      "legitimateManagementWriteKeys": [
+        "__casino_probe__",
+        "theme",
+        "hotelGameState",
+        "hotelGameState",
+        "hotelGameState",
+        "hotelGameState"
+      ],
+      "saveUnchangedAfterManagementClosed": true,
+      "checkpoint": null
+    },
+    {
+      "project": "chromium",
+      "name": "actual-full-page-management",
+      "before": null,
+      "after": null,
+      "coverage": {
+        "score": 74,
+        "status": "thin"
+      },
+      "returnedReception": {
+        "assignment": "lobby",
+        "available": true,
+        "assignedCount": 1,
+        "coverageScore": 74,
+        "coverageStatus": "thin",
+        "reason": null
+      },
+      "occupancy": {
+        "metric": "guest-capacity-utilization",
+        "available": true,
+        "guestPopulation": 4,
+        "guestCapacity": 10,
+        "percentage": 40,
+        "reason": null
+      },
+      "reception": null,
+      "policy": {
+        "profile": "moderate",
+        "nearFull": false,
+        "dialogueMood": "average",
+        "serviceMs": 8000,
+        "traffic": {
+          "minArrivalMs": 20000,
+          "maxArrivalMs": 35000,
+          "admissionCeiling": 5,
+          "weights": {
+            "checkIn": 40,
+            "casino": 30,
+            "relaxing": 15,
+            "hotelDeparture": 15
+          }
+        }
+      },
+      "worldWrites": [],
+      "legitimateManagementWriteKeys": [
+        "__casino_probe__",
+        "theme",
+        "hotelGameState",
+        "hotelGameState",
+        "hotelGameState",
+        "hotelGameState"
+      ],
+      "saveUnchangedAfterManagementClosed": null,
+      "checkpoint": {
+        "x": 717,
+        "y": 243,
+        "facing": "up"
+      }
+    },
+    {
+      "project": "mobile-chrome",
+      "name": "actual-management-rooms",
+      "before": {
+        "population": 4,
+        "capacity": 10,
+        "cash": 4321
+      },
+      "after": {
+        "population": 4,
+        "capacity": 16,
+        "cash": 3821
+      },
+      "coverage": null,
+      "returnedReception": null,
+      "occupancy": {
+        "metric": "guest-capacity-utilization",
+        "available": true,
+        "guestPopulation": 4,
+        "guestCapacity": 16,
+        "percentage": 25,
+        "reason": null
+      },
+      "reception": {
+        "assignment": "lobby",
+        "available": true,
+        "assignedCount": 1,
+        "coverageScore": 100,
+        "coverageStatus": "covered",
+        "reason": null
+      },
+      "policy": {
+        "profile": "low",
+        "nearFull": false,
+        "dialogueMood": "average",
+        "serviceMs": 6000,
+        "traffic": {
+          "minArrivalMs": 30000,
+          "maxArrivalMs": 50000,
+          "admissionCeiling": 3,
+          "weights": {
+            "checkIn": 20,
+            "casino": 50,
+            "relaxing": 20,
+            "hotelDeparture": 10
+          }
+        }
+      },
+      "worldWrites": [],
+      "legitimateManagementWriteKeys": [
+        "__casino_probe__",
+        "theme",
+        "hotelGameState",
+        "hotelGameState",
+        "hotelGameState",
+        "hotelGameState",
+        "hotelGameState",
+        "hotelGameState"
+      ],
+      "saveUnchangedAfterManagementClosed": true,
+      "checkpoint": null
+    },
+    {
+      "project": "mobile-chrome",
+      "name": "actual-management-staff",
+      "before": null,
+      "after": null,
+      "coverage": "short",
+      "returnedReception": null,
+      "occupancy": {
+        "metric": "guest-capacity-utilization",
+        "available": true,
+        "guestPopulation": 4,
+        "guestCapacity": 10,
+        "percentage": 40,
+        "reason": null
+      },
+      "reception": {
+        "assignment": "lobby",
+        "available": true,
+        "assignedCount": 0,
+        "coverageScore": 0,
+        "coverageStatus": "short",
+        "reason": null
+      },
+      "policy": {
+        "profile": "moderate",
+        "nearFull": false,
+        "dialogueMood": "average",
+        "serviceMs": 12000,
+        "traffic": {
+          "minArrivalMs": 20000,
+          "maxArrivalMs": 35000,
+          "admissionCeiling": 5,
+          "weights": {
+            "checkIn": 40,
+            "casino": 30,
+            "relaxing": 15,
+            "hotelDeparture": 15
+          }
+        }
+      },
+      "worldWrites": [],
+      "legitimateManagementWriteKeys": [
+        "__casino_probe__",
+        "theme",
+        "hotelGameState",
+        "hotelGameState",
+        "hotelGameState",
+        "hotelGameState"
+      ],
+      "saveUnchangedAfterManagementClosed": true,
+      "checkpoint": null
+    },
+    {
+      "project": "mobile-chrome",
+      "name": "actual-full-page-management",
+      "before": null,
+      "after": null,
+      "coverage": {
+        "score": 74,
+        "status": "thin"
+      },
+      "returnedReception": {
+        "assignment": "lobby",
+        "available": true,
+        "assignedCount": 1,
+        "coverageScore": 74,
+        "coverageStatus": "thin",
+        "reason": null
+      },
+      "occupancy": {
+        "metric": "guest-capacity-utilization",
+        "available": true,
+        "guestPopulation": 4,
+        "guestCapacity": 10,
+        "percentage": 40,
+        "reason": null
+      },
+      "reception": null,
+      "policy": {
+        "profile": "moderate",
+        "nearFull": false,
+        "dialogueMood": "average",
+        "serviceMs": 8000,
+        "traffic": {
+          "minArrivalMs": 20000,
+          "maxArrivalMs": 35000,
+          "admissionCeiling": 5,
+          "weights": {
+            "checkIn": 40,
+            "casino": 30,
+            "relaxing": 15,
+            "hotelDeparture": 15
+          }
+        }
+      },
+      "worldWrites": [],
+      "legitimateManagementWriteKeys": [
+        "__casino_probe__",
+        "theme",
+        "hotelGameState",
+        "hotelGameState",
+        "hotelGameState",
+        "hotelGameState"
+      ],
+      "saveUnchangedAfterManagementClosed": null,
+      "checkpoint": {
+        "x": 717,
+        "y": 243,
+        "facing": "up"
+      }
+    }
+  ],
+  "protected": {
+    "count": 113,
+    "unchanged": 113,
+    "differences": [],
+    "files": [
+      {
+        "hash": "99A75E7F7A2C343131DF7693BF90803E113E5149CC1B679A4FE58A701DA45908",
+        "path": "world/guest-controller.js"
+      },
+      {
+        "hash": "5A3258B442C1613BF7220228AC78DBDD2BB6D88F47E3171C25A0884C9B3A91B2",
+        "path": "world/npc-sprite.js"
+      },
+      {
+        "hash": "1E1B923DCDB461D1553F884732A76B3D2CBA2B95EE006B571B702BE57F72F48B",
+        "path": "hotel/hotel-engine.js"
+      },
+      {
+        "hash": "5C701E601B6C045742DB1CAACCFCB21729F878FD610170CCFA89216A0B3B7E58",
+        "path": "hotel/hotel-ui.js"
+      },
+      {
+        "hash": "35036511D526172466397F200E42F26BA79233EB481CB979453D1B23096E0667",
+        "path": "wallet.js"
+      },
+      {
+        "hash": "BFDE48634235BD4136D8B4C85BB2DE6E33E0A86AF320F036929453A050B6E8C1",
+        "path": "world/lobby-navigation.js"
+      },
+      {
+        "hash": "E88DA90B817642EF94D8372C561F56F42B8D81EC575084DA128509CD0A0F75DD",
+        "path": "world/lobby-config.js"
+      },
+      {
+        "hash": "800B7F854597FF021CA22C727221C7A93C6292B78E0013621FA2170F2EBC2FA0",
+        "path": "world/lobby-layout.js"
+      },
+      {
+        "hash": "C68F9A5C856C1A02CC9DE6CB48F7025F186C092A21F0DDCB0A6E7834E636905F",
+        "path": "world/guest-appearances.js"
+      },
+      {
+        "hash": "206172D2ED11F4E7B0F33EDBB812D798C98AEFC8179DD4E7B9F9499B58DF35FB",
+        "path": "world/guest-personalities.js"
+      },
+      {
+        "hash": "35BDDF75BF439D910A5139FE942BC59A9F878525AEF1F22385C6A5A738A1B887",
+        "path": "world/world-state.js"
+      },
+      {
+        "hash": "AF8E593E76B34A606E18B0DD0B2FE158860F6ED30905BBA538E06CECE7F47D20",
+        "path": "docs/recordings\\traveler-journey.webm"
+      },
+      {
+        "hash": "9FD2D74145D4D95CACD554D74ECF2473C572FBA75F37C1047A7423F9ACAD12FB",
+        "path": "docs/recordings\\reception-queue.webm"
+      },
+      {
+        "hash": "C5FC167B38260CF57013AFC07CCE8214220259B02098152584057C97B125C815",
+        "path": "docs/recordings\\guest-variety-dialogue.webm"
+      },
+      {
+        "hash": "EAFA79EECA9B8674C9C0CDCC35616925FB41E5F260903C969B0D767B04CB17CF",
+        "path": "docs/recordings\\dynamic-guest-traffic.webm"
+      },
+      {
+        "hash": "194B0C573E6D6BDBFC3F017DC0570A4FFA6F803BF225F057C1F3047DF94C364C",
+        "path": "docs/screenshots\\blackjack-lounge-collisions.png"
+      },
+      {
+        "hash": "4EAFC4DAF398BAD30D68687D577D28CD1639ABA3DF3228C2F45C48B08573B94B",
+        "path": "docs/screenshots\\title-320x720.png"
+      },
+      {
+        "hash": "9D7398EF7BFFB8AC24B3EFF4165146AE9856643F3016AC1E1A5646C0093903FC",
+        "path": "docs/screenshots\\dealer-world-table.png"
+      },
+      {
+        "hash": "18DE685CE8C184226AE4F9AC8ADCDD8EB61790DF0381FD9A8A26D8522ED31761",
+        "path": "docs/screenshots\\title-1920x1080.png"
+      },
+      {
+        "hash": "D45FA3E5E3138F52D8B1EB65B4E8A833343163E7C26A5DCEC9EB977928A804B5",
+        "path": "docs/screenshots\\title-1440x900.png"
+      },
+      {
+        "hash": "766419E08C4151AA7E5C5D2D915588ABD054A414B2F6D642FC7971CBD0863F6C",
+        "path": "docs/screenshots\\dealer-world-lounge.png"
+      },
+      {
+        "hash": "4CDA9905859F89C0A33D45775518011C7DD7BECA04F3D915527A277745588E8B",
+        "path": "docs/screenshots\\receptionist-lobby.png"
+      },
+      {
+        "hash": "9D7398EF7BFFB8AC24B3EFF4165146AE9856643F3016AC1E1A5646C0093903FC",
+        "path": "docs/screenshots\\dealer-floor-table.png"
+      },
+      {
+        "hash": "358BAE3CBFE3DC95BF08743FC5E68EC5445D4ABC2A6B1FB962DE203345491122",
+        "path": "docs/screenshots\\queue-two-waiting.png"
+      },
+      {
+        "hash": "045FE1419ECB1B5B6187034CCD57D7C47729EF64901410B9241D5563CCBDADAD",
+        "path": "docs/screenshots\\dealer-floor-lounge.png"
+      },
+      {
+        "hash": "9166DD8C7D70E4401BE40DD302897712F853234148BEE0724765425CDAA14E60",
+        "path": "docs/screenshots\\traffic-casino.png"
+      },
+      {
+        "hash": "AFED819F383EC6C0F9453E470A768B85CB790A4DD733BC4F47D00352EDB1D3F9",
+        "path": "docs/screenshots\\queue-second-advancing.png"
+      },
+      {
+        "hash": "ED7153A63ECB05EC2B48DA1FAB74206CC76E69255D7914E62A69698640B69C1B",
+        "path": "docs/screenshots\\central-lobby.png"
+      },
+      {
+        "hash": "358BAE3CBFE3DC95BF08743FC5E68EC5445D4ABC2A6B1FB962DE203345491122",
+        "path": "docs/screenshots\\queue-owner-access.png"
+      },
+      {
+        "hash": "9B591D6792A15A2BD7CC6633F337C4426ECCEA46E908240D2E58211D33426305",
+        "path": "docs/screenshots\\traffic-busy.png"
+      },
+      {
+        "hash": "9396B3B602C2240EEFD41EB7683E24A004064A85D501D6B98D21515B9617187E",
+        "path": "docs/screenshots\\central-lobby-collisions.png"
+      },
+      {
+        "hash": "90E813BF4E09AFEFE8907F255CF30BAEBAD17025C86EF9DE9E33E5A613427840",
+        "path": "docs/screenshots\\queue-first-service.png"
+      },
+      {
+        "hash": "0EAF80AF35F9EC4917F2C4A0EAA0312E1A774E2C6A65DFC4AA931AF2D97EBC48",
+        "path": "docs/screenshots\\blackjack-lounge.png"
+      },
+      {
+        "hash": "A1E5E25EB5A2257D9AC0E441E212A0B9CEDEB3AF292ED39D57CC0263FC523F3D",
+        "path": "docs/screenshots\\traffic-appearances.png"
+      },
+      {
+        "hash": "900F4D1C5703A8483B40C089EC1560BFE9970E2DCF92F640AAB97D93A5658490",
+        "path": "docs/screenshots\\queue-debug.png"
+      },
+      {
+        "hash": "03F4A106C3C4E0ECC098A54F0A02392E46E7510C77E81BAB26E1669FA14A3FDC",
+        "path": "docs/screenshots\\blackjack-lounge-table.png"
+      },
+      {
+        "hash": "07959991481FE44C669DF4F5853E161A7C16CC4AACF9D5E305B5CBC24CE1625D",
+        "path": "docs/screenshots\\title-768x1024.png"
+      },
+      {
+        "hash": "358BAE3CBFE3DC95BF08743FC5E68EC5445D4ABC2A6B1FB962DE203345491122",
+        "path": "docs/screenshots\\queue-all-three.png"
+      },
+      {
+        "hash": "A1E7185204D9A33488489AAFB5416B1CF3516691484846FF51B1EA75D045C7FD",
+        "path": "docs/screenshots\\blackjack-lounge-exit.png"
+      },
+      {
+        "hash": "59AA1B8A482AAC9445C1A341A05F88BA816FDD4F232E0A108E9C01D5BF7C538A",
+        "path": "docs/screenshots\\title-390x844.png"
+      },
+      {
+        "hash": "6621AC38AF10EF5F6C5B38EFDA7EDA904C70A6E65A64E8568C1D59354404B797",
+        "path": "docs/screenshots\\traffic-main-exit.png"
+      },
+      {
+        "hash": "247AF111C0DFDAA8555FAF4690D8FACA21E7A0BBD42CF69401585A55C424F0C3",
+        "path": "docs/screenshots\\traffic-passing.png"
+      },
+      {
+        "hash": "1441602FB97CE2A32C7E1167FDAE5091F89EA30243BBAC58DF5B63F7DCC71C8E",
+        "path": "docs/screenshots\\traffic-quiet.png"
+      },
+      {
+        "hash": "E01A010FA6DB9F882E94ECA655A43D3C6E744ACB73320699D61DEAB84C4F721A",
+        "path": "docs/screenshots\\traffic-debug.png"
+      },
+      {
+        "hash": "A20021676B9D75DD715A0E3C53F50E47033D8867F536BFFDAE711E4233E6ACE6",
+        "path": "docs/screenshots\\traffic-reception.png"
+      },
+      {
+        "hash": "384E3517B84B6BA0BE77212D589508522C8620A923C2136C009CEE23DC73E009",
+        "path": "docs/screenshots\\traffic-relaxing.png"
+      },
+      {
+        "hash": "BCE4FDED74973A8641CA992DD024F959F2ECE496E76616DEB338F1473734A70B",
+        "path": "docs/screenshots\\traffic-normal-quiet.png"
+      },
+      {
+        "hash": "06BEB6728F056F5CE6C1864232F736207A53AC02A68C8C8303F12B0B37EC6223",
+        "path": "docs/screenshots\\traffic-staggered.png"
+      },
+      {
+        "hash": "94C00C28597D4D4BD982C294E888F9EAAB0E480670F14D50CE483C8291103E3F",
+        "path": "docs/screenshots\\traveler-debug.png"
+      },
+      {
+        "hash": "4DE66ACE3EB39897E0DB5778699F118423ACEA8D657DA8D8D42046437C98AD0E",
+        "path": "docs/screenshots\\traveler-entering.png"
+      },
+      {
+        "hash": "93D5A713E7C8B9D9E79B0A81B7DD339C0BD211625800EBAA223F14033DC85F29",
+        "path": "docs/screenshots\\variety-young-casino.png"
+      },
+      {
+        "hash": "204E121CB846406B66C78D9A8A46FD044B1501196659716372ADA0D122E6C7A2",
+        "path": "docs/screenshots\\variety-tourist-seating.png"
+      },
+      {
+        "hash": "83F1210647D95E67A5177D68368861D33B5022499921037FBE32F060CA00CE87",
+        "path": "docs/screenshots\\variety-speech-expired.png"
+      },
+      {
+        "hash": "E4CD325DC42E43B5D47490C8A36A6E3ACA6E7FBAD70A352B942F919349AD8FAD",
+        "path": "docs/screenshots\\variety-relaxed-dialogue.png"
+      },
+      {
+        "hash": "F1BEDEE8146F7EE37E29B6164509AB08CE5639CA88D5BA273E925AE426C00C79",
+        "path": "docs/screenshots\\variety-owner-passage.png"
+      },
+      {
+        "hash": "523324EAE8609858BB41F343CBC022EAB870368A9C5A64482D6F14D1EAC4CC84",
+        "path": "docs/screenshots\\variety-normal.png"
+      },
+      {
+        "hash": "52090162DC01433FBC646B7ACB3909BF1AC03ECB22EBB268A09BAFEAE8DC1DD7",
+        "path": "docs/screenshots\\variety-luxury-hotel.png"
+      },
+      {
+        "hash": "33F8383C742EB1CEFE50B49ABB710F2DDAED3DF002484117EE3E1853608A8CDF",
+        "path": "docs/screenshots\\variety-impatient-queue.png"
+      },
+      {
+        "hash": "ED821150B804D03626DFAC2E1DB3AF58F7C194D7142715E0401CB8E729D03675",
+        "path": "docs/screenshots\\variety-high-roller-entry.png"
+      },
+      {
+        "hash": "9ACC2C1E61269224A385D34B0DC1E0A8A8488FFF498C49FB9F90CABB449D317B",
+        "path": "docs/screenshots\\variety-directions.png"
+      },
+      {
+        "hash": "BAA75D54CD1634D728B3583F11E67BAEB2FC94489BB853AAD995CBF713D136B3",
+        "path": "docs/screenshots\\variety-debug.png"
+      },
+      {
+        "hash": "F2579401F1D1075827F8C447CDC2E9072D5C3E06CAED236D7C31675743351332",
+        "path": "docs/screenshots\\variety-conference-reception.png"
+      },
+      {
+        "hash": "31702A2C4E99994D93D48A0D074A84751AF52A85AD379F1A3C12A0FB6C364F19",
+        "path": "docs/screenshots\\variety-busy.png"
+      },
+      {
+        "hash": "F73757B813F597D7C9CB5D17D30AD002A20B5742FDA5E478BA6E33C11EA547E6",
+        "path": "docs/screenshots\\variety-appearances.png"
+      },
+      {
+        "hash": "7FE7788B94D353D897008D2728D5E667B03909C1CCA5030DAB2A1B68B7BA65F6",
+        "path": "docs/screenshots\\traveler-reception.png"
+      },
+      {
+        "hash": "005C3EE00499E694CC02691633DB8462FC545C7F81659C104A4B4BB14496FBBC",
+        "path": "docs/screenshots\\traveler-hotel.png"
+      },
+      {
+        "hash": "E1BE3F569A35426805EBD45CFBA5295C49BF3C7757F2136BB8799E9A714F9DD3",
+        "path": "world/assets\\receptionist\\receptionist.png"
+      },
+      {
+        "hash": "D58C5BE75256B004E0DA681BC282C7296D3F7BF12AA608E58A5C0C9F1B60A19A",
+        "path": "world/assets\\receptionist\\receptionist-source.png"
+      },
+      {
+        "hash": "4AD004B6130AAA796D14BCD73583A137AE209ABFA2CF69D3FC249E579627D4F4",
+        "path": "world/assets\\receptionist\\receptionist-frames.json"
+      },
+      {
+        "hash": "F63C9CB4C167423619535624E92364067A62053C23229042DBEB3DFD1C42F0C6",
+        "path": "world/assets\\receptionist\\README.md"
+      },
+      {
+        "hash": "90DB1834AE5596A4AB55C27397D23E466C59D1DA50A9A9BB0E52588B837F7A66",
+        "path": "world/assets\\guests\\young-casino-visitor\\young-casino-visitor.png"
+      },
+      {
+        "hash": "9B7600D11A542F5EF9FD709CFD5CCDF9FD5839E2117D553E4B7301D63E852093",
+        "path": "world/assets\\guests\\young-casino-visitor\\young-casino-visitor-source.png"
+      },
+      {
+        "hash": "238A501D2748D032E83A1BED5A1951B3F042B80B0BB46B969551553514CB36FB",
+        "path": "world/assets\\guests\\young-casino-visitor\\young-casino-visitor-frames.json"
+      },
+      {
+        "hash": "6E58C611855B2D87355D0CF20BF8507EC50E11D8ACBE8CE4370313779DE8F797",
+        "path": "world/assets\\guests\\young-casino-visitor\\README.md"
+      },
+      {
+        "hash": "519A0C524D5BB4441DC577011C4E02D553E6D326B08F343245D2ABC15D85E574",
+        "path": "world/assets\\owner\\README.md"
+      },
+      {
+        "hash": "D2872FF85A2FE9510A422DEBCF5F8F2308BD9288166129343F04D2DFF1C26078",
+        "path": "world/assets\\owner\\owner.png"
+      },
+      {
+        "hash": "6D2B574153536B90594B05C65A74AEEB453D9680B70E4FE574548EB5E734EF0C",
+        "path": "world/assets\\owner\\owner-source.png"
+      },
+      {
+        "hash": "37EE12BB2C0C5FF2372E83B876035625991348CC201A131DF773EDF97DFC0FDE",
+        "path": "world/assets\\owner\\owner-frames.json"
+      },
+      {
+        "hash": "4FA44E549D01CDD1FE8E2A424335129653456E19BBB8A67D03187958A0F9AF7D",
+        "path": "world/assets\\lobby\\central-lobby.png"
+      },
+      {
+        "hash": "887800AB047FF26F993AEBE763C3590B305959B1AA6C09F9C9DCF0FBEC2CAACB",
+        "path": "world/assets\\guests\\vacation-tourist\\vacation-tourist.png"
+      },
+      {
+        "hash": "CB4D1B94AB56775DF600D025B62EA957999E097734764CF81F1694D3904A7652",
+        "path": "world/assets\\guests\\vacation-tourist\\vacation-tourist-source.png"
+      },
+      {
+        "hash": "D76FE679DBD7697B3CBB8BFE4FEF1E567DD6F36BC1B450A0B80F4DBA3EAE5B20",
+        "path": "world/assets\\guests\\vacation-tourist\\vacation-tourist-frames.json"
+      },
+      {
+        "hash": "53B092A4DB6D8938B6512C50BBC2726C72840646C02D04935EA5D0820E466188",
+        "path": "world/assets\\guests\\vacation-tourist\\README.md"
+      },
+      {
+        "hash": "1469505DBACA7834BF7B823E4CC386A7295B3A9FB1467CD2A59B3483FBF47582",
+        "path": "world/assets\\guests\\luxury-hotel-guest\\README.md"
+      },
+      {
+        "hash": "0FB99D2AF28088D15E88653BDB6E4F99E5C117610B25B155EFFC2CF7F9CE96E4",
+        "path": "world/assets\\guests\\older-leisure-traveler\\README.md"
+      },
+      {
+        "hash": "195EB5911C933E6A67F470905877744608A47313007B4CBC89FA8711318421BE",
+        "path": "world/assets\\guests\\luxury-hotel-guest\\luxury-hotel-guest.png"
+      },
+      {
+        "hash": "11F2613A6CF7D57EE9BAE7D073C951AEF22A47D6212C2FCAD4CA2F5C0E0EE611",
+        "path": "world/assets\\guests\\older-leisure-traveler\\older-leisure-traveler.png"
+      },
+      {
+        "hash": "0F2B53AAB4111AF5F957D49DC6558B3EF9E0FDE72BC2FCE6B344F33661D41F9D",
+        "path": "world/assets\\guests\\luxury-hotel-guest\\luxury-hotel-guest-source.png"
+      },
+      {
+        "hash": "DA62B862E515EAA15826EFD6863D4B3EFF8336536D6DCB1B15CAA707674CCC8C",
+        "path": "world/assets\\guests\\older-leisure-traveler\\older-leisure-traveler-source.png"
+      },
+      {
+        "hash": "02C8845956C96EE2D9AD4C5711F4F257B72307DDC400C72088B68480CA40F9DE",
+        "path": "world/assets\\guests\\luxury-hotel-guest\\luxury-hotel-guest-frames.json"
+      },
+      {
+        "hash": "005264B3FFA51AA348EA261CB61C51AD079FFEFB1A58D09153A0F43D79AF0C6E",
+        "path": "world/assets\\guests\\older-leisure-traveler\\older-leisure-traveler-frames.json"
+      },
+      {
+        "hash": "0C5DF2C429AFFA9E3D6EED651C10ED5CDFDC37E096B9E1EC947C469538058373",
+        "path": "world/assets\\guests\\high-roller\\README.md"
+      },
+      {
+        "hash": "C15A7F560F10B526053CFB7CDA4B8685EC6206DAB07985D6FC8BFE5C90F007BF",
+        "path": "world/assets\\guests\\high-roller\\high-roller.png"
+      },
+      {
+        "hash": "D3AB3D9A0292B4C91158B0C2D9D8A4E2123C61FAA34C7B2A3C5D252D15ACC572",
+        "path": "world/assets\\guests\\high-roller\\high-roller-source.png"
+      },
+      {
+        "hash": "E0D5EE15FF3EFDF5E87CB4593A0984B6A7EB9BABBC37EC3FE9D5BB8DE218F2DB",
+        "path": "world/assets\\guests\\high-roller\\high-roller-frames.json"
+      },
+      {
+        "hash": "2EB40445EA0981BC31A67FBE04C566BD6913A1A1A55A36F770D3813E0FCA698A",
+        "path": "world/assets\\guests\\casual-traveler\\README.md"
+      },
+      {
+        "hash": "46F6FB5325D839FCA0FECF91085FB8DDA7157B858614FF7B3492F82B71796622",
+        "path": "world/assets\\guests\\casual-traveler\\casual-traveler.png"
+      },
+      {
+        "hash": "AC3F8472093CB16CDBF62E950E3755FA4E3AAF103B37667589AC3E087381CBCF",
+        "path": "world/assets\\guests\\casual-traveler\\casual-traveler-source.png"
+      },
+      {
+        "hash": "77F232C20654E9B08368BECD0982702732A449C7E97EA74353277F3AA0D53A0D",
+        "path": "world/assets\\guests\\casual-traveler\\casual-traveler-frames.json"
+      },
+      {
+        "hash": "9E7ECEFBFC3418797319E37A4D823D036EF88B57FF300DDFFB2D1D26A1AA3C27",
+        "path": "world/assets\\guests\\conference-attendee\\README.md"
+      },
+      {
+        "hash": "99A14DA79296CE3D6724D8C2EE41042A57C25971B45B0FC67F749B211C7976C2",
+        "path": "world/assets\\guests\\conference-attendee\\conference-attendee.png"
+      },
+      {
+        "hash": "C43303BA1C6BC926B1E557ABFE81EAA260146B29ED198F4251638080D827990F",
+        "path": "world/assets\\guests\\conference-attendee\\conference-attendee-source.png"
+      },
+      {
+        "hash": "054A647404CD753B48ABC1DFE014FA0141EDBF985A2CF43E6DAF64EF4AC9FAB0",
+        "path": "world/assets\\guests\\conference-attendee\\conference-attendee-frames.json"
+      },
+      {
+        "hash": "0AB17771F4DF96B506CEDF4C820838069DD9F385228C047D1CF732E15B682083",
+        "path": "world/assets\\guests\\business-traveler\\business-traveler-source.png"
+      },
+      {
+        "hash": "9B573F6F3F73130F5BD9D8CBAE6C43EEE29B3DC482241D7E6BFCC798AA0CC8B3",
+        "path": "world/assets\\guests\\business-traveler\\business-traveler-frames.json"
+      },
+      {
+        "hash": "1D2A4C2D55E16B0E05D922A741A31F89D74720FCEB1DBA064E12DA619851D7EF",
+        "path": "world/assets\\guests\\business-traveler\\business-traveler.png"
+      },
+      {
+        "hash": "B40DB82F3F417308109F8D750A2EC2BD0C89EA16D2BF7184CA16C0EDCE5E3E12",
+        "path": "world/assets\\guests\\business-traveler\\README.md"
+      },
+      {
+        "hash": "DA813375FD9CE5F590DCDB4C3C0A40664048C4B7EC8889BBD0264B2C38F731F4",
+        "path": "world/owner-controller.js"
+      },
+      {
+        "hash": "890FF1FE331D8DE15B22013EB410288141A8963D6C7B49B7C0E1FE4A884345FA",
+        "path": "world/collision-geometry.js"
+      },
+      {
+        "hash": "9B5D7C714C995B9CFC45C61631BDD79DFD2F5BF04272054651798625E4585080",
+        "path": "world/explorable-scene.js"
+      },
+      {
+        "hash": "78CF6BC4A73CFA4ED35EB551761E780C96324666F586D7044E91331A5F8DF8BC",
+        "path": "world/lobby-scene.js"
+      },
+      {
+        "hash": "C387D2F90782834FA5CF639E7684295F87798E512F36147AA4311FD8C9E82ED7",
+        "path": "world/hotel-scene.js"
+      },
+      {
+        "hash": "85E218D5966125D31D83D9D0D51B2D464D40E28254BD70B8079F9600B4D19109",
+        "path": "save-safety.js"
+      }
+    ]
+  },
+  "applicationFiles": [
+    {
+      "path": "world/hotel-state-adapter.js",
+      "sha256": "3ed1b56804ea151c94aca4bdf4aab3d1722d539b87660dbdbb19adf6107552ee"
+    },
+    {
+      "path": "world/guest-activity-config.js",
+      "sha256": "c59b8be78ca4efa43ab2fa1e7455f57d880eef9ef6358639d556ef7ec3e022aa"
+    },
+    {
+      "path": "world/guest-activity-director.js",
+      "sha256": "d6f460dca1a5b4883a80d36ab3713d802a159981824f1ebcd32ec0c6f9ed6ae8"
+    },
+    {
+      "path": "hotel/hotel-config.js",
+      "sha256": "a05e0126a47d73413cd2da9a4569366ed7068333ab6349c7333c33d21c0c6f10"
+    },
+    {
+      "path": "hotel/hotel-state.js",
+      "sha256": "89253dc36cc1d9bbda9929ed8ff674d1826b73d2fc4a48b9381a46d625fe88cf"
+    },
+    {
+      "path": "hotel/hotel-guests.js",
+      "sha256": "61d77a5d3ea281bda12345c2b9e3b7fb1641e5529693791225e8a03156b59f43"
+    },
+    {
+      "path": "world/guest-traffic-controller.js",
+      "sha256": "2adba5404cd2225b3d9acbcf8801dd89f0bda7a24f5e055f7be374e208aab92d"
+    },
+    {
+      "path": "world/reception-queue-manager.js",
+      "sha256": "6115e22015a12a9b04010dd4e2cc6fe7f0f4e2569784a81d844855844f903ca1"
+    },
+    {
+      "path": "world/guest-dialogue-config.js",
+      "sha256": "0e759d08acbb9725217831b1a4e007f81c565cb9b725d2c7b49126875399693c"
+    },
+    {
+      "path": "world/guest-dialogue-controller.js",
+      "sha256": "b17e593b8ba4453e34940f7cec598bda41962f733c9cb150e41526a9f7b10120"
+    },
+    {
+      "path": "world/lobby-guests.js",
+      "sha256": "29675c6b85a928847fb72d11e881d60b949a3e11d40c0d903da723eaa8868079"
+    },
+    {
+      "path": "world/main.js",
+      "sha256": "26b368c98c61d6477be9187fabd40a4eb32cef2f58e3c439053ce67c4ee7b51c"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "docs/screenshots/activity-actual-management-arrival.png",
+      "bytes": 1266541,
+      "sha256": "dadf35413b803df28526a7f0b2ba543de12444185d41c7a86cd31c57fa3bc30d"
+    },
+    {
+      "path": "docs/screenshots/activity-debug.png",
+      "bytes": 1067107,
+      "sha256": "8108e600ecbe79f9392e715c5064edaccce5bea244531f1036527fed8edec31a"
+    },
+    {
+      "path": "docs/screenshots/activity-full-page-return.png",
+      "bytes": 1261203,
+      "sha256": "126488f9311d843ce2d9d2c95029cd70bb2ea0b974484149e1f19050b4163a20"
+    },
+    {
+      "path": "docs/screenshots/activity-high.png",
+      "bytes": 1265141,
+      "sha256": "d9e0d1c4213b46448a659e6d09c77dfb4c72225b0e27891f0b2d727e743b3537"
+    },
+    {
+      "path": "docs/screenshots/activity-live-management.png",
+      "bytes": 1262081,
+      "sha256": "0b2e6b7dd4e2f706eaa7bc242763574243d893a70bfa663edb83356d2396fe0f"
+    },
+    {
+      "path": "docs/screenshots/activity-low.png",
+      "bytes": 1267771,
+      "sha256": "e71be0102b5702d9f2eefa7819d9dfb4bd75a410649d3e04af2c238c3ec8c6c2"
+    },
+    {
+      "path": "docs/screenshots/activity-management-after.png",
+      "bytes": 1223045,
+      "sha256": "b25d06a68f18152e5f9eec97b0d0f724f0c5be7da0cdb3631e164a9ae9aa3085"
+    },
+    {
+      "path": "docs/screenshots/activity-management-before.png",
+      "bytes": 1148314,
+      "sha256": "7ba217f43d4fbcba51fd51ab0646ac3bd104a5c56a035affedf40c650b9d5af7"
+    },
+    {
+      "path": "docs/screenshots/activity-mobile-full-page-return.png",
+      "bytes": 1378760,
+      "sha256": "10ecf97b7c56fa31422d5f8dc1c77fc732d2f2908421180ff48a0493323d6933"
+    },
+    {
+      "path": "docs/screenshots/activity-mobile-live-management.png",
+      "bytes": 1381129,
+      "sha256": "52a87979c740d9a39bf1e6ad70ed8904a15152d36539cdc331c59fd32d2863f1"
+    },
+    {
+      "path": "docs/screenshots/activity-mobile-owner-passage.png",
+      "bytes": 1375667,
+      "sha256": "c09fc513a6cc5857dcf57a034d7edd035fca89f0c89ddee68ceb02d066ea0733"
+    },
+    {
+      "path": "docs/screenshots/activity-mobile-service-live-short.png",
+      "bytes": 1381154,
+      "sha256": "b936996d29d26fdba8cd536363f438adcf725cdaac6f0db7146e4bac63924135"
+    },
+    {
+      "path": "docs/screenshots/activity-moderate.png",
+      "bytes": 1268455,
+      "sha256": "1f7e4f57b874a4f7ac1b70c9030261af4112e620fc9f7583a0ade0f9d067405c"
+    },
+    {
+      "path": "docs/screenshots/activity-owner-passage.png",
+      "bytes": 1263304,
+      "sha256": "a61d657561670f9a51e97cd4279e2d8594ab690ebb41d8c8d584ec0766d7dee7"
+    },
+    {
+      "path": "docs/screenshots/activity-satisfaction-high.png",
+      "bytes": 1265021,
+      "sha256": "655ae14d61cdf21be9f3391701df23c76baf023b20034845cb6b69289a0ddd4f"
+    },
+    {
+      "path": "docs/screenshots/activity-satisfaction-low.png",
+      "bytes": 1264473,
+      "sha256": "3a9175bf29a203a0c4d9a3232174969885e4cfc80b9727bd8dae2d1ef61112a7"
+    },
+    {
+      "path": "docs/screenshots/activity-service-covered.png",
+      "bytes": 1268240,
+      "sha256": "401f62c90a0036815c87d4a03cca648a08c906d402d1bb4c08c990eb6629019c"
+    },
+    {
+      "path": "docs/screenshots/activity-service-live-short.png",
+      "bytes": 1262383,
+      "sha256": "9f85e62457b567d0ea9231eee593f28967df8d2a3728bf3748347a7a5f34db91"
+    },
+    {
+      "path": "docs/screenshots/activity-service-short.png",
+      "bytes": 1265386,
+      "sha256": "de924bb047aa589ea34616a46572853e58d84f619c00638e1437fae6f85aa808"
+    },
+    {
+      "path": "docs/screenshots/activity-service-thin.png",
+      "bytes": 1268981,
+      "sha256": "09bc3ad5349c3a2dfc8d29d3ab438fce21f14370cc157f13691f796702596af6"
+    },
+    {
+      "path": "docs/screenshots/activity-transition.png",
+      "bytes": 1265882,
+      "sha256": "baec07ea44655a9b50cbccd5912f515ac3c7148e90bb9d6b5300b2ef4e924ea6"
+    },
+    {
+      "path": "docs/recordings/management-activity-fixtures.webm",
+      "bytes": 5453524,
+      "sha256": "7ae433101fccd50b69f663e0b285257796f105e054e1daa5301c8fbe3722ba4c"
+    },
+    {
+      "path": "docs/recordings/management-guest-activity.webm",
+      "bytes": 3561558,
+      "sha256": "5edd1fcfecf333863ad5d969d1253c7c4269c1fdcb21a6ba0c70a075497f6d2c"
+    }
+  ],
+  "limitations": [
+    "Utilization is guest population / canonical upgrade capacity, not physical occupied rooms.",
+    "Staffing uses canonical assigned lobby coverage; no separate attendance or schedule model.",
+    "Satisfaction is aggregate saved current satisfaction, not individual NPC satisfaction.",
+    "Existing structurally corrupt-save guards pause the world; presentation fallback cannot bypass them.",
+    "Full-page navigation resets transient NPCs; retained-lobby updates preserve live journeys."
+  ]
+}
